@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     LOG_FORMAT: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
     # API
+    API_HOST: str = "0.0.0.0"
+    API_PORT: int = 8080
     API_PREFIX: str = "/api/v1"
     API_TITLE: str = "Task Manager API"
     API_VERSION: str = "1.0.0"
@@ -30,7 +32,7 @@ class Settings(BaseSettings):
     AGENT_MAX_TOKENS: int = 4096
     AGENT_TEMPERATURE: float = 0.3
     AGENT_MAX_TOOL_ROUNDS: int = 10
-    AGENT_API_BASE_URL: str = "http://localhost:8000/api/v1"
+    AGENT_API_BASE_URL: str = "http://localhost:8080/api/v1"
 
     class Config:
         env_file = ".env"

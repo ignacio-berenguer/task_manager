@@ -41,10 +41,10 @@ uv run python manage.py migrate --db custom.db  # Custom database path
 ```bash
 cd backend
 uv sync
-uv run uvicorn app.main:app --reload --port 8000
+uv run python -m app.main                    # Uses API_PORT from .env (default: 8080)
 ```
 
-- Swagger UI: http://localhost:8000/api/v1/docs
+- Swagger UI: http://localhost:8080/api/v1/docs
 
 **Dependencies:** fastapi, uvicorn, sqlalchemy, pydantic, pydantic-settings, python-dotenv, anthropic, httpx
 
@@ -89,7 +89,7 @@ task_manager/
 │       └── migrate/                 # engine.py
 │
 ├── db/
-│   ├── schema.sql                   # Complete DDL (4 tables)
+│   ├── schema.sql                   # Complete DDL (5 tables)
 │   └── task_manager.db              # SQLite database (gitignored)
 │
 ├── backend/                         # FastAPI REST API
@@ -97,7 +97,7 @@ task_manager/
 │   │   ├── main.py                  # Entry point + CORS + router registration
 │   │   ├── config.py                # Environment config
 │   │   ├── database.py              # SQLite connection
-│   │   ├── models.py                # 4 SQLAlchemy ORM models
+│   │   ├── models.py                # 5 SQLAlchemy ORM models
 │   │   ├── schemas.py               # Pydantic validation schemas
 │   │   ├── crud.py                  # Reusable CRUD operations
 │   │   ├── search.py                # Flexible search with operators
@@ -113,6 +113,7 @@ task_manager/
 │   │       ├── tareas.py            # Tareas endpoints
 │   │       ├── acciones.py          # Acciones endpoints
 │   │       ├── estados.py           # Estados endpoints
+│   │       ├── responsables.py      # Responsables parametric endpoint
 │   │       └── agent.py             # AI agent chat endpoint
 │   ├── pyproject.toml
 │   └── .env.example                 # Configuration template
@@ -171,7 +172,7 @@ task_manager/
 
 ## Database Schema
 
-**4 Tables:**
+**5 Tables:**
 
 | Table | Primary Key | Description |
 |-------|-------------|-------------|
@@ -179,13 +180,15 @@ task_manager/
 | `acciones_realizadas` | `id` (INTEGER, autoincrement) | Actions linked to tasks via `tarea_id` FK |
 | `estados_tareas` | `id` (INTEGER, autoincrement) | Parametric: task status values |
 | `estados_acciones` | `id` (INTEGER, autoincrement) | Parametric: action status values |
+| `responsables` | `id` (INTEGER, autoincrement) | Parametric: responsable values (seeded from migration) |
 
 **Table Details:**
 
-- **tareas**: `tarea_id` (TEXT PK), `tarea`, `responsable`, `descripcion`, `fecha_siguiente_accion`, `tema`, `estado`, `fecha_creacion`, `fecha_actualizacion`
-- **acciones_realizadas**: `id` (INTEGER PK), `tarea_id` (FK to tareas, ON DELETE CASCADE), `accion`, `estado`, `fecha_creacion`, `fecha_actualizacion`
+- **tareas**: `tarea_id` (TEXT PK), `tarea`, `responsable`, `descripcion`, `fecha_siguiente_accion`, `tema`, `estado`, `notas_anteriores`, `fecha_creacion`, `fecha_actualizacion`
+- **acciones_realizadas**: `id` (INTEGER PK), `tarea_id` (FK to tareas, ON DELETE CASCADE), `accion`, `fecha_accion`, `estado`, `fecha_creacion`, `fecha_actualizacion`
 - **estados_tareas**: `id`, `valor` (UNIQUE), `orden`, `color` — seeded with: Pendiente, En Progreso, Completada, Cancelada
 - **estados_acciones**: `id`, `valor` (UNIQUE), `orden`, `color` — seeded with: Pendiente, En Progreso, Completada
+- **responsables**: `id`, `valor` (UNIQUE), `orden` — seeded during migration from unique Excel responsable values
 
 ## Backend API
 
@@ -211,6 +214,13 @@ task_manager/
 ### Estados (`/api/v1/estados-tareas`, `/api/v1/estados-acciones`)
 
 - `GET /` — List all status values
+- `POST /` — Create
+- `PUT /{id}` — Update
+- `DELETE /{id}` — Delete
+
+### Responsables (`/api/v1/responsables`)
+
+- `GET /` — List all responsables (ordered by `orden`)
 - `POST /` — Create
 - `PUT /{id}` — Update
 - `DELETE /{id}` — Delete
@@ -296,14 +306,14 @@ AGENT_MODEL=claude-sonnet-4-20250514
 AGENT_MAX_TOKENS=4096
 AGENT_TEMPERATURE=0.0
 AGENT_MAX_TOOL_ROUNDS=10
-AGENT_API_BASE_URL=http://localhost:8000/api/v1
+AGENT_API_BASE_URL=http://localhost:8080/api/v1
 ```
 
 ### Frontend
 
 ```env
 VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
-VITE_API_BASE_URL=http://localhost:8000/api/v1
+VITE_API_BASE_URL=http://localhost:8080/api/v1
 VITE_LOG_LEVEL=INFO
 VITE_APP_NAME=Task Manager
 ```
@@ -311,7 +321,7 @@ VITE_APP_NAME=Task Manager
 ### MCP Server
 
 ```env
-API_BASE_URL=http://localhost:8000/api/v1
+API_BASE_URL=http://localhost:8080/api/v1
 API_TIMEOUT=30
 LOG_LEVEL=INFO
 LOG_FILE=task_manager_mcp.log

@@ -182,7 +182,9 @@ frontend/
 #### 6.3 Detail Page (`/detail/:tarea_id`)
 
 - **Task info card**: Displays all tarea fields (tarea_id, tarea, responsable, descripcion, tema, estado, fecha_siguiente_accion, timestamps)
-- **Acciones CRUD table**: Lists all acciones for the tarea with create, edit, and delete operations
+- **Edit tarea dialog**: Responsable uses a dropdown populated from `/api/v1/responsables`
+- **Notas Anteriores card**: Read-only display of the original notas text (shown only when non-empty)
+- **Acciones CRUD table**: Lists all acciones for the tarea with fecha_accion, accion text, estado columns, and create/edit/delete operations
 - **Navigation back** to search page
 
 #### 6.4 Chat Page (`/chat`)
@@ -329,7 +331,7 @@ ClerkProvider
 
 ```env
 VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
-VITE_API_BASE_URL=http://localhost:8000/api/v1
+VITE_API_BASE_URL=http://localhost:8080/api/v1
 VITE_LOG_LEVEL=INFO
 VITE_APP_NAME=Task Manager
 ```

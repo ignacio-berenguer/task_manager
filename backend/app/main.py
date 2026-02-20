@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .config import settings
-from .routers import tareas, acciones, estados, agent
+from .routers import tareas, acciones, estados, responsables, agent
 
 # Setup logging
 _backend_dir = Path(__file__).parent.parent
@@ -95,6 +95,7 @@ app.include_router(tareas.router, prefix=settings.API_PREFIX)
 app.include_router(acciones.router, prefix=settings.API_PREFIX)
 app.include_router(estados.router_tareas, prefix=settings.API_PREFIX)
 app.include_router(estados.router_acciones, prefix=settings.API_PREFIX)
+app.include_router(responsables.router, prefix=settings.API_PREFIX)
 app.include_router(agent.router, prefix=settings.API_PREFIX)
 
 
@@ -112,3 +113,14 @@ def root():
 def health():
     """Health check endpoint."""
     return {"status": "healthy"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(
+        "app.main:app",
+        host=settings.API_HOST,
+        port=settings.API_PORT,
+        reload=True,
+    )

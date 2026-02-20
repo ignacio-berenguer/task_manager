@@ -20,7 +20,7 @@ task_manager/
 │   ├── .env                 # Configuration (gitignored)
 │   └── pyproject.toml       # Dependencies
 ├── db/
-│   └── schema.sql           # Database DDL (4 tables + seed data)
+│   └── schema.sql           # Database DDL (5 tables + seed data)
 ├── backend/                 # Backend module
 ├── frontend/                # Frontend module
 ├── mcp_server/              # MCP server module
@@ -98,8 +98,13 @@ management/src/
 - `recreate_tables(db_path)`: Drops all existing tables and recreates them from `schema.sql` without deleting the `.db` file.
 
 ### migrate/engine.py
-- `TareasMigrationEngine` class: Reads Excel workbook, inserts tareas and acciones_realizadas into the database.
-- `migrate_all()`: Entry point for the migration process.
+- `TareasMigrationEngine` class: Reads Excel workbook, inserts tareas, parses notas into acciones, and seeds responsables.
+- `_read_excel_table()`: Reads data from an Excel named Table (ListObject) via openpyxl. Falls back to reading the entire sheet if the named Table is not found.
+- `migrate_all()`: Entry point — calls `migrate_tareas()` → `migrate_acciones_from_notas()` → `migrate_responsables()`.
+- `migrate_tareas()`: Reads tareas from Excel, maps columns, normalizes dates/text, inserts into database.
+- `migrate_acciones_from_notas()`: Parses the `notas_anteriores` field of each tarea line-by-line to create `acciones_realizadas` records (dates → COMPLETADO, NBA: prefix → PENDIENTE).
+- `migrate_responsables()`: Extracts unique responsable values from tareas and seeds the `responsables` parametric table.
+- Helper functions: `parse_notas()` (line-by-line parsing with regex), `normalize_accion_text()` (trim + capitalize).
 - Handles column name normalization, data quality cleanup, and error tracking.
 
 ---
@@ -153,14 +158,25 @@ This command orchestrates the complete pipeline:
 ### Migration Flow
 
 ```
-Excel File  -->  TareasMigrationEngine  -->  SQLite Database
-                        │
-                        v
-                Data Quality Functions
-                (normalize dates, text cleanup)
+Excel File (named Table)
+        │
+        v
+  _read_excel_table()          ← openpyxl: locate Table range, fallback to full sheet
+        │
+        v
+  migrate_tareas()             ← column mapping, date/text normalization, batch insert
+        │
+        v
+  migrate_acciones_from_notas() ← parse notas_anteriores line-by-line → acciones_realizadas
+        │
+        v
+  migrate_responsables()       ← extract unique responsables → seed parametric table
+        │
+        v
+  SQLite Database
 ```
 
-The migration reads from the configured Excel file and sheet, normalizes column names (remove accents, lowercase, underscores), applies data quality functions, and inserts records into the `tareas` and `acciones_realizadas` tables.
+The migration reads from the configured Excel named Table (or falls back to the full sheet), normalizes column names (lowercase, underscores), applies data quality functions, and inserts records into the `tareas`, `acciones_realizadas`, and `responsables` tables. The `notas_anteriores` field on each tarea is parsed to generate individual accion records.
 
 ---
 
@@ -176,7 +192,24 @@ LOG_FILE=task_manager_migration.log
 
 # Excel Source
 EXCEL_SOURCE_DIR=excel_source
+EXCEL_SOURCE_FILE=tareas.xlsx
+EXCEL_SHEET_TAREAS=Tareas
+EXCEL_TABLE_TAREAS=Tareas
+
+# Batch Processing
+BATCH_COMMIT_SIZE=100
 ```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LOG_LEVEL` | `INFO` | Logging level |
+| `LOG_FILE` | `task_manager_migration.log` | Log file name |
+| `DATABASE_PATH` | _(auto-detect)_ | SQLite database path |
+| `EXCEL_SOURCE_DIR` | `excel_source` | Directory containing Excel files |
+| `EXCEL_SOURCE_FILE` | `tareas.xlsx` | Excel workbook file name |
+| `EXCEL_SHEET_TAREAS` | `Tareas` | Sheet name containing tareas data |
+| `EXCEL_TABLE_TAREAS` | `Tareas` | Excel named Table (ListObject) within the sheet |
+| `BATCH_COMMIT_SIZE` | `100` | Rows per batch commit during migration |
 
 ### Startup Validation
 

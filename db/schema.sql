@@ -32,6 +32,13 @@ CREATE TABLE IF NOT EXISTS estados_acciones (
     color TEXT DEFAULT NULL
 );
 
+-- Valid responsables for tareas
+CREATE TABLE IF NOT EXISTS responsables (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    valor TEXT NOT NULL UNIQUE,
+    orden INTEGER DEFAULT 0
+);
+
 -- ============================================================================
 -- CORE TABLES
 -- ============================================================================
@@ -45,6 +52,7 @@ CREATE TABLE IF NOT EXISTS tareas (
     fecha_siguiente_accion TEXT,  -- ISO 8601 date (YYYY-MM-DD)
     tema TEXT,
     estado TEXT,
+    notas_anteriores TEXT,
     fecha_creacion TEXT DEFAULT (datetime('now')),
     fecha_actualizacion TEXT DEFAULT (datetime('now'))
 );
@@ -58,6 +66,7 @@ CREATE TABLE IF NOT EXISTS acciones_realizadas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     tarea_id TEXT NOT NULL,
     accion TEXT NOT NULL,
+    fecha_accion TEXT,  -- ISO 8601 date (YYYY-MM-DD)
     estado TEXT,
     fecha_creacion TEXT DEFAULT (datetime('now')),
     fecha_actualizacion TEXT DEFAULT (datetime('now')),
@@ -66,6 +75,7 @@ CREATE TABLE IF NOT EXISTS acciones_realizadas (
 
 CREATE INDEX IF NOT EXISTS idx_acciones_tarea_id ON acciones_realizadas(tarea_id);
 CREATE INDEX IF NOT EXISTS idx_acciones_estado ON acciones_realizadas(estado);
+CREATE INDEX IF NOT EXISTS idx_acciones_fecha_accion ON acciones_realizadas(fecha_accion);
 
 -- ============================================================================
 -- SEED DATA

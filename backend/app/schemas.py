@@ -37,6 +37,7 @@ class TareaCreate(BaseModel):
     fecha_siguiente_accion: str | None = None
     tema: str | None = None
     estado: str | None = None
+    notas_anteriores: str | None = None
 
 
 class TareaUpdate(BaseModel):
@@ -46,6 +47,7 @@ class TareaUpdate(BaseModel):
     fecha_siguiente_accion: str | None = None
     tema: str | None = None
     estado: str | None = None
+    notas_anteriores: str | None = None
 
 
 # --- Acciones ---
@@ -53,11 +55,13 @@ class TareaUpdate(BaseModel):
 class AccionCreate(BaseModel):
     tarea_id: str
     accion: str
+    fecha_accion: str | None = None
     estado: str | None = None
 
 
 class AccionUpdate(BaseModel):
     accion: str | None = None
+    fecha_accion: str | None = None
     estado: str | None = None
 
 
@@ -73,3 +77,15 @@ class EstadoUpdate(BaseModel):
     valor: str | None = None
     orden: int | None = None
     color: str | None = None
+
+
+# --- Responsables (parametric) ---
+
+class ResponsableCreate(BaseModel):
+    valor: str
+    orden: int = 0
+
+
+class ResponsableUpdate(BaseModel):
+    valor: str | None = None
+    orden: int | None = None

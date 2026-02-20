@@ -14,7 +14,7 @@ class _Settings:
     """Configuration settings loaded from environment."""
 
     # API Connection
-    API_BASE_URL: str = os.getenv("API_BASE_URL", "http://localhost:8000/api/v1")
+    API_BASE_URL: str = os.getenv("API_BASE_URL", "http://localhost:8080/api/v1")
     API_TIMEOUT: float = float(os.getenv("API_TIMEOUT", "30"))
 
     # Logging

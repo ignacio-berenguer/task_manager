@@ -37,7 +37,7 @@ An embedded conversational AI assistant that answers questions about Portfolio D
                                                                ▼
                                                    ┌───────────────────────┐
                                                    │   FastAPI REST API    │
-                                                   │   (localhost:8000)    │
+                                                   │   (localhost:8080)    │
                                                    └───────────┬───────────┘
                                                                │
                                                                ▼
@@ -233,7 +233,7 @@ New variables added to `backend/app/config.py` via pydantic-settings `BaseSettin
 | `AGENT_MAX_TOKENS` | `int` | `4096` | Max tokens per Anthropic API response |
 | `AGENT_TEMPERATURE` | `float` | `0.3` | Temperature for response generation |
 | `AGENT_MAX_TOOL_ROUNDS` | `int` | `10` | Max tool-use iterations (safety limit) |
-| `AGENT_API_BASE_URL` | `str` | `http://localhost:8000/api/v1` | Backend API URL for self-calls |
+| `AGENT_API_BASE_URL` | `str` | `http://localhost:8080/api/v1` | Backend API URL for self-calls |
 | `CHART_DPI` | `int` | `150` | Chart image resolution (dots per inch) |
 | `CHART_DEFAULT_WIDTH` | `int` | `10` | Default chart width in inches |
 | `CHART_DEFAULT_HEIGHT` | `int` | `6` | Default chart height in inches |

@@ -26,7 +26,7 @@ backend/
 │   ├── main.py              # Entry point, CORS, middleware, router registration
 │   ├── config.py            # Environment configuration (pydantic-settings)
 │   ├── database.py          # SQLite connection setup & SessionLocal
-│   ├── models.py            # 4 SQLAlchemy ORM models
+│   ├── models.py            # 5 SQLAlchemy ORM models
 │   ├── schemas.py           # Pydantic models for search, CRUD validation
 │   ├── crud.py              # Generic CRUDBase class
 │   ├── search.py            # Flexible search with 12 operators
@@ -45,6 +45,7 @@ backend/
 │       ├── tareas.py         # Tareas CRUD + Search
 │       ├── acciones.py       # Acciones CRUD (incl. by tarea_id)
 │       ├── estados.py        # Estados parametric tables (two routers)
+│       ├── responsables.py   # Responsables parametric table CRUD
 │       └── agent.py          # AI agent chat with SSE streaming
 ├── .env                      # Environment variables (gitignored)
 ├── .env.example              # Template
@@ -55,14 +56,15 @@ backend/
 
 ## 4. Database Models
 
-4 SQLAlchemy models reflecting the database schema:
+5 SQLAlchemy models reflecting the database schema:
 
 | Model | Table | Primary Key | Description |
 |-------|-------|-------------|-------------|
-| `Tarea` | `tareas` | `tarea_id` (TEXT) | Main tasks with responsable, tema, estado, descripcion, fecha_siguiente_accion |
-| `AccionRealizada` | `acciones_realizadas` | `id` (INTEGER, auto) | Actions performed on tasks, FK to tareas (CASCADE) |
+| `Tarea` | `tareas` | `tarea_id` (TEXT) | Main tasks with responsable, tema, estado, descripcion, fecha_siguiente_accion, notas_anteriores |
+| `AccionRealizada` | `acciones_realizadas` | `id` (INTEGER, auto) | Actions performed on tasks, FK to tareas (CASCADE). Includes fecha_accion |
 | `EstadoTarea` | `estados_tareas` | `id` (INTEGER, auto) | Parametric: valid task estados with orden and color |
 | `EstadoAccion` | `estados_acciones` | `id` (INTEGER, auto) | Parametric: valid action estados with orden and color |
+| `Responsable` | `responsables` | `id` (INTEGER, auto) | Parametric: responsable values with orden (unique valor) |
 
 ---
 
@@ -127,7 +129,18 @@ Two separate routers for the two estado tables:
 
 **Router:** `routers/estados.py` exports `router_tareas` and `router_acciones`.
 
-### 6.4 Agent Chat
+### 6.4 Responsables
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/responsables` | List all responsables (ordered by `orden`) |
+| POST | `/api/v1/responsables` | Create a new responsable (409 on duplicate) |
+| PUT | `/api/v1/responsables/{id}` | Update a responsable |
+| DELETE | `/api/v1/responsables/{id}` | Delete a responsable |
+
+**Router:** `routers/responsables.py` with prefix `/responsables`.
+
+### 6.5 Agent Chat
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -135,7 +148,7 @@ Two separate routers for the two estado tables:
 
 **Router:** `routers/agent.py` with prefix `/agent`.
 
-### 6.5 Utility Endpoints
+### 6.6 Utility Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -236,6 +249,8 @@ LOG_FILE=task_manager_backend.log
 LOG_FORMAT=%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 # API Settings
+API_HOST=0.0.0.0
+API_PORT=8080
 API_PREFIX=/api/v1
 API_TITLE=Task Manager API
 API_VERSION=1.0.0
@@ -253,7 +268,7 @@ AGENT_MODEL=claude-sonnet-4-20250514
 AGENT_MAX_TOKENS=4096
 AGENT_TEMPERATURE=0.3
 AGENT_MAX_TOOL_ROUNDS=10
-AGENT_API_BASE_URL=http://localhost:8000/api/v1
+AGENT_API_BASE_URL=http://localhost:8080/api/v1
 ```
 
 ### Logging
@@ -278,12 +293,12 @@ AGENT_API_BASE_URL=http://localhost:8000/api/v1
 ```bash
 cd backend
 uv sync
-uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uv run python -m app.main                    # Uses API_HOST/API_PORT from .env
 ```
 
 **API Documentation:**
-- Swagger UI: http://localhost:8000/api/v1/docs
-- ReDoc: http://localhost:8000/api/v1/redoc
+- Swagger UI: http://localhost:8080/api/v1/docs
+- ReDoc: http://localhost:8080/api/v1/redoc
 
 ---
 

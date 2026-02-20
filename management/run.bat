@@ -14,6 +14,6 @@ if %errorlevel% geq 8 (
 
 echo ===Ficheros copiados correctamente===
 
-echo ===Lanzando el proceso de cálculo de datos relevantes===
+echo ===Lanzando el proceso de migracion===
 uv run python manage.py complete_process
 echo ===Proceso finalizado===

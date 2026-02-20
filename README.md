@@ -33,11 +33,11 @@ uv run python manage.py complete_process                   # Full pipeline: recr
 cd backend
 uv sync
 cp .env.example .env                                      # Configure (optional)
-uv run uvicorn app.main:app --reload --port 8000
+uv run python -m app.main                                # Uses API_PORT from .env (default: 8080)
 ```
 
-- Swagger UI: http://localhost:8000/api/v1/docs
-- ReDoc: http://localhost:8000/api/v1/redoc
+- Swagger UI: http://localhost:8080/api/v1/docs
+- ReDoc: http://localhost:8080/api/v1/redoc
 
 ### 3. Frontend
 
@@ -73,14 +73,14 @@ task_manager/
 │       └── migrate/                 # engine.py (TareasMigrationEngine)
 │
 ├── db/
-│   └── schema.sql                   # Complete DDL (4 tables + seed data)
+│   └── schema.sql                   # Complete DDL (5 tables + seed data)
 │
 ├── backend/                         # FastAPI REST API
 │   ├── app/
 │   │   ├── main.py                  # Entry point + CORS + router registration
 │   │   ├── config.py                # Environment config
 │   │   ├── database.py              # SQLite connection
-│   │   ├── models.py                # 4 SQLAlchemy ORM models
+│   │   ├── models.py                # 5 SQLAlchemy ORM models
 │   │   ├── schemas.py               # Pydantic validation schemas
 │   │   ├── crud.py                  # Generic CRUDBase class
 │   │   ├── search.py                # Flexible search with 12 operators
@@ -97,6 +97,7 @@ task_manager/
 │   │       ├── tareas.py            # Tareas CRUD + Search
 │   │       ├── acciones.py          # Acciones CRUD
 │   │       ├── estados.py           # Estados parametric tables
+│   │       ├── responsables.py      # Responsables parametric table
 │   │       └── agent.py             # AI agent chat with SSE streaming
 │   ├── pyproject.toml
 │   └── .env                         # Configuration (gitignored)
@@ -140,16 +141,30 @@ task_manager/
 
 ## Database Schema
 
-**4 tables** in SQLite:
+**5 tables** in SQLite:
 
 | Table | Primary Key | Description |
 |-------|-------------|-------------|
-| `tareas` | `tarea_id` (TEXT) | Main tasks table with responsable, tema, estado, descripcion |
-| `acciones_realizadas` | `id` (INTEGER, auto) | Actions performed on tasks, FK to tareas |
+| `tareas` | `tarea_id` (TEXT) | Main tasks table with responsable, tema, estado, notas_anteriores |
+| `acciones_realizadas` | `id` (INTEGER, auto) | Actions performed on tasks, FK to tareas. Includes `fecha_accion` |
 | `estados_tareas` | `id` (INTEGER, auto) | Parametric table of valid task estados |
 | `estados_acciones` | `id` (INTEGER, auto) | Parametric table of valid action estados |
+| `responsables` | `id` (INTEGER, auto) | Parametric table of responsable values |
 
-Seed data includes default estados: Pendiente, En Progreso, Completada, Cancelada (tareas) and Pendiente, En Progreso, Completada (acciones).
+Seed data includes default estados: Pendiente, En Progreso, Completada, Cancelada (tareas) and Pendiente, En Progreso, Completada (acciones). Responsables are seeded during migration from Excel data.
+
+### Migration: Excel Table Reading
+
+The migration engine reads data from an Excel named Table (ListObject) using openpyxl. It locates the Table specified by `EXCEL_TABLE_TAREAS` within the sheet `EXCEL_SHEET_TAREAS`. If the named Table is not found, it falls back to reading the entire sheet.
+
+### Migration: Notas Parsing
+
+During migration, the `Notas` column from the Excel tareas data is:
+1. Preserved as-is in the `notas_anteriores` field on tareas
+2. Parsed line-by-line to create individual `acciones_realizadas` records:
+   - Lines starting with a date (`DD/MM/YYYY` or `DD/MM`) → accion with `estado = COMPLETADO`
+   - Lines starting with `NBA:` → accion with `estado = PENDIENTE` and future date (today + 7 days)
+   - Text is normalized: first letter capitalized, leading spaces/punctuation trimmed
 
 ## Backend API
 
@@ -183,6 +198,15 @@ Seed data includes default estados: Pendiente, En Progreso, Completada, Cancelad
 |--------|----------|-------------|
 | GET | `/api/v1/estados-tareas` | List task estados |
 | GET | `/api/v1/estados-acciones` | List action estados |
+
+**Responsables:**
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/responsables` | List all responsables |
+| POST | `/api/v1/responsables` | Create responsable |
+| PUT | `/api/v1/responsables/{id}` | Update responsable |
+| DELETE | `/api/v1/responsables/{id}` | Delete responsable |
 
 **Agent:**
 
@@ -225,6 +249,10 @@ Seed data includes default estados: Pendiente, En Progreso, Completada, Cancelad
 | `LOG_FILE` | `task_manager_migration.log` | Log file name |
 | `DATABASE_PATH` | `PROJECT_ROOT/db/task_manager.db` | SQLite database path |
 | `EXCEL_SOURCE_DIR` | `excel_source` | Directory containing Excel files |
+| `EXCEL_SOURCE_FILE` | `tareas.xlsx` | Excel workbook file name |
+| `EXCEL_SHEET_TAREAS` | `Tareas` | Sheet name containing tareas data |
+| `EXCEL_TABLE_TAREAS` | `Tareas` | Excel named Table (ListObject) within the sheet |
+| `BATCH_COMMIT_SIZE` | `100` | Rows per batch commit during migration |
 
 ### Backend (.env)
 
@@ -232,6 +260,8 @@ Seed data includes default estados: Pendiente, En Progreso, Completada, Cancelad
 |----------|---------|-------------|
 | `LOG_LEVEL` | `INFO` | Logging level |
 | `LOG_FILE` | `task_manager_backend.log` | Log file name |
+| `API_HOST` | `0.0.0.0` | Server bind host |
+| `API_PORT` | `8080` | Server port |
 | `API_PREFIX` | `/api/v1` | API route prefix |
 | `API_TITLE` | `Task Manager API` | Swagger title |
 | `API_VERSION` | `1.0.0` | API version |
@@ -243,14 +273,14 @@ Seed data includes default estados: Pendiente, En Progreso, Completada, Cancelad
 | `AGENT_MAX_TOKENS` | `4096` | Max tokens per agent response |
 | `AGENT_TEMPERATURE` | `0.3` | Agent temperature |
 | `AGENT_MAX_TOOL_ROUNDS` | `10` | Max tool iteration rounds |
-| `AGENT_API_BASE_URL` | `http://localhost:8000/api/v1` | Backend API URL for agent self-calls |
+| `AGENT_API_BASE_URL` | `http://localhost:8080/api/v1` | Backend API URL for agent self-calls |
 
 ### Frontend (.env)
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `VITE_CLERK_PUBLISHABLE_KEY` | -- | Clerk publishable key (required) |
-| `VITE_API_BASE_URL` | `http://localhost:8000/api/v1` | Backend API URL |
+| `VITE_API_BASE_URL` | `http://localhost:8080/api/v1` | Backend API URL |
 | `VITE_LOG_LEVEL` | `INFO` | Browser console log level |
 | `VITE_APP_NAME` | `Task Manager` | Application name |
 
@@ -258,7 +288,7 @@ Seed data includes default estados: Pendiente, En Progreso, Completada, Cancelad
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `API_BASE_URL` | `http://localhost:8000/api/v1` | FastAPI backend URL |
+| `API_BASE_URL` | `http://localhost:8080/api/v1` | FastAPI backend URL |
 | `API_TIMEOUT` | `30` | HTTP request timeout (seconds) |
 | `LOG_LEVEL` | `INFO` | Logging level |
 | `LOG_FILE` | `task_manager_mcp.log` | Log file name |

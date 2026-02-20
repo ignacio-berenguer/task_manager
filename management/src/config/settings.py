@@ -33,7 +33,7 @@ else:
 EXCEL_SOURCE_DIR: str = os.getenv('EXCEL_SOURCE_DIR', 'excel_source')
 EXCEL_SOURCE_FILE: str = os.getenv('EXCEL_SOURCE_FILE', 'tareas.xlsx')
 EXCEL_SHEET_TAREAS: str = os.getenv('EXCEL_SHEET_TAREAS', 'Tareas')
-EXCEL_SHEET_ACCIONES: str = os.getenv('EXCEL_SHEET_ACCIONES', 'Acciones')
+EXCEL_TABLE_TAREAS: str = os.getenv('EXCEL_TABLE_TAREAS', 'Tareas')
 
 # --- Batch Processing ---
 BATCH_COMMIT_SIZE: int = int(os.getenv('BATCH_COMMIT_SIZE', '100'))

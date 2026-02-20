@@ -48,7 +48,7 @@ function linkifyPortfolioIds(children) {
 
 function resolveImageSrc(src) {
   if (!src) return src
-  const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1').replace(/\/api\/v1\/?$/, '')
+  const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1').replace(/\/api\/v1\/?$/, '')
 
   // Relative path — prepend API base
   if (src.startsWith('/')) {

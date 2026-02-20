@@ -15,7 +15,7 @@ The MCP (Model Context Protocol) server provides read-only access to Task Manage
 │   MCP Server    │ ─────────────────────> │   FastAPI API   │ ───────────> task_manager.db
 │  (mcp_server/)  │   POST /search         │  (backend/)     │
 │                 │   GET /tareas/{id}     │                 │
-│  stdio | SSE    │ <───────────────────── │  :8000          │
+│  stdio | SSE    │ <───────────────────── │  :8080          │
 └─────────────────┘       JSON responses   └─────────────────┘
 ```
 
@@ -109,7 +109,7 @@ URL prefix overrides:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `API_BASE_URL` | `http://localhost:8000/api/v1` | FastAPI backend URL |
+| `API_BASE_URL` | `http://localhost:8080/api/v1` | FastAPI backend URL |
 | `API_TIMEOUT` | `30` | HTTP request timeout (seconds) |
 | `LOG_LEVEL` | `INFO` | Logging level |
 | `LOG_FILE` | `task_manager_mcp.log` | Log filename (in ../logs/) |
@@ -162,4 +162,4 @@ uv run -m mcp_tareas
 MCP_TRANSPORT=sse uv run -m mcp_tareas
 ```
 
-**Prerequisite:** The backend API must be running on port 8000.
+**Prerequisite:** The backend API must be running on port 8080.

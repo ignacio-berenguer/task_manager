@@ -14,6 +14,7 @@ class Tarea(Base):
     fecha_siguiente_accion = Column(Text)
     tema = Column(Text)
     estado = Column(Text)
+    notas_anteriores = Column(Text)
     fecha_creacion = Column(Text)
     fecha_actualizacion = Column(Text)
 
@@ -24,9 +25,18 @@ class AccionRealizada(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     tarea_id = Column(Text, ForeignKey("tareas.tarea_id", ondelete="CASCADE"), nullable=False)
     accion = Column(Text, nullable=False)
+    fecha_accion = Column(Text)
     estado = Column(Text)
     fecha_creacion = Column(Text)
     fecha_actualizacion = Column(Text)
+
+
+class Responsable(Base):
+    __tablename__ = "responsables"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    valor = Column(Text, nullable=False, unique=True)
+    orden = Column(Integer, default=0)
 
 
 class EstadoTarea(Base):

@@ -16,22 +16,23 @@ This feature customizes the Excel-to-SQLite migration for tareas to:
 
 ### 2. Schema Changes
 
-#### 2.1 Add `notas_anteriores` and `fecha_nba` to `tareas`
+#### 2.1 Add `notas_anteriores` to `tareas`
 
 ```sql
--- tareas table modification
-ALTER TABLE tareas ADD COLUMN notas_anteriores TEXT;
+-- Added to tareas table definition in schema.sql
+notas_anteriores TEXT,
 ```
 
-The `fecha_siguiente_accion` field already exists and will be mapped from "Fecha NBA" Excel column. No additional column needed for that mapping.
+The `fecha_siguiente_accion` field already exists and will be mapped from the "Fecha NBA" Excel column. No additional column needed for that.
 
 #### 2.2 Add `fecha_accion` to `acciones_realizadas`
 
 ```sql
-ALTER TABLE acciones_realizadas ADD COLUMN fecha_accion TEXT;  -- ISO 8601 date (YYYY-MM-DD)
+-- Added to acciones_realizadas table definition in schema.sql
+fecha_accion TEXT,  -- ISO 8601 date (YYYY-MM-DD)
 ```
 
-This stores the date parsed from each Notas line (e.g., "15/01/2025: Did something" → fecha_accion = "2025-01-15").
+Stores the date parsed from each Notas line (e.g., "15/01/2025: Did something" → fecha_accion = "2025-01-15").
 
 #### 2.3 Create `responsables` parametric table
 
@@ -47,7 +48,7 @@ Seeded during migration with unique Responsable values extracted from the Excel.
 
 #### 2.4 Updated `schema.sql`
 
-All changes above will be reflected in `db/schema.sql` so that `init` and `recreate_tables` work correctly.
+All changes above reflected directly in `db/schema.sql` table definitions (not ALTER TABLE — the schema is recreated from scratch via `init` / `recreate_tables`).
 
 ---
 
@@ -74,10 +75,10 @@ TAREAS_COLUMN_MAP = {
     "tarea": "tarea",
     "responsable": "responsable",
     "descripcion": "descripcion",
-    "fecha_nba": "fecha_siguiente_accion",   # Changed from "fecha_siguiente_accion"
+    "fecha_nba": "fecha_siguiente_accion",   # Changed: Excel "Fecha NBA" → "fecha_nba" after normalization
     "tema": "tema",
     "estado": "estado",
-    "notas": "notas_anteriores",             # New: raw notas preserved
+    "notas": "notas_anteriores",             # New: raw notas preserved in notas_anteriores
 }
 ```
 
@@ -87,7 +88,7 @@ Key changes:
 
 #### 3.3 Auto-generate tarea_id
 
-If the Excel does not contain a `tarea_id` column, auto-generate it as `TAREA_NNN` (zero-padded, sequential). Log a warning.
+If the Excel does not contain a `tarea_id` column, auto-generate it as `TAREA_001`, `TAREA_002`, etc. (zero-padded, sequential). Log a warning.
 
 ---
 
@@ -168,9 +169,9 @@ Output acciones:
 #### 5.1 `migrate_all()` flow
 
 ```
-1. migrate_tareas()         — reads Excel, maps columns, inserts tareas
-2. migrate_acciones_from_notas()  — parses notas_anteriores, inserts acciones
-3. migrate_responsables()   — extracts unique responsables, seeds parametric table
+1. migrate_tareas()                — reads Excel, maps columns, inserts tareas (including notas_anteriores)
+2. migrate_acciones_from_notas()   — parses notas_anteriores from DB, inserts acciones_realizadas
+3. migrate_responsables()          — extracts unique responsables, seeds parametric table
 ```
 
 The existing `migrate_acciones()` (which reads a dedicated Acciones sheet) is **removed**.
@@ -178,19 +179,20 @@ The existing `migrate_acciones()` (which reads a dedicated Acciones sheet) is **
 #### 5.2 `migrate_acciones_from_notas()`
 
 New method that:
-1. Queries all tareas from DB (tarea_id, notas_anteriores)
+1. Queries all tareas from DB: `SELECT tarea_id, notas_anteriores FROM tareas WHERE notas_anteriores IS NOT NULL`
 2. For each tarea with non-null notas_anteriores:
    - Parse lines using the algorithm from Section 4
-   - Insert each parsed accion into `acciones_realizadas`
+   - Insert each parsed accion into `acciones_realizadas` (tarea_id, accion, fecha_accion, estado)
 3. Batch-commit with `BATCH_COMMIT_SIZE`
 4. Log summary: total acciones created, COMPLETADO count, PENDIENTE count, errors
 
 #### 5.3 `migrate_responsables()`
 
 New method that:
-1. Queries `SELECT DISTINCT responsable FROM tareas WHERE responsable IS NOT NULL`
+1. Queries `SELECT DISTINCT responsable FROM tareas WHERE responsable IS NOT NULL AND responsable != ''`
 2. Inserts each into `responsables` table with sequential `orden`
-3. Logs count of unique responsables seeded
+3. Uses INSERT OR IGNORE to handle duplicates
+4. Logs count of unique responsables seeded
 
 ---
 
@@ -251,9 +253,9 @@ crud_responsables = CRUDBase(Responsable)
 
 New router with prefix `/responsables`, tags `["responsables"]`:
 - `GET /` — List all responsables ordered by `orden`
-- `POST /` — Create new responsable
-- `PUT /{id}` — Update
-- `DELETE /{id}` — Delete
+- `POST /` — Create new responsable (409 if duplicate)
+- `PUT /{id}` — Update (404 if not found)
+- `DELETE /{id}` — Delete (404 if not found)
 
 Follow the same pattern as `estados.py`.
 
@@ -264,11 +266,9 @@ from app.routers import responsables
 app.include_router(responsables.router, prefix=f"{settings.API_PREFIX}/responsables")
 ```
 
-#### 6.6 Update Acciones in `acciones.py` router
+#### 6.6 Acciones router — no route changes needed
 
-The `GET /tarea/{tarea_id}` endpoint already returns all acciones for a tarea. The `fecha_accion` field will be automatically included via `model_to_dict()` since it reads all columns.
-
-No route changes needed — just the model/schema updates.
+The `GET /tarea/{tarea_id}` endpoint already returns all acciones for a tarea. The new `fecha_accion` field is automatically included via `model_to_dict()` since it reads all columns. Same for CRUD operations.
 
 ---
 
@@ -276,46 +276,58 @@ No route changes needed — just the model/schema updates.
 
 #### 7.1 Display `notas_anteriores` in Detail Page
 
-The detail page for a tarea should show the `notas_anteriores` field as a read-only section. Since acciones are already displayed in the AccionesSection, `notas_anteriores` provides the original raw context.
+The Detail Page (`frontend/src/features/detail/DetailPage.jsx`) currently shows:
+1. Header (tarea_id, estado badge, tarea title, edit button)
+2. "Datos de la Tarea" card — 9 fields in a 2-column grid
+3. "Acciones Realizadas" card — table of acciones with edit/delete
 
-**Implementation approach**: Since the detail page is based on portfolio/initiative detail (inherited from parent project), and the tarea-specific detail may be accessed differently, we need to ensure that wherever tarea details are shown, `notas_anteriores` is visible.
+**Changes:**
+- Add `notas_anteriores` to `FIELD_LABELS` and `DISPLAY_FIELDS` in DetailPage.jsx
+- Display it with `whitespace-pre-wrap` styling since it's multi-line text
+- Alternatively, add a dedicated "Notas Anteriores" card between the Datos card and Acciones card, with read-only `<pre>`-style rendering for better readability of multi-line content
 
-The most practical approach: add `notas_anteriores` as a read-only field displayed in the tarea listing/detail view. If the existing detail page is used for tareas, add it as a collapsible text area. If tareas are shown in a search/list view, add it as an expandable row detail.
+#### 7.2 Acciones table — show `fecha_accion`
 
-**Minimum viable change**: Add `notas_anteriores` to the tareas search/list columns and display it as a `longtext` field that can be viewed when expanding a tarea row or viewing tarea details.
+Update the acciones `<table>` in DetailPage.jsx to add a "Fecha" column:
+- Add `<th>` for "Fecha" in the table header
+- Add `<td>` showing `acc.fecha_accion` (formatted as DD/MM/YYYY) in each row
+- Position as the first column for chronological context
 
-#### 7.2 Acciones display — show `fecha_accion`
+#### 7.3 Responsable dropdown in Edit Tarea form
 
-Update the `AccionesSection` COLUMNS to include `fecha_accion`:
+Currently the "Responsable" field in the Edit Tarea dialog is a plain `<Input>` text field. Change it to a `<select>` dropdown that:
+- Fetches values from `GET /api/v1/responsables`
+- Shows all parametric values as `<option>` elements
+- Includes an empty option for clearing the value
+- Falls back gracefully if the API call fails (show text input)
 
-```javascript
-export const COLUMNS = [
-  { key: 'fecha_accion', label: 'Fecha', type: 'date' },
-  { key: 'accion', label: 'Acción', type: 'longtext' },
-  { key: 'estado', label: 'Estado', type: 'text' },
-  // ... existing columns
-]
-```
+#### 7.4 Responsable filter in Search Page
 
-#### 7.3 Responsable dropdown in forms
+The Search Page (`frontend/src/features/search/SearchPage.jsx`) already has a "Responsable" dropdown filter populated from `/tareas/filter-options`. No change needed here — the existing filter-options endpoint returns distinct responsable values from the tareas table.
 
-The `EntityFormModal` already supports `parametric` fields (seen in `DATOS_DESCRIPTIVOS_FIELDS`). Add `responsable` as a parametric field that fetches values from `/responsables`.
+#### 7.5 Version & Changelog
 
-#### 7.4 Version & Changelog
-
-- Increment `APP_VERSION.minor` to `71` in `frontend/src/lib/version.js`
-- Add changelog entry in `frontend/src/lib/changelog.js`
+- Set `APP_VERSION` to `{ major: 1, minor: 2 }` in `frontend/src/lib/version.js`
+- Add changelog entry at TOP of `CHANGELOG` array in `frontend/src/lib/changelog.js`:
+  ```js
+  {
+    version: "1.002",
+    feature: 2,
+    title: "Migración Tareas: Notas → Acciones",
+    summary: "Migración personalizada de tareas: parseo de Notas en acciones individuales con fechas y estados, tabla paramétrica de responsables, y campo notas_anteriores."
+  }
+  ```
 
 ---
 
 ### 8. Configuration
 
 No new `.env` variables needed. The existing configuration covers:
-- `EXCEL_SOURCE_FILE` — Excel file name
-- `EXCEL_SHEET_TAREAS` — Sheet name for tareas
-- `BATCH_COMMIT_SIZE` — Batch insert size
+- `EXCEL_SOURCE_FILE` — Excel file name (default: `tareas.xlsx`)
+- `EXCEL_SHEET_TAREAS` — Sheet name for tareas (default: `Tareas`)
+- `BATCH_COMMIT_SIZE` — Batch insert size (default: `100`)
 
-The `EXCEL_SHEET_ACCIONES` setting becomes unused (but kept for backward compatibility).
+The `EXCEL_SHEET_ACCIONES` setting becomes unused (but kept for backward compatibility — the `migrate_acciones()` method that used it is removed).
 
 ---
 
@@ -325,7 +337,7 @@ All operations logged via existing `task_manager_migration` logger:
 
 | Level | Messages |
 |---|---|
-| INFO | Migration start/end, row counts, accion counts by estado |
+| INFO | Migration start/end, row counts, accion counts by estado, responsables count |
 | WARNING | Lines that can't be parsed (no date, no NBA prefix), missing columns |
 | DEBUG | Individual line parsing details, date conversions |
 | ERROR | Insert failures, Excel read failures |

@@ -28,12 +28,22 @@ const FIELD_LABELS = {
 
 const DISPLAY_FIELDS = ['tarea_id', 'tarea', 'responsable', 'descripcion', 'fecha_siguiente_accion', 'tema', 'estado', 'fecha_creacion', 'fecha_actualizacion']
 
+function formatDate(value) {
+  if (!value) return '-'
+  if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}/)) {
+    const [year, month, day] = value.split('-')
+    return `${day}/${month}/${year}`
+  }
+  return value
+}
+
 export default function DetailPage() {
   const { tarea_id } = useParams()
   usePageTitle(`Tarea ${tarea_id}`)
 
   const [tarea, setTarea] = useState(null)
   const [acciones, setAcciones] = useState([])
+  const [responsables, setResponsables] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -43,7 +53,7 @@ export default function DetailPage() {
 
   // Accion modal
   const [accionOpen, setAccionOpen] = useState(false)
-  const [accionForm, setAccionForm] = useState({ accion: '', estado: '' })
+  const [accionForm, setAccionForm] = useState({ accion: '', fecha_accion: '', estado: '' })
   const [editingAccionId, setEditingAccionId] = useState(null)
 
   const fetchData = async () => {
@@ -64,6 +74,13 @@ export default function DetailPage() {
   }
 
   useEffect(() => { fetchData() }, [tarea_id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch responsables for dropdown
+  useEffect(() => {
+    apiClient.get('/responsables')
+      .then(res => setResponsables(res.data))
+      .catch(() => setResponsables([]))
+  }, [])
 
   // Edit tarea handlers
   const openEdit = () => {
@@ -90,23 +107,25 @@ export default function DetailPage() {
 
   // Accion handlers
   const openNewAccion = () => {
-    setAccionForm({ accion: '', estado: 'Pendiente' })
+    setAccionForm({ accion: '', fecha_accion: '', estado: 'Pendiente' })
     setEditingAccionId(null)
     setAccionOpen(true)
   }
 
   const openEditAccion = (acc) => {
-    setAccionForm({ accion: acc.accion, estado: acc.estado || '' })
+    setAccionForm({ accion: acc.accion, fecha_accion: acc.fecha_accion || '', estado: acc.estado || '' })
     setEditingAccionId(acc.id)
     setAccionOpen(true)
   }
 
   const saveAccion = async () => {
     try {
+      const payload = { ...accionForm }
+      if (!payload.fecha_accion) delete payload.fecha_accion
       if (editingAccionId) {
-        await apiClient.put(`/acciones/${editingAccionId}`, accionForm)
+        await apiClient.put(`/acciones/${editingAccionId}`, payload)
       } else {
-        await apiClient.post('/acciones', { tarea_id, ...accionForm })
+        await apiClient.post('/acciones', { tarea_id, ...payload })
       }
       setAccionOpen(false)
       fetchData()
@@ -165,6 +184,14 @@ export default function DetailPage() {
           </dl>
         </Card>
 
+        {/* Notas Anteriores (read-only) */}
+        {tarea.notas_anteriores && (
+          <Card className="mb-6 p-6">
+            <h2 className="mb-4 text-lg font-semibold">Notas Anteriores</h2>
+            <p className="text-sm whitespace-pre-wrap text-muted-foreground">{tarea.notas_anteriores}</p>
+          </Card>
+        )}
+
         {/* Acciones */}
         <Card className="p-6">
           <div className="mb-4 flex items-center justify-between">
@@ -180,6 +207,7 @@ export default function DetailPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
+                  <th className="px-3 py-2 text-left font-medium">Fecha</th>
                   <th className="px-3 py-2 text-left font-medium">Accion</th>
                   <th className="px-3 py-2 text-left font-medium">Estado</th>
                   <th className="px-3 py-2 text-right font-medium">Acciones</th>
@@ -188,6 +216,7 @@ export default function DetailPage() {
               <tbody>
                 {acciones.map(acc => (
                   <tr key={acc.id} className="border-b">
+                    <td className="px-3 py-2 text-muted-foreground">{formatDate(acc.fecha_accion)}</td>
                     <td className="px-3 py-2">{acc.accion}</td>
                     <td className="px-3 py-2"><Badge variant="outline">{acc.estado || '-'}</Badge></td>
                     <td className="px-3 py-2 text-right">
@@ -216,7 +245,16 @@ export default function DetailPage() {
               </div>
               <div>
                 <label className="text-sm font-medium">Responsable</label>
-                <Input value={editForm.responsable || ''} onChange={e => setEditForm(f => ({ ...f, responsable: e.target.value }))} />
+                <select
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  value={editForm.responsable || ''}
+                  onChange={e => setEditForm(f => ({ ...f, responsable: e.target.value }))}
+                >
+                  <option value="">-- Seleccionar --</option>
+                  {responsables.map(r => (
+                    <option key={r.id} value={r.valor}>{r.valor}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="text-sm font-medium">Descripcion</label>
@@ -260,6 +298,10 @@ export default function DetailPage() {
                   value={accionForm.accion}
                   onChange={e => setAccionForm(f => ({ ...f, accion: e.target.value }))}
                 />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Fecha</label>
+                <Input type="date" value={accionForm.fecha_accion} onChange={e => setAccionForm(f => ({ ...f, fecha_accion: e.target.value }))} />
               </div>
               <div>
                 <label className="text-sm font-medium">Estado</label>
