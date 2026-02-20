@@ -1,0 +1,55 @@
+/* DatePicker overrides for react-day-picker v9 + Tailwind dark mode */
+
+.rdp-root {
+  --rdp-accent-color: var(--color-primary);
+  --rdp-accent-background-color: var(--color-primary);
+  --rdp-today-color: var(--color-primary);
+  --rdp-day-height: 36px;
+  --rdp-day-width: 36px;
+  --rdp-day_button-height: 34px;
+  --rdp-day_button-width: 34px;
+  --rdp-selected-border: 2px solid var(--color-primary);
+}
+
+/* Ensure chevron SVGs are visible in dark mode */
+.rdp-chevron {
+  fill: var(--color-primary);
+}
+
+/* Selected day: filled background with white text */
+.rdp-selected .rdp-day_button {
+  background-color: var(--color-primary);
+  color: white;
+  border-radius: 9999px;
+}
+
+/* Day button hover */
+.rdp-day_button:hover:not(:disabled) {
+  background-color: var(--color-muted);
+  border-radius: 9999px;
+}
+
+/* Ensure table cells don't collapse */
+.rdp-month_grid {
+  border-spacing: 0;
+}
+
+/* Weekday headers */
+.rdp-weekday {
+  color: var(--color-muted-foreground);
+  font-size: 0.75rem;
+  width: var(--rdp-day-width);
+}
+
+/* Month caption styling */
+.rdp-month_caption {
+  font-size: 0.875rem;
+  color: var(--color-foreground);
+}
+
+/* Nav buttons hover */
+.rdp-button_next:hover,
+.rdp-button_previous:hover {
+  background-color: var(--color-muted);
+  border-radius: 0.375rem;
+}

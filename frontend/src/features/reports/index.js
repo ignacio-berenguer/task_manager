@@ -1,0 +1,6 @@
+export { default as ReportPage } from './ReportPage'
+export { default as LTPsReportPage } from './LTPsReportPage'
+export { default as AccionesReportPage } from './AccionesReportPage'
+export { default as EtiquetasReportPage } from './EtiquetasReportPage'
+export { default as TransaccionesReportPage } from './TransaccionesReportPage'
+export { default as TransaccionesJsonReportPage } from './TransaccionesJsonReportPage'

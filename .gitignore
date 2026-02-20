@@ -1,0 +1,73 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Environment files with secrets
+.env
+
+# Excel files
+*.xlsx
+*.xlsm
+*.xlsb
+
+# Database files
+db/*.db
+*.sqlite3
+*.db-shm
+*.db-wal
+
+# Logs
+logs/*.log
+*.log
+portfolio_mismatched_migration.txt
+
+# Management module specific (redundant patterns for clarity)
+management/.venv/
+management/__pycache__/
+management/src/**/__pycache__/
+management/excel_source/
+management/excel_output/
+management/*.db
+management/*.log
+
+# Backend module specific
+backend/.venv/
+backend/__pycache__/
+backend/app/**/__pycache__/
+
+# Keep .gitkeep files
+!.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Build outputs
+frontend/dist/
+
+# Test coverage
+coverage/
+.coverage
+htmlcov/
+
+# Terminal Paste Image folder
+.cp-images/
+nul
+
+# Claude settings (if applicable)
+.claude/settings.local.json
+
+# Charts Outputs
+backend/charts_output/

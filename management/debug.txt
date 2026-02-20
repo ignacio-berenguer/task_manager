@@ -1,0 +1,1 @@
+uv run python -m debugpy --listen 5678 --wait-for-client -m main export_datos_relevantes
