@@ -21,11 +21,14 @@ function buildGroups(entries) {
 }
 
 /**
- * Format a group range label (e.g., "v0.050 – 0.059")
+ * Format a group range label (e.g., "v1.000 – 1.009")
  */
 function groupLabel(group) {
-  const start = `0.${String(group.start).padStart(3, '0')}`
-  const end = `0.${String(group.end).padStart(3, '0')}`
+  const major = group.entries.length > 0
+    ? group.entries[0].version.split('.')[0]
+    : '1'
+  const start = `${major}.${String(group.start).padStart(3, '0')}`
+  const end = `${major}.${String(group.end).padStart(3, '0')}`
   return `v${start} – ${end}`
 }
 

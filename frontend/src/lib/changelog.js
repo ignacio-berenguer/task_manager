@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.003",
+    feature: 3,
+    title: "Mejoras UI: Busqueda y Detalle",
+    summary: "Filtros con etiquetas, atajos de teclado, columnas ordenables y reordenables, tags de estado con color, panel lateral de filtros, visor rapido, acordeones, y mejoras de navegacion."
+  },
+  {
     version: "1.002",
     feature: 2,
     title: "Migración Tareas: Notas → Acciones",

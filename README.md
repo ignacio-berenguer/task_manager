@@ -109,13 +109,13 @@ task_manager/
 │   │   │   ├── ui/                  # 20 shadcn-style components
 │   │   │   ├── layout/              # Navbar, Footer, Layout, GlobalSearch
 │   │   │   ├── theme/               # ThemeProvider, ModeToggle, ColorTheme
-│   │   │   └── shared/              # ProtectedRoute, ColumnConfigurator, ErrorBoundary, etc.
+│   │   │   └── shared/              # ProtectedRoute, ColumnConfigurator, EstadoBadge, ErrorBoundary, etc.
 │   │   ├── features/
 │   │   │   ├── landing/             # Public landing page (hero + changelog)
 │   │   │   ├── search/              # Task search + data grid
 │   │   │   ├── detail/              # Task detail + acciones CRUD
 │   │   │   └── chat/                # AI assistant chat
-│   │   ├── lib/                     # changelog, estadoOrder, logger, storage, utils, version, themes
+│   │   ├── lib/                     # changelog, estadoOrder, formatDate, logger, storage, utils, version, themes
 │   │   └── providers/               # Clerk, Query, Theme, Chat, Toaster
 │   ├── .env / .env.example
 │   ├── package.json
@@ -222,8 +222,8 @@ During migration, the `Notas` column from the Excel tareas data is:
 |-------|--------|-------------|
 | `/` | Public | Landing page with hero section and changelog |
 | `/sign-in`, `/sign-up` | Public | Clerk authentication |
-| `/search` | Private | Task search with 5 filters, sortable table, pagination |
-| `/detail/:tarea_id` | Private | Task info card + acciones CRUD table |
+| `/search` | Private | Task search with labeled filters, lateral sidebar (xl+), sortable/reorderable columns, colored estado tags, inline detail accordion, side drawer quick view, keyboard shortcuts, new tarea dialog |
+| `/detail/:tarea_id` | Private | Task header with estado + responsable badges, acciones CRUD table (sorted desc, sticky headers), notas, datos accordion (collapsed), back navigation with state preservation |
 | `/chat` | Private | AI assistant with SSE streaming |
 
 ## MCP Tools

@@ -110,6 +110,7 @@ frontend/
 │   │       ├── ProtectedRoute.jsx        # Auth guard for routes
 │   │       ├── ColumnConfigurator.jsx    # Column visibility + drag-and-drop reordering
 │   │       ├── SortableColumnItem.jsx    # Draggable column item (used by ColumnConfigurator)
+│   │       ├── EstadoBadge.jsx            # Colored estado badge component
 │   │       ├── EmptyState.jsx            # Empty state component
 │   │       ├── ErrorBoundary.jsx         # Error boundary with retry
 │   │       ├── NotFoundPage.jsx          # 404 page
@@ -129,6 +130,7 @@ frontend/
 │   ├── lib/
 │   │   ├── changelog.js           # Version changelog entries
 │   │   ├── estadoOrder.js         # Canonical estado ordering
+│   │   ├── formatDate.js          # Date format utility (YYYY-MM-DD → DD/MM/YYYY)
 │   │   ├── logger.js              # createLogger() utility
 │   │   ├── storage.js             # createStorage() localStorage utility
 │   │   ├── themes.js              # Color theme definitions
@@ -172,20 +174,31 @@ frontend/
 
 #### 6.2 Search Page (`/search`)
 
-- **5 filter criteria**: tarea_id, tarea (nombre), responsable, tema, estado
-- **Sortable data grid** using TanStack Table with configurable columns
+- **5 labeled filter criteria**: tarea_id, tarea (nombre), responsable, tema, estado — each with visible label
+- **Lateral filter sidebar** on xl+ screens; collapsible accordion on smaller screens
+- **Default filter**: estado defaults to "En Curso"; "Limpiar" resets to "En Curso"
+- **Default sort**: fecha_siguiente_accion ascending
+- **Auto-search** on initial page load with default filters
+- **Keyboard shortcuts**: Ctrl+Shift+F (focus tarea filter), Ctrl+Shift+N (new tarea dialog), Enter (trigger search)
+- **Sortable data grid** with configurable columns and sticky column headers
+- **Colored estado tags**: EstadoBadge component renders estado as colored badges (red=En Curso, green=Completado, gray=Cancelado)
+- **Reorderable columns** via ColumnConfigurator with drag-and-drop; order persisted to localStorage
+- **Inline detail accordion**: Each row has an expand button showing descripcion, notas_anteriores, and acciones inline
+- **Side drawer quick view**: PanelRightOpen button opens a Sheet from the right with tarea summary and acciones list
+- **Nueva Tarea dialog**: Create new tarea with button (tooltip shows Ctrl+Shift+N shortcut)
+- **Full-width layout**: No max-width constraint; uses all available width
 - **Server-side pagination** with configurable page size
-- **Click-to-detail**: Clicking a row navigates to `/detail/:tarea_id`
-- **Column configurator**: Select and reorder visible columns via drag-and-drop
-- **Filter and column preferences** persisted to localStorage
+- **Click-to-detail**: Clicking a row navigates to `/detail/:tarea_id` (saves search state to sessionStorage)
+- **State preservation**: Search state (filters, results, page, sort) saved to sessionStorage before navigation and restored on return
 
 #### 6.3 Detail Page (`/detail/:tarea_id`)
 
-- **Task info card**: Displays all tarea fields (tarea_id, tarea, responsable, descripcion, tema, estado, fecha_siguiente_accion, timestamps)
+- **Header**: tarea_id, EstadoBadge (colored estado), responsable Badge, tarea title, edit button
+- **Acciones Realizadas** (primary content, first section): CRUD table sorted by fecha_accion descending, with sticky headers and EstadoBadge for estado
+- **Notas Anteriores** (second section): Read-only display of original notas text (shown only when non-empty)
+- **Datos de la Tarea** (third section, accordion): Collapsible accordion (collapsed by default) showing all tarea fields with formatted dates and EstadoBadge
 - **Edit tarea dialog**: Responsable uses a dropdown populated from `/api/v1/responsables`
-- **Notas Anteriores card**: Read-only display of the original notas text (shown only when non-empty)
-- **Acciones CRUD table**: Lists all acciones for the tarea with fecha_accion, accion text, estado columns, and create/edit/delete operations
-- **Navigation back** to search page
+- **Back navigation**: Uses `navigate(-1)` (browser history) to preserve Search page state
 
 #### 6.4 Chat Page (`/chat`)
 
@@ -264,6 +277,7 @@ ClerkProvider
 | `ProtectedRoute.jsx` | Auth guard, redirects unauthenticated users |
 | `ColumnConfigurator.jsx` | Column visibility + drag-and-drop reordering dialog |
 | `SortableColumnItem.jsx` | Draggable column item for ColumnConfigurator |
+| `EstadoBadge.jsx` | Colored estado badge: maps estado values to Badge variants (destructive, success, secondary, outline) |
 | `EmptyState.jsx` | Styled empty state with icon and message |
 | `ErrorBoundary.jsx` | Error boundary with retry button |
 | `NotFoundPage.jsx` | 404 page |
@@ -286,6 +300,7 @@ ClerkProvider
 |--------|-------------|
 | `changelog.js` | Array of version entries `{version, feature, title, summary}` displayed on landing page |
 | `estadoOrder.js` | Canonical workflow order for estado dropdowns (not alphabetical) |
+| `formatDate.js` | Converts YYYY-MM-DD date strings to DD/MM/YYYY display format |
 | `logger.js` | `createLogger('ContextName')` factory for browser console logging (color-coded, timestamped, level-configurable) |
 | `storage.js` | `createStorage(prefix)` factory for namespaced localStorage access (`saveJSON`, `loadJSON`, `saveString`, `loadString`, `remove`) |
 | `themes.js` | Color theme definitions for the application |

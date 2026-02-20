@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { Layout } from '@/components/layout/Layout'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { EstadoBadge } from '@/components/shared/EstadoBadge'
+import { formatDate } from '@/lib/formatDate'
 import { ArrowLeft, Plus, Pencil, Trash2 } from 'lucide-react'
-import { Link } from 'react-router-dom'
 import { createLogger } from '@/lib/logger'
 import apiClient from '@/api/client'
 
@@ -28,17 +30,9 @@ const FIELD_LABELS = {
 
 const DISPLAY_FIELDS = ['tarea_id', 'tarea', 'responsable', 'descripcion', 'fecha_siguiente_accion', 'tema', 'estado', 'fecha_creacion', 'fecha_actualizacion']
 
-function formatDate(value) {
-  if (!value) return '-'
-  if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}/)) {
-    const [year, month, day] = value.split('-')
-    return `${day}/${month}/${year}`
-  }
-  return value
-}
-
 export default function DetailPage() {
   const { tarea_id } = useParams()
+  const navigate = useNavigate()
   usePageTitle(`Tarea ${tarea_id}`)
 
   const [tarea, setTarea] = useState(null)
@@ -64,7 +58,13 @@ export default function DetailPage() {
         apiClient.get(`/acciones/tarea/${tarea_id}`),
       ])
       setTarea(tareaRes.data)
-      setAcciones(accionesRes.data)
+      // Sort acciones by fecha_accion descending
+      const sorted = [...accionesRes.data].sort((a, b) => {
+        if (!a.fecha_accion) return 1
+        if (!b.fecha_accion) return -1
+        return b.fecha_accion.localeCompare(a.fecha_accion)
+      })
+      setAcciones(sorted)
     } catch (err) {
       LOG.error('Error loading detail', err)
       setError('Error cargando la tarea')
@@ -144,6 +144,11 @@ export default function DetailPage() {
     }
   }
 
+  // Back navigation — use browser history to preserve Search state
+  const goBack = () => {
+    navigate(-1)
+  }
+
   if (loading) return <Layout><div className="p-8 text-center text-muted-foreground">Cargando...</div></Layout>
   if (error) return <Layout><div className="p-8 text-center text-destructive">{error}</div></Layout>
   if (!tarea) return <Layout><div className="p-8 text-center">Tarea no encontrada</div></Layout>
@@ -154,13 +159,14 @@ export default function DetailPage() {
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/search" className="text-muted-foreground hover:text-foreground">
+            <button onClick={goBack} className="text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-5 w-5" />
-            </Link>
+            </button>
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-bold">{tarea.tarea_id}</h1>
-                <Badge>{tarea.estado || 'Sin estado'}</Badge>
+                <EstadoBadge estado={tarea.estado} />
+                {tarea.responsable && <Badge variant="outline">{tarea.responsable}</Badge>}
               </div>
               <p className="mt-1 text-muted-foreground">{tarea.tarea}</p>
             </div>
@@ -171,29 +177,8 @@ export default function DetailPage() {
           </Button>
         </div>
 
-        {/* Tarea Info */}
+        {/* 1. Acciones Realizadas (primary content, moved up) */}
         <Card className="mb-6 p-6">
-          <h2 className="mb-4 text-lg font-semibold">Datos de la Tarea</h2>
-          <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {DISPLAY_FIELDS.map(field => (
-              <div key={field}>
-                <dt className="text-sm font-medium text-muted-foreground">{FIELD_LABELS[field]}</dt>
-                <dd className="mt-1 text-sm">{tarea[field] || '-'}</dd>
-              </div>
-            ))}
-          </dl>
-        </Card>
-
-        {/* Notas Anteriores (read-only) */}
-        {tarea.notas_anteriores && (
-          <Card className="mb-6 p-6">
-            <h2 className="mb-4 text-lg font-semibold">Notas Anteriores</h2>
-            <p className="text-sm whitespace-pre-wrap text-muted-foreground">{tarea.notas_anteriores}</p>
-          </Card>
-        )}
-
-        {/* Acciones */}
-        <Card className="p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Acciones Realizadas ({acciones.length})</h2>
             <Button size="sm" onClick={openNewAccion}>
@@ -204,35 +189,72 @@ export default function DetailPage() {
           {acciones.length === 0 ? (
             <p className="text-sm text-muted-foreground">No hay acciones registradas.</p>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="px-3 py-2 text-left font-medium">Fecha</th>
-                  <th className="px-3 py-2 text-left font-medium">Accion</th>
-                  <th className="px-3 py-2 text-left font-medium">Estado</th>
-                  <th className="px-3 py-2 text-right font-medium">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {acciones.map(acc => (
-                  <tr key={acc.id} className="border-b">
-                    <td className="px-3 py-2 text-muted-foreground">{formatDate(acc.fecha_accion)}</td>
-                    <td className="px-3 py-2">{acc.accion}</td>
-                    <td className="px-3 py-2"><Badge variant="outline">{acc.estado || '-'}</Badge></td>
-                    <td className="px-3 py-2 text-right">
-                      <Button variant="ghost" size="sm" onClick={() => openEditAccion(acc)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => deleteAccion(acc.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 z-10 bg-card">
+                  <tr className="border-b">
+                    <th className="px-3 py-2 text-left font-medium">Fecha</th>
+                    <th className="px-3 py-2 text-left font-medium">Accion</th>
+                    <th className="px-3 py-2 text-left font-medium">Estado</th>
+                    <th className="px-3 py-2 text-right font-medium">Acciones</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {acciones.map(acc => (
+                    <tr key={acc.id} className="border-b">
+                      <td className="px-3 py-2 text-muted-foreground">{formatDate(acc.fecha_accion)}</td>
+                      <td className="px-3 py-2">{acc.accion}</td>
+                      <td className="px-3 py-2"><EstadoBadge estado={acc.estado} /></td>
+                      <td className="px-3 py-2 text-right">
+                        <Button variant="ghost" size="sm" onClick={() => openEditAccion(acc)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => deleteAccion(acc.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </Card>
+
+        {/* 2. Notas Anteriores (moved after acciones) */}
+        {tarea.notas_anteriores && (
+          <Card className="mb-6 p-6">
+            <h2 className="mb-4 text-lg font-semibold">Notas Anteriores</h2>
+            <p className="text-sm whitespace-pre-wrap text-muted-foreground">{tarea.notas_anteriores}</p>
+          </Card>
+        )}
+
+        {/* 3. Datos de la Tarea (accordion, collapsed by default) */}
+        <Accordion type="single" collapsible>
+          <AccordionItem value="datos" className="rounded-lg border bg-card">
+            <AccordionTrigger className="px-6">
+              <span className="text-lg font-semibold">Datos de la Tarea</span>
+            </AccordionTrigger>
+            <AccordionContent className="px-6">
+              <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {DISPLAY_FIELDS.map(field => (
+                  <div key={field}>
+                    <dt className="text-sm font-medium text-muted-foreground">{FIELD_LABELS[field]}</dt>
+                    <dd className="mt-1 text-sm">
+                      {field === 'estado' ? (
+                        <EstadoBadge estado={tarea[field]} />
+                      ) : field.startsWith('fecha') ? (
+                        formatDate(tarea[field])
+                      ) : (
+                        tarea[field] || '-'
+                      )}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
 
         {/* Edit Tarea Dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
