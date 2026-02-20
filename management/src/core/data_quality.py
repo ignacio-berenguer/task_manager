@@ -1,6 +1,7 @@
 """
 Data quality handling module.
 Provides utilities for normalizing and validating data during migration.
+Kept generic — all functions are small utilities reusable across domains.
 """
 
 import re
@@ -11,7 +12,7 @@ from datetime import datetime, date
 from typing import Tuple, Optional, Any
 import pandas as pd
 
-logger = logging.getLogger('portfolio_data_quality')
+logger = logging.getLogger('task_manager_data_quality')
 
 
 def remove_accents(text: Optional[str]) -> Optional[str]:

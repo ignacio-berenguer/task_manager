@@ -18,7 +18,6 @@ export default defineConfig({
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           'vendor-tanstack': ['@tanstack/react-query', '@tanstack/react-table'],
           'vendor-clerk': ['@clerk/clerk-react'],
-          'vendor-charts': ['recharts'],
         }
       }
     }

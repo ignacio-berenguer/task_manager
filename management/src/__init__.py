@@ -1,7 +1,7 @@
 """
-Portfolio Migration System - Source Package
+Task Manager Migration System - Source Package
 
-This package contains all the core functionality for the portfolio migration tool.
+This package contains all the core functionality for the task manager migration tool.
 """
 
 __version__ = "1.0.0"

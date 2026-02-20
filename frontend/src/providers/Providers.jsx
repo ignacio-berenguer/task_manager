@@ -1,7 +1,6 @@
 import { ClerkProvider } from '@clerk/clerk-react'
 import { Toaster } from 'sonner'
 import { ThemeProvider } from '@/components/theme/ThemeProvider'
-import { ColorThemeProvider } from '@/components/theme/ColorThemeProvider'
 import { QueryProvider } from './QueryProvider'
 import { ChatProvider } from '@/features/chat/ChatContext'
 
@@ -19,19 +18,17 @@ export function Providers({ children }) {
   return (
     <ClerkProvider
       publishableKey={clerkPubKey || 'pk_test_placeholder'}
-      afterSignInUrl="/dashboard"
-      afterSignUpUrl="/dashboard"
+      afterSignInUrl="/search"
+      afterSignUpUrl="/search"
       afterSignOutUrl="/"
     >
       <ThemeProvider>
-        <ColorThemeProvider>
-          <QueryProvider>
-            <ChatProvider>
-              {children}
-              <Toaster richColors position="top-right" />
-            </ChatProvider>
-          </QueryProvider>
-        </ColorThemeProvider>
+        <QueryProvider>
+          <ChatProvider>
+            {children}
+            <Toaster richColors position="top-right" />
+          </ChatProvider>
+        </QueryProvider>
       </ThemeProvider>
     </ClerkProvider>
   )

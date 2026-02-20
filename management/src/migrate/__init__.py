@@ -1,3 +1,5 @@
 """Migration module."""
 
-from .engine import migrate_all, MigrationEngine
+from src.migrate.engine import TareasMigrationEngine
+
+__all__ = ["TareasMigrationEngine"]

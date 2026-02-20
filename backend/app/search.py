@@ -1,18 +1,16 @@
 """
 Flexible search operations for database models.
 
-This module provides advanced search capabilities with support for
-calculated fields that are computed on-the-fly.
+This module provides advanced search capabilities.
 """
 import logging
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import func, inspect
+from sqlalchemy import inspect
 from typing import Type, Any
 from .database import Base
 from .schemas import SearchRequest, SearchFilter
-from .crud import model_to_dict, batch_model_to_dict_with_calculated
-from .calculated_fields import get_calculated_fields
+from .crud import model_to_dict
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +58,6 @@ def search(
     db: Session,
     model: Type[Base],
     request: SearchRequest,
-    populate_calculated: bool = True
 ) -> dict[str, Any]:
     """
     Execute a flexible search query.
@@ -69,7 +66,6 @@ def search(
         db: Database session
         model: SQLAlchemy model class
         request: Search request with filters, ordering, pagination
-        populate_calculated: Whether to populate calculated fields (default True)
 
     Returns:
         Dictionary with total count, data, limit, and offset
@@ -101,11 +97,8 @@ def search(
     # Apply pagination
     data = query.offset(request.offset).limit(request.limit).all()
 
-    # Convert to dictionaries and populate calculated fields if needed
-    if populate_calculated and get_calculated_fields(table_name):
-        data_dicts = batch_model_to_dict_with_calculated(db, data, table_name)
-    else:
-        data_dicts = [model_to_dict(row) for row in data]
+    # Convert to dictionaries
+    data_dicts = [model_to_dict(row) for row in data]
 
     logger.info(
         f"Search on {table_name}: "

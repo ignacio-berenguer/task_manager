@@ -1,4 +1,4 @@
-"""Core utilities for portfolio migration."""
+"""Core utilities for task manager migration."""
 
 from .logging_config import setup_logging, LOG_LEVEL, LOG_FILE, LOG_FORMAT, LOG_DATE_FORMAT
 from .data_quality import (

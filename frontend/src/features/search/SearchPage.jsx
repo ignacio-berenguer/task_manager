@@ -1,447 +1,233 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { Search, LayoutGrid, LayoutList, FilterX } from 'lucide-react'
+import { useState, useCallback, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Layout } from '@/components/layout/Layout'
-import { Button } from '@/components/ui/button'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { Search, X } from 'lucide-react'
 import { createLogger } from '@/lib/logger'
-import { cn } from '@/lib/utils'
-import { useSearchInitiatives, useExportInitiatives, buildSearchRequest } from './hooks/useSearchInitiatives'
-import { useFilterOptions } from './hooks/useFilterOptions'
-import { useSearchPreferences } from './hooks/useSearchPreferences'
-import { exportData } from './utils/exportHelpers'
-import { FilterPanel } from './components/FilterPanel'
-import { ColumnConfigurator } from '@/components/shared/ColumnConfigurator'
-import { ExportDropdown } from './components/ExportDropdown'
-import { ALL_COLUMNS } from './utils/columnDefinitions'
-import { DEFAULT_COLUMNS } from './utils/searchStorage'
-import { DataGrid } from './components/DataGrid'
-import { CardGrid } from './components/CardGrid'
-import { GroupBySelector } from './components/GroupBySelector'
-import { CopySelectedButton } from './components/CopySelectedButton'
-import { FavoritesToolbar } from './components/FavoritesToolbar'
-import { InitiativeDrawer } from '@/components/shared/InitiativeDrawer'
-import { LtpModal } from './components/LtpModal'
-import { Pagination } from './components/Pagination'
-import { FilterChips } from './components/FilterChips'
-import { useFavorites } from './hooks/useFavorites'
-import { createStorage } from '@/lib/storage'
+import apiClient from '@/api/client'
 
-const viewModeStorage = createStorage('portfolio-search')
+const LOG = createLogger('Search')
 
-const logger = createLogger('SearchPage')
+const DEFAULT_COLUMNS = ['tarea_id', 'tarea', 'responsable', 'tema', 'estado', 'fecha_siguiente_accion']
+const DEFAULT_PAGE_SIZE = 50
+
+const COLUMN_LABELS = {
+  tarea_id: 'ID',
+  tarea: 'Tarea',
+  responsable: 'Responsable',
+  descripcion: 'Descripcion',
+  fecha_siguiente_accion: 'Fecha Sig. Accion',
+  tema: 'Tema',
+  estado: 'Estado',
+  fecha_creacion: 'Creado',
+  fecha_actualizacion: 'Actualizado',
+}
 
 export default function SearchPage() {
-  usePageTitle('Búsqueda')
-  const location = useLocation()
+  usePageTitle('Busqueda')
   const navigate = useNavigate()
 
-  // Preferences hook (localStorage persistence)
-  const {
-    columns,
-    setColumns,
-    pageSize,
-    setPageSize,
-    filters,
-    setFilters,
-    clearFilters,
-    resetColumns,
-    hasActiveFilters,
-    activeFilterCount,
-  } = useSearchPreferences()
-
-  // Favorites hook
-  const {
-    favorites,
-    count: favoritesCount,
-    isFavorite,
-    toggleFavorite,
-    removeFavorite,
-    clearAll: clearFavorites,
-    copyToClipboard: copyFavoritesToClipboard,
-  } = useFavorites()
-
-  // API hooks
-  const { data: filterOptions, isLoading: optionsLoading } = useFilterOptions()
-  const searchMutation = useSearchInitiatives()
-  const exportMutation = useExportInitiatives()
-
-  // View mode: table or cards
-  const [viewMode, setViewMode] = useState(() => {
-    const saved = viewModeStorage.loadString('view-mode', null)
-    if (saved === 'cards' || saved === 'table') return saved
-    return typeof window !== 'undefined' && window.innerWidth < 768 ? 'cards' : 'table'
+  const [filters, setFilters] = useState({
+    tarea_id: '',
+    tarea: '',
+    responsable: '',
+    tema: '',
+    estado: '',
   })
+  const [results, setResults] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [page, setPage] = useState(0)
+  const [pageSize] = useState(DEFAULT_PAGE_SIZE)
+  const [sortField, setSortField] = useState(null)
+  const [sortDir, setSortDir] = useState('asc')
+  const [filterOptions, setFilterOptions] = useState(null)
 
-  const handleViewModeChange = useCallback((mode) => {
-    setViewMode(mode)
-    viewModeStorage.saveString('view-mode', mode)
+  // Fetch filter options on first load
+  useEffect(() => {
+    apiClient.get('/tareas/filter-options').then(res => {
+      setFilterOptions(res.data)
+    }).catch(err => LOG.error('Error loading filter options', err))
   }, [])
 
-  // Local state
-  const [currentPage, setCurrentPage] = useState(1)
-  const [sortConfig, setSortConfig] = useState({ field: null, direction: null })
-  const [results, setResults] = useState({ data: [], total: 0 })
-  const [hasSearched, setHasSearched] = useState(false)
-  const [rowSelection, setRowSelection] = useState({})
-  const [columnFilters, setColumnFilters] = useState({})
-
-  const handleColumnFilterChange = useCallback((columnId, value) => {
-    setColumnFilters((prev) => ({ ...prev, [columnId]: value }))
-  }, [])
-
-  const hasActiveColumnFilters = useMemo(() => {
-    return Object.values(columnFilters).some((v) =>
-      v != null && v !== '' &&
-      !(Array.isArray(v) && v.length === 0) &&
-      !(typeof v === 'object' && !Array.isArray(v) && v.min === '' && v.max === '')
-    )
-  }, [columnFilters])
-
-  const [groupByField, setGroupByField] = useState(null)
-
-  // Drawer state
-  const [drawerData, setDrawerData] = useState({ isOpen: false, rowData: null })
-
-  const handleOpenDrawer = useCallback((portfolioId) => {
-    const row = (results.data || []).find((r) => r.portfolio_id === portfolioId)
-    if (row) setDrawerData({ isOpen: true, rowData: row })
-  }, [results.data])
-
-  const handleCloseDrawer = useCallback(() => {
-    setDrawerData({ isOpen: false, rowData: null })
-  }, [])
-
-  // LTP modal state
-  const [ltpModalData, setLtpModalData] = useState({ isOpen: false, portfolioId: null, nombre: null })
-
-  const handleOpenLtpModal = useCallback((portfolioId, nombre) => {
-    setLtpModalData({ isOpen: true, portfolioId, nombre })
-  }, [])
-
-  const handleCloseLtpModal = useCallback(() => {
-    setLtpModalData({ isOpen: false, portfolioId: null, nombre: null })
-  }, [])
-
-  // Selected portfolio IDs (keys of rowSelection are portfolio_ids via getRowId)
-  const selectedIds = useMemo(
-    () => Object.keys(rowSelection).filter((id) => rowSelection[id]),
-    [rowSelection]
-  )
-
-  // Ref to FilterPanel for focus
-  const filterPanelRef = useRef(null)
-
-  // Check for filters passed via location state (e.g., from Dashboard chart double-click)
-  const locationFiltersRef = useRef(location.state?.filters || null)
-  const pendingLocationSearchRef = useRef(false)
-
-  // Execute search (does NOT clear row selection — callers decide)
-  const executeSearch = useCallback(async (resetPage = false) => {
-    const page = resetPage ? 1 : currentPage
-    if (resetPage) {
-      setCurrentPage(1)
-    }
-
-    const searchRequest = buildSearchRequest(filters, sortConfig, pageSize, page)
-    logger.info('Executing search', { filters: searchRequest.filters?.length || 0, page, pageSize })
-
+  const doSearch = useCallback(async (pageOverride = 0) => {
+    setLoading(true)
     try {
-      const response = await searchMutation.mutateAsync(searchRequest)
-      setResults(response)
-      setHasSearched(true)
-    } catch (error) {
-      logger.error('Search failed', error)
-    }
-  }, [filters, sortConfig, pageSize, currentPage, searchMutation])
+      const searchFilters = []
+      if (filters.tarea_id) searchFilters.push({ field: 'tarea_id', operator: 'ilike', value: `%${filters.tarea_id}%` })
+      if (filters.tarea) searchFilters.push({ field: 'tarea', operator: 'ilike', value: `%${filters.tarea}%` })
+      if (filters.responsable) searchFilters.push({ field: 'responsable', operator: 'eq', value: filters.responsable })
+      if (filters.tema) searchFilters.push({ field: 'tema', operator: 'eq', value: filters.tema })
+      if (filters.estado) searchFilters.push({ field: 'estado', operator: 'eq', value: filters.estado })
 
-  // Initial search on mount — apply location state filters if present
-  useEffect(() => {
-    if (locationFiltersRef.current) {
-      const stateFilters = locationFiltersRef.current
-      locationFiltersRef.current = null
-      logger.info('Applying filters from navigation state', stateFilters)
-      setFilters(stateFilters)
-      // Clear location state to prevent stale re-use on back/forward
-      navigate('/search', { replace: true })
-      // Flag: execute search after filters state settles (see effect below)
-      pendingLocationSearchRef.current = true
-    } else {
-      setRowSelection({})
-      executeSearch(true)
-      setTimeout(() => {
-        filterPanelRef.current?.focusPortfolioId()
-      }, 100)
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Execute pending search after navigation filters are applied to state.
-  // This runs on the re-render after setFilters(), so executeSearch has the correct filters.
-  useEffect(() => {
-    if (pendingLocationSearchRef.current) {
-      pendingLocationSearchRef.current = false
-      setRowSelection({})
-      executeSearch(true)
-    }
-  }, [filters]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Re-search when page changes
-  useEffect(() => {
-    if (hasSearched) {
-      executeSearch(false)
-    }
-  }, [currentPage]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Re-search when sort changes (clears selection — result order changes)
-  useEffect(() => {
-    if (hasSearched) {
-      setRowSelection({})
-      executeSearch(true)
-    }
-  }, [sortConfig]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Re-search when page size changes (clears selection — page boundaries change)
-  useEffect(() => {
-    if (hasSearched) {
-      setRowSelection({})
-      executeSearch(true)
-    }
-  }, [pageSize]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Handle filter apply (clears selection — result set changes)
-  const handleApplyFilters = () => {
-    setRowSelection({})
-    executeSearch(true)
-  }
-
-  // Handle filter clear (clears selection — result set changes)
-  const handleClearFilters = () => {
-    setRowSelection({})
-    clearFilters()
-    // Execute search with empty filters
-    setTimeout(() => executeSearch(true), 0)
-  }
-
-  // Handle loading a saved search
-  const handleLoadSearch = useCallback((savedFilters) => {
-    setRowSelection({})
-    setFilters(savedFilters)
-    setTimeout(() => executeSearch(true), 0)
-  }, [setFilters, executeSearch]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Handle page size change
-  const handlePageSizeChange = (newSize) => {
-    setPageSize(newSize)
-    setCurrentPage(1)
-    // Search is triggered by useEffect when pageSize changes
-  }
-
-  // Handle export
-  const handleExport = async (format) => {
-    logger.info('Starting export', { format })
-    console.log('[Export] Starting export with format:', format)
-
-    try {
-      // Build filters from current search (pagination is handled by the mutation)
-      const searchRequest = buildSearchRequest(filters, sortConfig, 1000, 1)
-      console.log('[Export] Fetching data with filters:', searchRequest.filters)
-
-      const response = await exportMutation.mutateAsync({
-        filters: searchRequest.filters,
-        order_by: searchRequest.order_by,
-        order_dir: searchRequest.order_dir,
-      })
-      console.log('[Export] Data fetched, rows:', response.data?.length)
-
-      if (!response.data || response.data.length === 0) {
-        console.warn('[Export] No data to export')
-        return
+      const body = {
+        filters: searchFilters,
+        limit: pageSize,
+        offset: pageOverride * pageSize,
+      }
+      if (sortField) {
+        body.order_by = sortField
+        body.order_dir = sortDir
       }
 
-      // Export the data
-      console.log('[Export] Exporting data with columns:', columns)
-      exportData(format, response.data, columns)
-      logger.info('Export completed', { format, rows: response.data.length })
-      console.log('[Export] Export completed successfully')
-    } catch (error) {
-      logger.error('Export failed', error)
-      console.error('[Export] Export failed:', error)
+      const res = await apiClient.post('/tareas/search', body)
+      setResults(res.data)
+      setPage(pageOverride)
+    } catch (err) {
+      LOG.error('Search error', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [filters, sortField, sortDir, pageSize])
+
+  const clearFilters = () => {
+    setFilters({ tarea_id: '', tarea: '', responsable: '', tema: '', estado: '' })
+  }
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDir('asc')
     }
   }
 
-  // Handle removing a single filter chip
-  const handleRemoveFilter = useCallback((filterKey) => {
-    let newValue
-    if (filterKey === 'includeCancelled') {
-      // Removing "Excl. Canceladas" chip means include cancelled (set to true)
-      newValue = true
-    } else if (Array.isArray(filters[filterKey])) {
-      newValue = []
-    } else {
-      newValue = ''
-    }
-    setFilters({ ...filters, [filterKey]: newValue })
-    setRowSelection({})
-    setTimeout(() => executeSearch(true), 0)
-  }, [filters, setFilters, executeSearch]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const totalPages = Math.ceil(results.total / pageSize)
+  const totalPages = results ? Math.ceil(results.total / pageSize) : 0
 
   return (
     <Layout>
-      <div className="w-full mx-auto px-6 sm:px-8 xl:px-12 py-6">
-        {/* Header */}
-        <div className="mb-6 bg-muted/40 rounded-lg px-4 py-4 animate-fade-in-up">
-          <h1 className="text-2xl font-bold font-heading tracking-tight flex items-center gap-2">
-            <Search className="h-6 w-6" />
-            Búsqueda de Iniciativas
-          </h1>
-          <p className="text-muted-foreground font-body mt-1">
-            Busque y explore las iniciativas del portfolio con criterios flexibles
-          </p>
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+        <h1 className="mb-6 text-2xl font-bold">Busqueda de Tareas</h1>
+
+        {/* Filters */}
+        <div className="mb-6 rounded-lg border bg-card p-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <Input
+              placeholder="ID Tarea"
+              value={filters.tarea_id}
+              onChange={e => setFilters(f => ({ ...f, tarea_id: e.target.value }))}
+            />
+            <Input
+              placeholder="Tarea (texto)"
+              value={filters.tarea}
+              onChange={e => setFilters(f => ({ ...f, tarea: e.target.value }))}
+            />
+            <select
+              className="rounded-md border bg-background px-3 py-2 text-sm"
+              value={filters.responsable}
+              onChange={e => setFilters(f => ({ ...f, responsable: e.target.value }))}
+            >
+              <option value="">Responsable</option>
+              {filterOptions?.responsables?.map(r => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+            <select
+              className="rounded-md border bg-background px-3 py-2 text-sm"
+              value={filters.tema}
+              onChange={e => setFilters(f => ({ ...f, tema: e.target.value }))}
+            >
+              <option value="">Tema</option>
+              {filterOptions?.temas?.map(t => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+            <select
+              className="rounded-md border bg-background px-3 py-2 text-sm"
+              value={filters.estado}
+              onChange={e => setFilters(f => ({ ...f, estado: e.target.value }))}
+            >
+              <option value="">Estado</option>
+              {filterOptions?.estados?.map(e => (
+                <option key={e} value={e}>{e}</option>
+              ))}
+            </select>
+          </div>
+          <div className="mt-3 flex gap-2">
+            <Button onClick={() => doSearch(0)} disabled={loading}>
+              <Search className="mr-2 h-4 w-4" />
+              Buscar
+            </Button>
+            <Button variant="outline" onClick={clearFilters}>
+              <X className="mr-2 h-4 w-4" />
+              Limpiar
+            </Button>
+          </div>
         </div>
 
-        {/* Filter Panel */}
-        <FilterPanel
-          ref={filterPanelRef}
-          filters={filters}
-          onFiltersChange={setFilters}
-          onApply={handleApplyFilters}
-          onClear={handleClearFilters}
-          onLoadSearch={handleLoadSearch}
-          filterOptions={filterOptions}
-          isLoading={searchMutation.isPending}
-        />
-
-        {/* Filter Chips */}
-        <FilterChips
-          filters={filters}
-          onRemoveFilter={handleRemoveFilter}
-          onClearAll={handleClearFilters}
-        />
-
-        {/* Toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-          <div className="flex flex-wrap items-center gap-2">
-            {/* View mode toggle */}
-            <div className="flex items-center rounded-md border border-input">
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn('h-8 w-8 rounded-r-none', viewMode === 'table' && 'bg-accent text-accent-foreground')}
-                onClick={() => handleViewModeChange('table')}
-                aria-label="Vista tabla"
-              >
-                <LayoutList className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn('h-8 w-8 rounded-l-none border-l', viewMode === 'cards' && 'bg-accent text-accent-foreground')}
-                onClick={() => handleViewModeChange('cards')}
-                aria-label="Vista tarjetas"
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
+        {/* Results */}
+        {results && (
+          <div className="rounded-lg border bg-card">
+            <div className="border-b px-4 py-3 text-sm text-muted-foreground">
+              {results.total} resultado{results.total !== 1 ? 's' : ''}
             </div>
-            {viewMode === 'table' && (
-              <GroupBySelector
-                value={groupByField}
-                onChange={setGroupByField}
-                disabled={viewMode !== 'table'}
-              />
-            )}
-            {viewMode === 'table' && (
-              <ColumnConfigurator
-                selectedColumns={columns}
-                onColumnsChange={setColumns}
-                onReset={resetColumns}
-                allColumns={ALL_COLUMNS}
-                defaultColumns={DEFAULT_COLUMNS}
-              />
-            )}
-            <ExportDropdown
-              onExport={handleExport}
-              isExporting={exportMutation.isPending}
-              disabled={results.total === 0}
-            />
-            <CopySelectedButton selectedIds={selectedIds} />
-            <FavoritesToolbar
-              favorites={favorites}
-              count={favoritesCount}
-              onCopyToClipboard={copyFavoritesToClipboard}
-              onRemove={removeFavorite}
-              onClearAll={clearFavorites}
-            />
-            {hasActiveColumnFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 text-xs text-muted-foreground"
-                onClick={() => setColumnFilters({})}
-              >
-                <FilterX className="h-3.5 w-3.5 mr-1" />
-                Limpiar filtros columna
-              </Button>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    {DEFAULT_COLUMNS.map(col => (
+                      <th
+                        key={col}
+                        className="cursor-pointer px-4 py-3 text-left font-medium hover:bg-muted"
+                        onClick={() => handleSort(col)}
+                      >
+                        {COLUMN_LABELS[col] || col}
+                        {sortField === col && (sortDir === 'asc' ? ' \u2191' : ' \u2193')}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {results.data.map(row => (
+                    <tr
+                      key={row.tarea_id}
+                      className="cursor-pointer border-b hover:bg-muted/50"
+                      onClick={() => navigate(`/detail/${row.tarea_id}`)}
+                    >
+                      {DEFAULT_COLUMNS.map(col => (
+                        <td key={col} className="px-4 py-3">
+                          {col === 'estado' ? (
+                            <Badge variant="outline">{row[col] || '-'}</Badge>
+                          ) : (
+                            row[col] || '-'
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between border-t px-4 py-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page === 0}
+                  onClick={() => doSearch(page - 1)}
+                >
+                  Anterior
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Pagina {page + 1} de {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= totalPages - 1}
+                  onClick={() => doSearch(page + 1)}
+                >
+                  Siguiente
+                </Button>
+              </div>
             )}
           </div>
-
-          <div className="flex items-center gap-3 text-sm text-muted-foreground">
-            {selectedIds.length > 0 && (
-              <span className="text-primary font-medium">
-                {selectedIds.length} seleccionados
-              </span>
-            )}
-            <span>{results.total.toLocaleString('es-ES')} iniciativas encontradas</span>
-          </div>
-        </div>
-
-        {/* Data Grid or Card Grid */}
-        {viewMode === 'table' ? (
-          <DataGrid
-            data={results.data}
-            columns={columns}
-            isLoading={searchMutation.isPending}
-            sortConfig={sortConfig}
-            onSort={setSortConfig}
-            rowSelection={rowSelection}
-            onRowSelectionChange={setRowSelection}
-            isFavorite={isFavorite}
-            onToggleFavorite={toggleFavorite}
-            onOpenDrawer={handleOpenDrawer}
-            onOpenLtpModal={handleOpenLtpModal}
-            columnFilters={columnFilters}
-            onColumnFilterChange={handleColumnFilterChange}
-            groupByField={groupByField}
-          />
-        ) : (
-          <CardGrid
-            data={results.data}
-            isLoading={searchMutation.isPending}
-            onQuickView={handleOpenDrawer}
-          />
         )}
-
-        {/* Pagination */}
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={results.total}
-          pageSize={pageSize}
-          onPageChange={setCurrentPage}
-          onPageSizeChange={handlePageSizeChange}
-        />
-        <InitiativeDrawer
-          isOpen={drawerData.isOpen}
-          onClose={handleCloseDrawer}
-          rowData={drawerData.rowData}
-        />
-        <LtpModal
-          isOpen={ltpModalData.isOpen}
-          onClose={handleCloseLtpModal}
-          portfolioId={ltpModalData.portfolioId}
-          nombre={ltpModalData.nombre}
-        />
       </div>
     </Layout>
   )

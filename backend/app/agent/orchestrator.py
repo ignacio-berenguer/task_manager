@@ -13,7 +13,7 @@ from .tools_executor import execute_tool
 from .system_prompt import get_system_prompt
 from . import config
 
-logger = logging.getLogger("portfolio_agent")
+logger = logging.getLogger("task_manager_agent")
 
 
 async def stream_agent_response(messages: list[dict]) -> AsyncGenerator[str, None]:
@@ -157,64 +157,23 @@ def _sse_event(event: str, data: dict) -> str:
 
 def _summarize_tool_input(tool_name: str, tool_input: dict) -> str:
     """Create a human-readable summary of tool input for the frontend."""
-    if tool_name == "buscar_iniciativas":
+    if tool_name == "buscar_tareas":
         parts = []
         if tool_input.get("filtros"):
             filters = [f"{f.get('field')} {f.get('operator')} {f.get('value', '')}" for f in tool_input["filtros"]]
             parts.append(f"filtros: {', '.join(filters)}")
         if tool_input.get("limite"):
-            parts.append(f"límite: {tool_input['limite']}")
+            parts.append(f"limite: {tool_input['limite']}")
         return " | ".join(parts) if parts else "sin filtros"
 
-    if tool_name == "buscar_en_tabla":
-        tabla = tool_input.get("tabla", "?")
-        parts = [f"tabla: {tabla}"]
-        if tool_input.get("filtros"):
-            filters = [f"{f.get('field')} {f.get('operator')} {f.get('value', '')}" for f in tool_input["filtros"]]
-            parts.append(f"filtros: {', '.join(filters)}")
-        return " | ".join(parts)
+    if tool_name == "obtener_tarea":
+        return tool_input.get("tarea_id", "?")
 
-    if tool_name == "obtener_iniciativa":
-        return tool_input.get("portfolio_id", "?")
+    if tool_name == "buscar_acciones":
+        return f"tarea: {tool_input.get('tarea_id', '?')}"
 
-    if tool_name == "obtener_documentos":
-        parts = []
-        if tool_input.get("portfolio_id"):
-            parts.append(tool_input["portfolio_id"])
-        if tool_input.get("texto_busqueda"):
-            parts.append(f'"{tool_input["texto_busqueda"]}"')
-        return ", ".join(parts) if parts else "todos"
-
-    if tool_name == "contar_iniciativas":
-        parts = [f"agrupar por: {tool_input.get('campo_agrupacion', '?')}"]
-        if tool_input.get("filtros"):
-            filters = [f"{f.get('field')} {f.get('operator')} {f.get('value', '')}" for f in tool_input["filtros"]]
-            parts.append(f"filtros: {', '.join(filters)}")
-        return " | ".join(parts)
-
-    if tool_name == "totalizar_importes":
-        parts = [f"sumar: {tool_input.get('campo_importe', '?')}"]
-        if tool_input.get("campo_agrupacion"):
-            parts.append(f"por: {tool_input['campo_agrupacion']}")
-        return " | ".join(parts)
-
-    if tool_name == "describir_tabla":
-        return tool_input.get("tabla", "?")
-
-    if tool_name == "obtener_valores_campo":
-        return f"{tool_input.get('tabla', '?')}.{tool_input.get('campo', '?')}"
-
-    if tool_name == "generar_grafico":
-        parts = [f"tipo: {tool_input.get('tipo_grafico', '?')}"]
-        if tool_input.get("titulo"):
-            parts.append(f'"{tool_input["titulo"]}"')
-        return " | ".join(parts)
-
-    if tool_name == "ejecutar_consulta_sql":
-        sql = tool_input.get("consulta_sql", "")
-        # Show first 120 chars of SQL
-        sql_preview = sql[:120] + ("..." if len(sql) > 120 else "")
-        return f"SQL: {sql_preview}"
+    if tool_name == "listar_estados":
+        return f"tipo: {tool_input.get('tipo', '?')}"
 
     return json.dumps(tool_input, ensure_ascii=False, default=str)[:150] if tool_input else ""
 
@@ -231,42 +190,24 @@ def _summarize_tool_result(result_str: str) -> str:
 
     parts = []
 
-    # Count/total summaries
+    # Search results
     if "total" in data:
         parts.append(f"{data['total']} registros")
-    if "total_iniciativas" in data:
-        parts.append(f"{data['total_iniciativas']} iniciativas")
-    if "total_general" in data:
-        parts.append(f"total: {data['total_general']:,.2f}")
-    if "grupos" in data:
-        parts.append(f"{len(data['grupos'])} grupos")
-    if "datos" in data and isinstance(data["datos"], list):
-        parts.append(f"{len(data['datos'])} filas devueltas")
-    if "documentos" in data and isinstance(data["documentos"], list):
-        parts.append(f"{len(data['documentos'])} documentos")
-    if "tablas" in data and isinstance(data["tablas"], dict):
-        parts.append(f"{len(data['tablas'])} tablas con datos")
-    if "campos" in data and isinstance(data["campos"], list):
-        parts.append(f"{len(data['campos'])} campos")
-    if "valores" in data and isinstance(data["valores"], list):
-        parts.append(f"{len(data['valores'])} valores distintos")
-    if "total_distintos" in data:
-        parts.append(f"total distintos: {data['total_distintos']}")
-    if "imagen_url" in data:
-        parts.append("gráfico generado")
+    if "data" in data and isinstance(data["data"], list):
+        parts.append(f"{len(data['data'])} filas devueltas")
 
-    # SQL query tool
-    if "sql_ejecutado" in data:
-        parts.append(f"{data.get('total_filas', 0)} filas")
-        if data.get("columnas"):
-            parts.append(f"{len(data['columnas'])} columnas")
-        if data.get("tiempo_ejecucion_ms"):
-            parts.append(f"{data['tiempo_ejecucion_ms']} ms")
-        if data.get("truncado"):
-            parts.append("truncado")
+    # Tarea detail
+    if "tarea" in data and isinstance(data["tarea"], dict):
+        parts.append("tarea encontrada")
+    if "acciones_realizadas" in data and isinstance(data["acciones_realizadas"], list):
+        parts.append(f"{len(data['acciones_realizadas'])} acciones")
 
-    # For listar_tablas (returns a list directly)
-    if isinstance(data, list):
-        parts.append(f"{len(data)} tablas")
+    # Acciones search
+    if "acciones" in data and isinstance(data["acciones"], list):
+        parts.append(f"{len(data['acciones'])} acciones")
+
+    # Estados list
+    if "estados" in data and isinstance(data["estados"], list):
+        parts.append(f"{len(data['estados'])} estados")
 
     return " | ".join(parts) if parts else "resultado recibido"

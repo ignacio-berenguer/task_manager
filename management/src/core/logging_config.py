@@ -1,5 +1,5 @@
 """
-Centralized logging configuration for portfolio migration.
+Centralized logging configuration for task manager migration.
 
 This module provides logging setup that can be shared across all modules.
 Logs are written to PROJECT_ROOT/logs/ directory.
@@ -29,7 +29,7 @@ LOG_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 def setup_logging():
     """
     Configure centralized logging for all modules.
-    All modules (main, init_db, migrate, validate) will log to the same file.
+    All modules (main, init_db, migrate) will log to the same file.
     Logs are appended to preserve history across multiple executions.
     Log file is stored in PROJECT_ROOT/logs/ directory.
     """
@@ -53,4 +53,4 @@ def setup_logging():
     root_logger.addHandler(console_handler)
 
     # Return logger for main module
-    return logging.getLogger('portfolio_main')
+    return logging.getLogger('task_manager_main')

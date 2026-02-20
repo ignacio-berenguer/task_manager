@@ -1,15 +1,11 @@
 [project]
-name = "portfolio-migration"
+name = "task-manager-migration"
 version = "0.1.0"
-description = "Add your description here"
+description = "Task Manager migration CLI: Excel to SQLite"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "pandas>=3.0.0",
     "openpyxl>=3.1.0",
     "python-dotenv>=1.0.0",
-    "debugpy>=1.8.20",
-    "anthropic>=0.40.0",
-    "pymupdf>=1.24.0",
-    "python-docx>=1.1.0",
 ]

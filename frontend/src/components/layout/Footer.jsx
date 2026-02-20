@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { CheckSquare } from 'lucide-react'
 
 const footerLinks = [
   { name: 'Contacto', href: '#' },
@@ -20,10 +21,10 @@ export function Footer() {
           {/* Copyright */}
           <div className="flex items-center space-x-2">
             <div className="flex h-6 w-6 items-center justify-center rounded bg-gradient-to-br from-primary to-primary/70 text-primary-foreground">
-              <span className="text-xs font-bold font-heading">P</span>
+              <CheckSquare className="h-4 w-4" />
             </div>
-            <span className="text-sm font-body text-muted-foreground">
-              {currentYear} Portfolio Digital. Todos los derechos reservados.
+            <span className="text-sm text-muted-foreground">
+              {currentYear} Task Manager. Todos los derechos reservados.
             </span>
           </div>
 
@@ -33,7 +34,7 @@ export function Footer() {
               <Link
                 key={link.name}
                 to={link.href}
-                className="text-sm font-body text-muted-foreground hover:text-foreground transition-colors"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 {link.name}
               </Link>

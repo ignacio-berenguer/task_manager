@@ -1,62 +1,10 @@
-"""
-Shared mapping of table names to SQLAlchemy model classes.
+"""Table name to SQLAlchemy model mapping."""
 
-Used by portfolio.py router and transaction_processor service.
-"""
-from .models import (
-    Iniciativa,
-    DatosRelevante,
-    DatosDescriptivo,
-    Hecho,
-    Etiqueta,
-    Ficha,
-    InformacionEconomica,
-    Accion,
-    Beneficio,
-    Facturacion,
-    Justificacion,
-    Nota,
-    Avance,
-    LTP,
-    WBE,
-    Dependencia,
-    DatosEjecucion,
-    EstadoEspecial,
-    InvestmentMemo,
-    ImpactoAATT,
-    Descripcion,
-    Transaccion,
-    GrupoIniciativa,
-    EtiquetaDestacada,
-    Documento,
-    DocumentoItem,
-)
+from app.models import Tarea, AccionRealizada, EstadoTarea, EstadoAccion
 
 TABLE_MODELS = {
-    "iniciativas": Iniciativa,
-    "datos_relevantes": DatosRelevante,
-    "datos_descriptivos": DatosDescriptivo,
-    "hechos": Hecho,
-    "etiquetas": Etiqueta,
-    "fichas": Ficha,
-    "informacion_economica": InformacionEconomica,
-    "acciones": Accion,
-    "beneficios": Beneficio,
-    "facturacion": Facturacion,
-    "justificaciones": Justificacion,
-    "notas": Nota,
-    "avance": Avance,
-    "ltp": LTP,
-    "wbes": WBE,
-    "dependencias": Dependencia,
-    "datos_ejecucion": DatosEjecucion,
-    "estado_especial": EstadoEspecial,
-    "investment_memos": InvestmentMemo,
-    "impacto_aatt": ImpactoAATT,
-    "descripciones": Descripcion,
-    "transacciones": Transaccion,
-    "grupos_iniciativas": GrupoIniciativa,
-    "etiquetas_destacadas": EtiquetaDestacada,
-    "documentos": Documento,
-    "documentos_items": DocumentoItem,
+    "tareas": Tarea,
+    "acciones_realizadas": AccionRealizada,
+    "estados_tareas": EstadoTarea,
+    "estados_acciones": EstadoAccion,
 }

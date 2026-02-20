@@ -4,16 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Portfolio Digital — a full-stack portfolio management system for IT initiatives. The system consolidates data from 5 Excel workbooks (~90,000 rows across 30+ sheets) into a normalized SQLite database, exposes it through a REST API, and provides a rich web application with dashboards, search, reports, and detail views.
+Task Manager — a full-stack task management system. The system imports tasks from an Excel workbook into a SQLite database, exposes them through a REST API, and provides a web application with search, detail views, and CRUD operations.
 
 **Four Modules:**
 
 | Module | Technology | Purpose |
 |--------|-----------|---------|
-| `management/` | Python 3.12 + pandas | CLI tool: Excel-to-SQLite migration, calculation, validation, export |
-| `backend/` | Python 3.12 + FastAPI + SQLAlchemy | REST API with CRUD, flexible search, reports, calculated fields |
-| `frontend/` | React 19 + Vite + Tailwind CSS | SPA with dashboard, search, 6 report pages, initiative detail |
-| `mcp_server/` | Python 3.12 + MCP SDK + httpx | MCP server for AI agents: read-only portfolio access via 11 tools |
+| `management/` | Python 3.12 + pandas | CLI tool: Excel-to-SQLite migration |
+| `backend/` | Python 3.12 + FastAPI + SQLAlchemy | REST API with CRUD, flexible search, AI agent |
+| `frontend/` | React 19 + Vite + Tailwind CSS | SPA with landing, search, detail, AI chat |
+| `mcp_server/` | Python 3.12 + MCP SDK + httpx | MCP server for AI agents: 6 tools |
 
 **Shared Resources:**
 - `db/` — SQLite database + schema DDL
@@ -27,19 +27,11 @@ Portfolio Digital — a full-stack portfolio management system for IT initiative
 ```bash
 cd management
 uv sync
-uv run python manage.py complete_process                  # Full pipeline: recreate + migrate + calculate + export + scan
-uv run python manage.py init                               # Create .db file + schema
-uv run python manage.py recreate_tables                    # Drop all tables, recreate from schema.sql
-uv run python manage.py migrate                            # Excel → SQLite
-uv run python manage.py validate                           # Check data quality
-uv run python manage.py calculate_datos_relevantes         # Compute datos_relevantes table
-uv run python manage.py export_datos_relevantes            # Export to Excel
-uv run python manage.py scan_documents                     # Scan folders → documentos table
-uv run python manage.py summarize_documentos               # LLM summarize pending documents
-uv run python manage.py summarize_documentos --portfolio-ids SPA_25_11,SPA_25_12  # Filter by portfolio
-uv run python manage.py summarize_documentos --reprocess   # Reprocess all (not just Pendiente)
-uv run python manage.py summarize_documentos --json-output-to-console  # Print colored JSON to console
-uv run python manage.py migrate --db custom.db             # Custom database path
+uv run python manage.py complete_process       # Full pipeline: recreate + migrate
+uv run python manage.py init                    # Create .db file + schema
+uv run python manage.py recreate_tables         # Drop all tables, recreate from schema.sql
+uv run python manage.py migrate                 # Excel -> SQLite
+uv run python manage.py migrate --db custom.db  # Custom database path
 ```
 
 **Dependencies:** pandas, openpyxl (managed via `uv`)
@@ -53,9 +45,8 @@ uv run uvicorn app.main:app --reload --port 8000
 ```
 
 - Swagger UI: http://localhost:8000/api/v1/docs
-- ReDoc: http://localhost:8000/api/v1/redoc
 
-**Dependencies:** fastapi, uvicorn, sqlalchemy, pydantic, pydantic-settings, python-dotenv
+**Dependencies:** fastapi, uvicorn, sqlalchemy, pydantic, pydantic-settings, python-dotenv, anthropic, httpx
 
 ### Frontend (React SPA)
 
@@ -66,7 +57,7 @@ npm run dev      # http://localhost:5173
 npm run build    # Production build
 ```
 
-**Key dependencies:** React 19, react-router-dom 6, @tanstack/react-query 5, @tanstack/react-table 8, @dnd-kit (drag-and-drop), recharts, @clerk/clerk-react, tailwindcss 4, xlsx, lucide-react
+**Dependencies:** React 19, react-router-dom 6, @tanstack/react-query 5, @clerk/clerk-react, tailwindcss 4, lucide-react, axios
 
 ### MCP Server (AI Agent Interface)
 
@@ -75,103 +66,98 @@ npm run build    # Production build
 ```bash
 cd mcp_server
 uv sync
-uv run -m mcp_portfolio                                    # Start (stdio mode)
-MCP_TRANSPORT=sse uv run -m mcp_portfolio                   # Start (SSE mode, port 8001)
+uv run -m mcp_tareas                          # Start (stdio mode)
+MCP_TRANSPORT=sse uv run -m mcp_tareas        # Start (SSE mode, port 8001)
 ```
 
-**11 MCP tools** (all in Spanish): buscar_iniciativas, buscar_en_tabla, obtener_iniciativa, obtener_documentos, contar_iniciativas, totalizar_importes, listar_tablas, describir_tabla, obtener_valores_campo, ejecutar_consulta_sql, generar_grafico.
+**6 MCP tools** (all in Spanish): buscar_tareas, buscar_acciones, obtener_tarea, listar_tablas, describir_tabla, obtener_valores_campo.
 
 **Dependencies:** mcp[cli], httpx, python-dotenv
 
 ## Project Structure
 
 ```
-portfolio_migration/
+task_manager/
 ├── management/                      # Migration CLI tool
-│   ├── manage.py                    # CLI entry point (9 commands)
-│   ├── .env / .env.example          # Configuration
-│   ├── src/
-│   │   ├── core/                    # logging_config.py, data_quality.py
-│   │   ├── config/                  # settings.py (loads .env)
-│   │   ├── init/                    # db_init.py
-│   │   ├── migrate/                 # engine.py, excel_readers.py
-│   │   ├── calculate/               # engine.py, estado_functions.py, importe_functions.py, lookup_functions.py, helper_functions.py
-│   │   ├── export/                  # excel_export.py
-│   │   └── validate/                # validator.py
-│   ├── excel_source/                # Excel workbooks (gitignored)
-│   └── excel_output/                # Excel output (gitignored)
+│   ├── manage.py                    # CLI entry point
+│   ├── .env.example                 # Configuration template
+│   ├── pyproject.toml
+│   └── src/
+│       ├── config/                  # settings.py (loads .env)
+│       ├── core/                    # logging_config.py, data_quality.py
+│       ├── init/                    # db_init.py
+│       └── migrate/                 # engine.py
 │
 ├── db/
-│   ├── schema.sql                   # Complete DDL (28 tables)
-│   └── portfolio.db                 # SQLite database (gitignored)
+│   ├── schema.sql                   # Complete DDL (4 tables)
+│   └── task_manager.db              # SQLite database (gitignored)
 │
 ├── backend/                         # FastAPI REST API
 │   ├── app/
 │   │   ├── main.py                  # Entry point + CORS + router registration
 │   │   ├── config.py                # Environment config
 │   │   ├── database.py              # SQLite connection
-│   │   ├── models.py                # 24 SQLAlchemy ORM models
-│   │   ├── calculated_fields/        # On-the-fly computed fields (~51 fields)
-│   │   │   ├── __init__.py          # Module exports
-│   │   │   ├── definitions.py       # Field mappings & metadata (FIELD_CALCULATORS)
-│   │   │   ├── lookup.py            # Lookup functions (datos_descriptivos, datos_relevantes, informacion_economica)
-│   │   │   ├── cache.py             # LookupCache for batch processing
-│   │   │   ├── estado.py            # Estado/justification calculation functions
-│   │   │   ├── utils.py             # Utility calculations (debe_tener, grupo_importes)
-│   │   │   └── service.py           # CalculatedFieldService orchestrator
+│   │   ├── models.py                # 4 SQLAlchemy ORM models
 │   │   ├── schemas.py               # Pydantic validation schemas
 │   │   ├── crud.py                  # Reusable CRUD operations
 │   │   ├── search.py                # Flexible search with operators
-│   │   ├── router_factory.py        # Generic CRUD router factory (12 routers use this)
 │   │   ├── table_registry.py        # TABLE_MODELS mapping
-│   │   ├── services/
-│   │   │   ├── transaction_processor.py  # JSON diff processor
-│   │   │   ├── excel_mapping.py          # DB-to-Excel field mapping config
-│   │   │   └── excel_writer.py           # Excel write-back via xlwings
-│   │   └── routers/                 # 25 API endpoint files
+│   │   ├── agent/                   # AI agent module
+│   │   │   ├── orchestrator.py      # Agent orchestration logic
+│   │   │   ├── tools.py             # Tool definitions for the agent
+│   │   │   ├── system_prompt.py     # System prompt configuration
+│   │   │   ├── api_client.py        # Internal API client
+│   │   │   ├── config.py            # Agent configuration
+│   │   │   └── table_metadata.py    # Table metadata for the agent
+│   │   └── routers/                 # API endpoint files
+│   │       ├── tareas.py            # Tareas endpoints
+│   │       ├── acciones.py          # Acciones endpoints
+│   │       ├── estados.py           # Estados endpoints
+│   │       └── agent.py             # AI agent chat endpoint
 │   ├── pyproject.toml
-│   └── .env                         # Configuration (gitignored)
+│   └── .env.example                 # Configuration template
 │
 ├── frontend/                        # React SPA
 │   ├── src/
 │   │   ├── api/client.js            # Axios + Clerk JWT interceptors
 │   │   ├── components/
-│   │   │   ├── ui/                  # Base components (Button, Dialog, MultiSelect, etc.)
+│   │   │   ├── ui/                  # Base components (Button, Dialog, etc.)
 │   │   │   ├── layout/              # Navbar, Footer, Layout
 │   │   │   ├── theme/               # ThemeProvider, ModeToggle
-│   │   │   └── shared/              # ProtectedRoute, ColumnConfigurator, ErrorBoundary, NotFoundPage
+│   │   │   └── shared/              # ProtectedRoute, ErrorBoundary, NotFoundPage
 │   │   ├── features/
-│   │   │   ├── landing/             # Public marketing page (8 sections)
-│   │   │   ├── dashboard/           # KPIs, charts, filters, sidebar nav
-│   │   │   ├── search/              # Initiative search + data grid + export
-│   │   │   ├── reports/             # 6 report pages (GenericReportPage pattern)
-│   │   │   └── detail/              # Initiative detail (20 accordion sections, CRUD)
-│   │   ├── lib/                     # estadoOrder.js, logger.js, storage.js, utils.js
-│   │   └── providers/               # QueryProvider, combined Providers
-│   ├── .env / .env.example
+│   │   │   ├── landing/             # Public landing page (branding + changelog)
+│   │   │   ├── search/              # Task search with filters
+│   │   │   ├── detail/              # Task detail (tarea info + acciones CRUD)
+│   │   │   └── chat/                # AI assistant chat page
+│   │   ├── lib/                     # utils.js, logger.js, storage.js, version.js, changelog.js, estadoOrder.js
+│   │   ├── hooks/                   # usePageTitle.js
+│   │   ├── providers/               # Providers.jsx, QueryProvider.jsx
+│   │   └── App.jsx, main.jsx, index.css
 │   ├── package.json
-│   └── vite.config.js
+│   ├── vite.config.js
+│   └── .env.example                 # Configuration template
 │
 ├── mcp_server/                      # MCP server for AI agents
-│   ├── pyproject.toml               # mcp[cli], httpx, python-dotenv
-│   ├── .env / .env.example          # Configuration
-│   └── src/mcp_portfolio/           # Server + 11 MCP tools
-│       ├── server.py                # FastMCP instance + entry point
-│       ├── api_client.py            # HTTP client for FastAPI backend
-│       ├── table_metadata.py        # Table descriptions + search capabilities
-│       └── tools/                   # busqueda, detalle, agregacion, esquema
+│   ├── src/mcp_tareas/
+│   │   ├── server.py                # FastMCP instance + entry point
+│   │   ├── api_client.py            # HTTP client for FastAPI backend
+│   │   ├── config.py                # MCP server configuration
+│   │   ├── logging_config.py        # Logging setup
+│   │   ├── table_metadata.py        # Table descriptions + search capabilities
+│   │   └── tools/                   # Tool modules
+│   │       ├── busqueda.py          # Search tools
+│   │       ├── detalle.py           # Detail tools
+│   │       └── esquema.py           # Schema tools
+│   ├── pyproject.toml
+│   └── .env.example                 # Configuration template
 │
 ├── logs/                            # Centralized logs (gitignored)
 ├── specs/
-│   ├── specs.md                     # Core technical specifications
 │   ├── architecture/                # Architecture documents
-│   │   ├── architecture_management.md
-│   │   ├── architecture_backend.md
-│   │   ├── architecture_frontend.md
-│   │   └── architecture_mcp_server.md
 │   └── features/                    # Feature specs
 │       ├── feature_NNN/             # Active features (in progress)
-│       └── implemented/             # Completed features (feature_001–feature_027)
+│       └── implemented/             # Completed features
 │
 ├── .claude/skills/                  # Custom Claude Code skills
 │   ├── create_feature/SKILL.md      # /create_feature — scaffold new feature folder
@@ -185,81 +171,66 @@ portfolio_migration/
 
 ## Database Schema
 
-**28 Tables** with `portfolio_id` (TEXT) as the consistent primary key across workbooks:
+**4 Tables:**
 
-| Category | Tables | Rows |
-|----------|--------|------|
-| Core | iniciativas, grupos_iniciativas | 832, 55 |
-| Descriptive | datos_descriptivos | 837 |
-| Financial | informacion_economica, facturacion | 812, 127 |
-| Operational | datos_ejecucion, hechos | 211, 3,530 |
-| Benefits | beneficios (current only, excludes snapshots) | 26,568 |
-| Supporting | etiquetas, justificaciones, ltp, wbes, dependencias | 7,278 / 689 / 95 / 122 |
-| Additional | notas, avance, acciones, descripciones, estado_especial, investment_memos, impacto_aatt | various |
-| Fichas | fichas | 7,787 |
-| Computed | datos_relevantes (60+ calculated columns) | ~837 |
-| Documents | documentos, documentos_items | variable |
-| Parametric | parametros, etiquetas_destacadas | variable |
-| Audit | migracion_metadata, transacciones, transacciones_json | ~9,000 |
+| Table | Primary Key | Description |
+|-------|-------------|-------------|
+| `tareas` | `tarea_id` (TEXT) | Core task records |
+| `acciones_realizadas` | `id` (INTEGER, autoincrement) | Actions linked to tasks via `tarea_id` FK |
+| `estados_tareas` | `id` (INTEGER, autoincrement) | Parametric: task status values |
+| `estados_acciones` | `id` (INTEGER, autoincrement) | Parametric: action status values |
+
+**Table Details:**
+
+- **tareas**: `tarea_id` (TEXT PK), `tarea`, `responsable`, `descripcion`, `fecha_siguiente_accion`, `tema`, `estado`, `fecha_creacion`, `fecha_actualizacion`
+- **acciones_realizadas**: `id` (INTEGER PK), `tarea_id` (FK to tareas, ON DELETE CASCADE), `accion`, `estado`, `fecha_creacion`, `fecha_actualizacion`
+- **estados_tareas**: `id`, `valor` (UNIQUE), `orden`, `color` — seeded with: Pendiente, En Progreso, Completada, Cancelada
+- **estados_acciones**: `id`, `valor` (UNIQUE), `orden`, `color` — seeded with: Pendiente, En Progreso, Completada
 
 ## Backend API
 
-### Endpoints
+### Tareas (`/api/v1/tareas`)
 
-**Standard CRUD** (all 28 tables):
-- `GET /api/v1/{table}` — List (paginated, limit/offset)
-- `GET /api/v1/{table}/{id}` — Get by ID
-- `POST /api/v1/{table}` — Create
-- `PUT /api/v1/{table}/{id}` — Update
-- `DELETE /api/v1/{table}/{id}` — Delete
+- `GET /` — List (paginated, limit/offset)
+- `GET /filter-options` — Distinct values for filter dropdowns
+- `POST /search` — Flexible search with filters
+- `GET /{tarea_id}` — Get by ID
+- `POST /` — Create
+- `PUT /{tarea_id}` — Update
+- `DELETE /{tarea_id}` — Delete (cascades to acciones_realizadas)
 
-**Flexible Search** (8 key tables — datos-relevantes, iniciativas, hechos, datos-descriptivos, etiquetas, acciones, ltp, informacion-economica):
+### Acciones (`/api/v1/acciones`)
+
+- `GET /` — List (paginated)
+- `GET /tarea/{tarea_id}` — Get actions by tarea
+- `GET /{id}` — Get by ID
+- `POST /` — Create
+- `PUT /{id}` — Update
+- `DELETE /{id}` — Delete
+
+### Estados (`/api/v1/estados-tareas`, `/api/v1/estados-acciones`)
+
+- `GET /` — List all status values
+- `POST /` — Create
+- `PUT /{id}` — Update
+- `DELETE /{id}` — Delete
+
+### Agent (`/api/v1/agent`)
+
+- `POST /chat` — AI chat via Server-Sent Events (SSE)
+
+### Flexible Search
+
 ```json
-POST /api/v1/{table}/search
+POST /api/v1/tareas/search
 {
-  "filters": [{"field": "nombre", "operator": "ilike", "value": "%digital%"}],
-  "order_by": "fecha_inicio", "order_dir": "desc",
+  "filters": [{"field": "responsable", "operator": "ilike", "value": "%juan%"}],
+  "order_by": "fecha_creacion", "order_dir": "desc",
   "limit": 100, "offset": 0
 }
 ```
-Operators: `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, `not_in`, `is_null`, `is_not_null`
 
-**Report Endpoints** (6 reports, each has filter-options GET + search POST):
-- `/hechos/report-hechos-filter-options` + `/hechos/search-report-hechos`
-- `/ltp/report-ltps-filter-options` + `/ltp/search-report-ltps`
-- `/acciones/report-acciones-filter-options` + `/acciones/search-report-acciones`
-- `/etiquetas/report-etiquetas-filter-options` + `/etiquetas/search-report-etiquetas`
-- `/transacciones/report-transacciones-filter-options` + `/transacciones/search-report-transacciones`
-- `/transacciones-json/report-filter-options` + `/transacciones-json/search-report`
-
-**Cross-Table**:
-- `GET /api/v1/portfolio/{pid}` — All data for a portfolio_id
-- `POST /api/v1/portfolio/search` — Multiple portfolio_ids with table selection
-
-**Transaction Processing**:
-- `POST /api/v1/transacciones-json/process` — Apply JSON diffs to database
-- `POST /api/v1/transacciones-json/process-excel` — Trigger async Excel write-back
-- `GET /api/v1/transacciones-json/process-excel-status` — Poll Excel processing status
-- `GET /api/v1/transacciones-json/by-portfolio/{pid}` — Get JSON transactions for a portfolio
-
-### Calculated Fields
-
-~51 calculated fields across 19 tables are computed on-the-fly by the `calculated_fields/` module and injected into API responses via `model_to_dict_with_calculated()`. Uses `LookupCache` for batch processing to avoid N+1 queries. API response shape unchanged for consumers.
-
-### Configuration (.env)
-
-```env
-LOG_LEVEL=INFO
-LOG_FILE=portfolio_backend.log
-LOG_FORMAT=%(asctime)s - %(name)s - %(levelname)s - %(message)s
-API_PREFIX=/api/v1
-API_TITLE=Portfolio Digital API
-API_VERSION=1.0.0
-DATABASE_PATH=              # Empty = auto-detect relative to project root
-DATABASE_ECHO=false         # Set to true to log SQL queries
-CORS_ORIGINS=["http://localhost:5173"]
-EXCEL_SOURCE_DIR=../management/excel_source  # Path to Excel source files for write-back
-```
+**Operators:** `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, `not_in`, `is_null`, `is_not_null`
 
 ## Frontend Application
 
@@ -267,116 +238,109 @@ EXCEL_SOURCE_DIR=../management/excel_source  # Path to Excel source files for wr
 
 | Route | Access | Page | Description |
 |-------|--------|------|-------------|
-| `/` | Public | LandingPage | Marketing page with 8 sections |
+| `/` | Public | LandingPage | Branding + changelog |
 | `/sign-in`, `/sign-up` | Public | Clerk auth | Authentication |
-| `/dashboard` | Private | DashboardPage | KPIs, 12 charts, filters, sidebar nav |
-| `/search` | Private | SearchPage | Flexible search + configurable data grid + export |
-| `/informes/hechos` | Private | ReportPage | Hechos by date range + portfolio data |
-| `/informes/ltps` | Private | GenericReportPage | LTPs by responsable/estado |
-| `/informes/acciones` | Private | GenericReportPage | Acciones with date/estado filters |
-| `/informes/etiquetas` | Private | GenericReportPage | Etiquetas search |
-| `/informes/transacciones` | Private | GenericReportPage | Transaction audit trail |
-| `/informes/transacciones-json` | Private | GenericReportPage | JSON diffs + process button |
-| `/detail/:portfolio_id` | Private | DetailPage | 20 data sections with CRUD |
-
-### Dashboard
-
-- **4 KPI cards**: Total initiatives, Budget (year), Approved, In Execution
-- **6 chart pairs** (12 cards): Priorizacion, Unidad, Framework, Cluster, Estado — each showing count and importe
-- **2 list cards**: Top value initiatives, Recent changes
-- **9 filters**: Year, Digital Framework, Unidad, Cluster, Estado, Previstas, Cerrada Econ., Excl. Canceladas, Excl. EPTs
-- **Sidebar navigation**: Sticky left sidebar (xl+ screens) with section links
-- **Chart navigation**: Double-click bar → Search page with pre-populated filters
-
-### Search Page
-
-- **9 filter criteria**: Portfolio ID, Nombre, Digital Framework, Unidad, Estado, Cluster, Tipo, Etiquetas, Cerrada Economicamente
-- **Configurable grid**: 60+ available columns with drag-and-drop reordering (ColumnConfigurator)
-- **Export**: TSV, CSV, JSON, Excel
-- **Server-side sorting and pagination** (25/50/100/200 rows)
-- **All preferences persisted** to localStorage
-
-### Reports (6 pages)
-
-All use `GenericReportPage` pattern (except Hechos which has custom implementation):
-- Configurable columns with drag-and-drop reordering
-- Server-side pagination and sorting
-- Per-report localStorage persistence
-- Data-driven filter panels
-
-### Detail Page
-
-- **18 accordion sections** showing all related data for an initiative
-- **CRUD operations** on Notas via `transacciones_json` table (create, edit, delete)
-- **Importes table**: Budget, SM200, Aprobado, CITETIC, Facturacion, Importe by year (2024–2028)
-- **Links**: portfolio_id links to detail page throughout the app
+| `/search` | Private | SearchPage | Task search with filters |
+| `/detail/:tarea_id` | Private | DetailPage | Tarea info + acciones CRUD |
+| `/chat` | Private | ChatPage | AI assistant |
 
 ### Key Frontend Patterns
 
 **Route-Based Code Splitting** (`src/App.jsx`):
 - All protected routes use `React.lazy()` + `Suspense` for on-demand loading
-- Vendor chunks split in `vite.config.js`: react, tanstack, clerk, recharts
 - `ErrorBoundary` wraps each protected route for graceful error handling
 - 404 catch-all route renders `NotFoundPage`
 
-**Column Configurator** (`src/components/shared/ColumnConfigurator.jsx`):
-- Dialog with drag-and-drop visible columns (top) + categorized available columns (bottom)
-- Uses `@dnd-kit/core` + `@dnd-kit/sortable`
-- Shared across Search and all Report pages
-- Column order persisted in the `columns` array in localStorage
-
 **Shared localStorage Utility** (`src/lib/storage.js`):
 - `createStorage(prefix)` factory creates namespaced storage interfaces
-- Used by searchStorage, reportStorage, filterStorage
 - Methods: `saveJSON`, `loadJSON`, `saveString`, `loadString`, `loadInt`, `remove`
 
 **Estado Workflow Order** (`src/lib/estadoOrder.js`):
 - All estado dropdowns use canonical workflow order, NOT alphabetical
-- Applies to Dashboard, Search, and all Report filter panels
-
-**Cross-Page Navigation** (React Router `location.state`):
-- Dashboard → Search: passes filter criteria on chart double-click
-- Dashboard → Hechos Report: passes date/dimension filters
+- Applies to Search and Detail filter panels
 
 **Authentication**: Clerk (JWT tokens auto-injected via Axios interceptors)
 
-**Logging**: `createLogger('ContextName')` → browser console, color-coded + timestamped
+**Logging**: `createLogger('ContextName')` — browser console, color-coded + timestamped
 
-### Frontend Configuration (.env)
+## Configuration (.env files)
+
+Each module has its own `.env` file (use `.env.example` as template). At minimum each includes `LOG_LEVEL` and `LOG_FILE`.
+
+### Management
+
+```env
+LOG_LEVEL=INFO
+LOG_FILE=task_manager.log
+DATABASE_PATH=                    # Empty = auto-detect relative to project root
+EXCEL_SOURCE_DIR=./excel_source
+EXCEL_SOURCE_FILE=tareas.xlsx
+EXCEL_SHEET_TAREAS=Tareas
+EXCEL_SHEET_ACCIONES=Acciones
+BATCH_COMMIT_SIZE=500
+```
+
+### Backend
+
+```env
+LOG_LEVEL=INFO
+LOG_FILE=task_manager_backend.log
+API_PREFIX=/api/v1
+API_TITLE=Task Manager API
+API_VERSION=1.0.0
+DATABASE_PATH=                    # Empty = auto-detect relative to project root
+DATABASE_ECHO=false               # Set to true to log SQL queries
+CORS_ORIGINS=["http://localhost:5173"]
+ANTHROPIC_API_KEY=                # Required for AI agent
+AGENT_MODEL=claude-sonnet-4-20250514
+AGENT_MAX_TOKENS=4096
+AGENT_TEMPERATURE=0.0
+AGENT_MAX_TOOL_ROUNDS=10
+AGENT_API_BASE_URL=http://localhost:8000/api/v1
+```
+
+### Frontend
 
 ```env
 VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
 VITE_API_BASE_URL=http://localhost:8000/api/v1
 VITE_LOG_LEVEL=INFO
-VITE_APP_NAME=Portfolio Digital
-VITE_DASHBOARD_TOP_VALUE_THRESHOLD=1000000
-VITE_DASHBOARD_RECENT_DAYS=7
+VITE_APP_NAME=Task Manager
+```
+
+### MCP Server
+
+```env
+API_BASE_URL=http://localhost:8000/api/v1
+API_TIMEOUT=30
+LOG_LEVEL=INFO
+LOG_FILE=task_manager_mcp.log
+MAX_QUERY_ROWS=500
+DEFAULT_QUERY_ROWS=50
+MCP_TRANSPORT=stdio
+MCP_HOST=0.0.0.0
+MCP_PORT=8001
 ```
 
 ## Key Implementation Details
 
 ### Naming Convention
 
-- **Spanish column names** with accents removed (Ano → anio, Descripcion → descripcion)
-- Lowercase with underscores: fecha_inicio, portfolio_id
+- **Spanish column names** with accents removed (e.g., descripcion, accion)
+- Lowercase with underscores: `tarea_id`, `fecha_creacion`, `fecha_actualizacion`
 
-### Data Quality Handling
+### Data Handling
 
-- **Dates**: Excel serial → ISO 8601; invalid → NULL + fecha_XXX_valida = 0
-- **Formula errors**: #REF!, #N/A → NULL, logged
-- **Currency**: REAL rounded to 2 decimals
-- **Text**: CRLF normalization
+- **Dates**: Stored as ISO 8601 TEXT in SQLite
+- **Cascade deletes**: Deleting a tarea cascades to its acciones_realizadas (ON DELETE CASCADE)
 
-### Computed Table: datos_relevantes
+### AI Agent
 
-Consolidates data from multiple tables into a single denormalized view per initiative (60+ columns):
-- **Lookups**: 17 from datos_descriptivos + informacion_economica
-- **Estado functions**: estado_iniciativa, estado_aprobacion, estado_ejecucion, etc.
-- **Importe functions**: budget, SM200, aprobado, facturado for years 2024–2028
-- **Date functions**: fecha_sm100, fecha_aprobada_con_cct, fecha_en_ejecucion
-- **Performance**: All reference data preloaded into memory caches (~8 bulk SQL queries instead of ~35K per-row queries)
-
-See `specs/features/implemented/feature_002/specs.md` for complete specifications.
+The backend includes an AI agent module (`app/agent/`) that provides a conversational interface to the task database. The agent:
+- Receives user messages via the `/agent/chat` SSE endpoint
+- Uses Anthropic's Claude API with tool-use to query the database
+- Has access to tools for searching, reading, and modifying tasks and actions
+- Streams responses back to the frontend via Server-Sent Events
 
 ## Custom Claude Code Skills
 
@@ -385,20 +349,17 @@ Four custom skills are available in `.claude/skills/`:
 | Skill | Command | Description |
 |-------|---------|-------------|
 | create_feature | `/create_feature <description>` | Scaffolds `specs/features/feature_NNN/requirements.md` with next available number |
-| plan_feature | `/plan_feature feature_NNN` | Plans a feature that has requirements.md ready |
+| plan_feature | `/plan_feature feature_NNN` | Creates specs.md and plan.md from requirements |
 | develop_feature | `/develop_feature feature_NNN` | Implements feature from specs & plan, creates task list, implements step by step |
 | close_feature | `/close_feature feature_NNN` | Verifies docs are updated, moves to `implemented/`, commits + pushes |
 
 ## Critical Development Notes
 
 ### FastAPI Route Ordering
-**Static routes MUST be defined before dynamic path parameter routes** in routers. E.g., `GET /report-hechos-filter-options` must come before `GET /{id}`. FastAPI attempts the dynamic match first and returns 422 rather than falling through.
+**Static routes MUST be defined before dynamic path parameter routes** in routers. E.g., `GET /filter-options` must come before `GET /{tarea_id}`. FastAPI attempts the dynamic match first and returns 422 rather than falling through.
 
 ### Estado Workflow Order
-All `estado` dropdowns across the app must use the canonical order from `src/lib/estadoOrder.js`, NOT alphabetical. This applies to dashboard filters, search filters, and all report filter panels with `sortByEstado: true`.
-
-### PRESERVED_TABLES — Data Protection
-The `PRESERVED_TABLES` list in `management/src/init/db_init.py` protects tables from being emptied during `recreate_tables`. Currently protected: `transacciones_json`. The `documentos` table is now migrated from Excel during the migration process. Only the `init` command (which deletes the entire .db file) destroys all data.
+All `estado` dropdowns across the app must use the canonical order from `src/lib/estadoOrder.js`, NOT alphabetical. This applies to search filters and detail page dropdowns.
 
 ### Post Implementation Checklist
 After implementing each feature:
@@ -412,28 +373,21 @@ After implementing each feature:
 - **Backend**: Always use `uv run` from the `backend/` directory
 - **Frontend**: Use `npm` from the `frontend/` directory
 - **MCP Server**: Always use `uv run` from the `mcp_server/` directory. Requires backend API running.
-- **Logs**: Check `logs/portfolio_migration.log` (management), `logs/portfolio_backend.log` (backend), or `logs/portfolio_mcp.log` (MCP server)
+- **Logs**: Check `logs/task_manager.log` (management), `logs/task_manager_backend.log` (backend), or `logs/task_manager_mcp.log` (MCP server)
 - **Log level**: Configurable via `.env` in each module (INFO, DEBUG, WARNING, ERROR)
-- **Architecture docs**: `specs/architecture/architecture_management.md`, `specs/architecture/architecture_backend.md`, `specs/architecture/architecture_frontend.md`, `specs/architecture/architecture_mcp_server.md`
+- **Architecture docs**: `specs/architecture/`
 
 ## Testing
 
 ```bash
-# Management - Full pipeline
+# Management - Create and migrate
 cd management
-uv run python manage.py complete_process --db test.db
-
-# Management - Step by step
 uv run python manage.py init --db test.db
 uv run python manage.py migrate --db test.db
-uv run python manage.py validate --db test.db
-uv run python manage.py calculate_datos_relevantes --db test.db
-uv run python manage.py export_datos_relevantes --db test.db
 
-# Management - Test imports
-uv run python -c "from src.core import setup_logging; print('Core OK')"
-uv run python -c "from src.migrate import migrate_all; print('Migrate OK')"
-uv run python -c "from src.calculate import main; print('Calculate OK')"
+# Backend - Import check
+cd backend
+uv run python -c "from app.main import app; print('Backend OK')"
 
 # Frontend - Build check
 cd frontend
@@ -443,16 +397,19 @@ npm run build
 ## Logging
 
 ### Management Module
-- File: `logs/portfolio_migration.log`
-- Six module loggers: portfolio_main, portfolio_init, portfolio_migration, portfolio_validate, portfolio_calculate, portfolio_export
+- File: `logs/task_manager.log`
 - Each run marked with "NEW EXECUTION" timestamp separator
 - Mode: Append
 
 ### Backend Module
-- File: `logs/portfolio_backend.log`
+- File: `logs/task_manager_backend.log`
 - Configurable via `backend/.env`
 
 ### Frontend
 - Browser console via `createLogger()` utility
 - Color-coded, timestamped
 - Level configurable via `VITE_LOG_LEVEL`
+
+### MCP Server
+- File: `logs/task_manager_mcp.log`
+- Configurable via `mcp_server/.env`

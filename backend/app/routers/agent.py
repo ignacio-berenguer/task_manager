@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from ..agent.orchestrator import stream_agent_response
 from ..config import settings
 
-logger = logging.getLogger("portfolio_agent")
+logger = logging.getLogger("task_manager_agent")
 
 router = APIRouter(prefix="/agent", tags=["agent"])
 

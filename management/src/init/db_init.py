@@ -11,7 +11,7 @@ from datetime import datetime
 from src.config import settings as config
 
 # Get logger (configured by main.py)
-logger = logging.getLogger('portfolio_init')
+logger = logging.getLogger('task_manager_init')
 
 
 def create_database(db_path: str = None, force_overwrite: bool = False) -> sqlite3.Connection:
@@ -136,7 +136,7 @@ def create_database(db_path: str = None, force_overwrite: bool = False) -> sqlit
     return conn
 
 
-PRESERVED_TABLES = ["transacciones_json"]
+PRESERVED_TABLES = []
 
 
 def recreate_tables(db_path: str = None) -> sqlite3.Connection:

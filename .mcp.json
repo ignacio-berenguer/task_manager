@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "portfolio-digital": {
-      "type": "stdio",
-      "command": "uv",
-      "args": ["--directory", "mcp_server", "run", "-m", "mcp_portfolio"]
-    }
-  }
-}

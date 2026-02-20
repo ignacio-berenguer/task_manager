@@ -13,7 +13,7 @@ if settings.DATABASE_PATH:
 else:
     _backend_dir = Path(__file__).parent.parent
     _project_root = _backend_dir.parent
-    _db_path = _project_root / "db" / "portfolio.db"
+    _db_path = _project_root / "db" / "task_manager.db"
 
 DATABASE_URL = f"sqlite:///{_db_path}"
 
