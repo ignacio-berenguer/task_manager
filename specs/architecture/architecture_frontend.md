@@ -176,15 +176,19 @@ frontend/
 
 - **5 labeled filter criteria**: tarea_id, tarea (nombre), responsable, tema, estado — each with visible label
 - **Lateral filter sidebar** on xl+ screens; collapsible accordion on smaller screens
+- **Inline column filters**: Client-side filter row below column headers for quick text/dropdown filtering of visible results
 - **Default filter**: estado defaults to "En Curso"; "Limpiar" resets to "En Curso"
 - **Default sort**: fecha_siguiente_accion ascending
 - **Auto-search** on initial page load with default filters
 - **Keyboard shortcuts**: Ctrl+Shift+F (focus tarea filter), Ctrl+Shift+N (new tarea dialog), Enter (trigger search)
+- **Sticky title bar**: "Busqueda de Tareas" title and action buttons remain visible when scrolling
 - **Sortable data grid** with configurable columns and sticky column headers
-- **Colored estado tags**: EstadoBadge component renders estado as colored badges (red=En Curso, green=Completado, gray=Cancelado)
+- **Colored estado tags**: EstadoBadge component renders estado as colored badges (red=En Curso/Pendiente, green=Completado/Completada, amber=En Progreso, gray=Cancelado)
+- **Information hierarchy**: tarea_id displayed in small muted monospace font; tarea name displayed with emphasis
 - **Reorderable columns** via ColumnConfigurator with drag-and-drop; order persisted to localStorage
 - **Inline detail accordion**: Each row has an expand button showing descripcion, notas_anteriores, and acciones inline
-- **Side drawer quick view**: PanelRightOpen button opens a Sheet from the right with tarea summary and acciones list
+- **Side drawer quick view**: PanelRightOpen button opens a Sheet from the right with tarea summary (tarea_id de-emphasized, tarea name as title) and compact acciones list
+- **Placeholder action buttons**: Each row has icon buttons for "Añadir Accion" and "Cambiar Fecha Siguiente Accion" (non-functional, future feature)
 - **Nueva Tarea dialog**: Create new tarea with button (tooltip shows Ctrl+Shift+N shortcut)
 - **Full-width layout**: No max-width constraint; uses all available width
 - **Server-side pagination** with configurable page size
@@ -193,10 +197,11 @@ frontend/
 
 #### 6.3 Detail Page (`/detail/:tarea_id`)
 
-- **Header**: tarea_id, EstadoBadge (colored estado), responsable Badge, tarea title, edit button
-- **Acciones Realizadas** (primary content, first section): CRUD table sorted by fecha_accion descending, with sticky headers and EstadoBadge for estado
-- **Notas Anteriores** (second section): Read-only display of original notas text (shown only when non-empty)
+- **Header**: tarea_id (small muted monospace), tarea name (primary heading, text-2xl), EstadoBadge (colored estado), responsable Badge, fecha_siguiente_accion Badge with Calendar icon, edit button
+- **Acciones Realizadas** (primary content, first section): Compact CRUD table sorted by fecha_accion descending, with sticky headers and EstadoBadge (size=sm) for estado; full width on lg+ screens
+- **Notas Anteriores** (second section, accordion): Collapsible accordion (closed by default), read-only display of original notas text (shown only when non-empty)
 - **Datos de la Tarea** (third section, accordion): Collapsible accordion (collapsed by default) showing all tarea fields with formatted dates and EstadoBadge
+- **Keyboard shortcuts**: Ctrl+Shift+F navigates to Search page with focus on tarea filter input
 - **Edit tarea dialog**: Responsable uses a dropdown populated from `/api/v1/responsables`
 - **Back navigation**: Uses `navigate(-1)` (browser history) to preserve Search page state
 
@@ -277,7 +282,7 @@ ClerkProvider
 | `ProtectedRoute.jsx` | Auth guard, redirects unauthenticated users |
 | `ColumnConfigurator.jsx` | Column visibility + drag-and-drop reordering dialog |
 | `SortableColumnItem.jsx` | Draggable column item for ColumnConfigurator |
-| `EstadoBadge.jsx` | Colored estado badge: maps estado values to Badge variants (destructive, success, secondary, outline) |
+| `EstadoBadge.jsx` | Colored estado badge: maps tarea estados (En Curso→red, Completado→green, Cancelado→gray) and accion estados (Pendiente→red, En Progreso→amber, Completada→green) to Badge variants |
 | `EmptyState.jsx` | Styled empty state with icon and message |
 | `ErrorBoundary.jsx` | Error boundary with retry button |
 | `NotFoundPage.jsx` | 404 page |

@@ -222,8 +222,8 @@ During migration, the `Notas` column from the Excel tareas data is:
 |-------|--------|-------------|
 | `/` | Public | Landing page with hero section and changelog |
 | `/sign-in`, `/sign-up` | Public | Clerk authentication |
-| `/search` | Private | Task search with labeled filters, lateral sidebar (xl+), sortable/reorderable columns, colored estado tags, inline detail accordion, side drawer quick view, keyboard shortcuts, new tarea dialog |
-| `/detail/:tarea_id` | Private | Task header with estado + responsable badges, acciones CRUD table (sorted desc, sticky headers), notas, datos accordion (collapsed), back navigation with state preservation |
+| `/search` | Private | Task search with labeled filters, lateral sidebar (xl+), inline column filters, sortable/reorderable columns, colored estado tags, sticky title bar, inline detail accordion, side drawer quick view, placeholder action buttons, keyboard shortcuts, new tarea dialog |
+| `/detail/:tarea_id` | Private | Task header with tarea name prominent + tarea_id muted, estado + responsable + fecha_siguiente_accion badges, compact acciones CRUD table (sorted desc, sticky headers), notas accordion (collapsed), datos accordion (collapsed), Ctrl+Shift+F shortcut, back navigation with state preservation |
 | `/chat` | Private | AI assistant with SSE streaming |
 
 ## MCP Tools

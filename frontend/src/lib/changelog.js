@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.004",
+    feature: 4,
+    title: "Mejoras de Interfaz",
+    summary: "Filtros por columna en tabla de busqueda, jerarquia visual mejorada (tarea_id secundario, nombre de tarea prominente), etiquetas de estado con colores para acciones, acciones compactas, notas en acordeon, fecha siguiente accion en cabecera de detalle, atajo Ctrl+Shift+F desde detalle, titulo fijo en busqueda, y botones de accion placeholder."
+  },
+  {
     version: "1.003",
     feature: 3,
     title: "Mejoras UI: Busqueda y Detalle",

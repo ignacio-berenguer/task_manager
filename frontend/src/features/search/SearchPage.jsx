@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Layout } from '@/components/layout/Layout'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { Button } from '@/components/ui/button'
@@ -13,7 +13,8 @@ import { ColumnConfigurator } from '@/components/shared/ColumnConfigurator'
 import { EstadoBadge } from '@/components/shared/EstadoBadge'
 import { formatDate } from '@/lib/formatDate'
 import { createStorage } from '@/lib/storage'
-import { Search, X, Plus, ChevronDown, ChevronRight, PanelRightOpen } from 'lucide-react'
+import { Search, X, Plus, ChevronDown, ChevronRight, PanelRightOpen, ListPlus, CalendarClock } from 'lucide-react'
+import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
 import apiClient from '@/api/client'
 
@@ -62,6 +63,7 @@ function clearSessionState() {
 export default function SearchPage() {
   usePageTitle('Busqueda')
   const navigate = useNavigate()
+  const location = useLocation()
   const sidebarTareaRef = useRef(null)
   const mobileTareaRef = useRef(null)
 
@@ -88,6 +90,9 @@ export default function SearchPage() {
     searchStorage.loadJSON('columns', DEFAULT_COLUMNS)
   )
 
+  // Column filters (client-side)
+  const [columnFilters, setColumnFilters] = useState({})
+
   // Expanded rows (inline accordion)
   const [expandedRows, setExpandedRows] = useState(new Set())
   const accionesCache = useRef(new Map())
@@ -111,6 +116,7 @@ export default function SearchPage() {
 
   const doSearch = useCallback(async (pageOverride = 0) => {
     setLoading(true)
+    setColumnFilters({})
     try {
       const searchFilters = []
       if (filters.tarea_id) searchFilters.push({ field: 'tarea_id', operator: 'ilike', value: `%${filters.tarea_id}%` })
@@ -201,6 +207,21 @@ export default function SearchPage() {
     return () => document.removeEventListener('keydown', handler)
   }, [])
 
+  // Handle focusTareaInput from navigation state (e.g. Ctrl+Shift+F from DetailPage)
+  useEffect(() => {
+    if (location.state?.focusTareaInput) {
+      setTimeout(() => {
+        const sidebarEl = sidebarTareaRef.current
+        if (sidebarEl && sidebarEl.offsetParent !== null) {
+          sidebarEl.focus()
+        } else {
+          mobileTareaRef.current?.focus()
+        }
+      }, 100)
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+  }, [location.state]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Filter keydown (Enter to search)
   const handleFilterKeyDown = (e) => {
     if (e.key === 'Enter') {
@@ -272,11 +293,26 @@ export default function SearchPage() {
     }
   }
 
+  // Client-side column filtering
+  const filteredData = useMemo(() => {
+    if (!results?.data) return []
+    const activeFilters = Object.entries(columnFilters).filter(([, v]) => v)
+    if (activeFilters.length === 0) return results.data
+    return results.data.filter(row =>
+      activeFilters.every(([key, value]) => {
+        const cellValue = row[key] || ''
+        return cellValue.toString().toLowerCase().includes(value.toLowerCase())
+      })
+    )
+  }, [results?.data, columnFilters])
+
   const totalPages = results ? Math.ceil(results.total / pageSize) : 0
 
   // Render a cell value
   const renderCell = (row, col) => {
     const val = row[col]
+    if (col === 'tarea_id') return <span className="text-xs text-muted-foreground font-mono">{val || '-'}</span>
+    if (col === 'tarea') return <span className="font-medium">{val || '-'}</span>
     if (col === 'estado') return <EstadoBadge estado={val} />
     if (col === 'fecha_siguiente_accion' || col === 'fecha_creacion' || col === 'fecha_actualizacion') return formatDate(val)
     return val || '-'
@@ -365,8 +401,8 @@ export default function SearchPage() {
   return (
     <Layout>
       <div className="w-full px-4 py-6 xl:px-8">
-        {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
+        {/* Header (sticky) */}
+        <div className="sticky top-16 z-30 -mx-4 xl:-mx-8 mb-6 flex items-center justify-between bg-background px-4 xl:px-8 py-3 border-b">
           <h1 className="text-2xl font-bold">Busqueda de Tareas</h1>
           <div className="flex items-center gap-2">
             <Tooltip>
@@ -384,7 +420,7 @@ export default function SearchPage() {
         <div className="flex gap-6">
           {/* Sidebar filters - xl+ */}
           <aside className="hidden xl:block w-72 shrink-0">
-            <div className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto rounded-lg border bg-card p-4">
+            <div className="sticky top-[8rem] max-h-[calc(100vh-9rem)] overflow-y-auto rounded-lg border bg-card p-4">
               <h2 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">Filtros</h2>
               {filterPanel}
             </div>
@@ -437,10 +473,41 @@ export default function SearchPage() {
                             {sortField === col && (sortDir === 'asc' ? ' ↑' : ' ↓')}
                           </th>
                         ))}
+                        <th className="w-[80px] px-2 py-3 text-center font-medium">Acciones</th>
+                      </tr>
+                      <tr className="border-b">
+                        <th className="w-8" />
+                        <th className="w-8" />
+                        {columns.map(col => (
+                          <th key={`filter-${col}`} className="px-4 py-1">
+                            {['tarea_id', 'tarea', 'responsable', 'tema'].includes(col) ? (
+                              <Input
+                                className="h-7 text-xs"
+                                placeholder="Filtrar..."
+                                value={columnFilters[col] || ''}
+                                onChange={e => setColumnFilters(f => ({ ...f, [col]: e.target.value }))}
+                                onClick={e => e.stopPropagation()}
+                              />
+                            ) : col === 'estado' ? (
+                              <select
+                                className="h-7 w-full rounded-md border bg-background px-2 text-xs"
+                                value={columnFilters[col] || ''}
+                                onChange={e => setColumnFilters(f => ({ ...f, [col]: e.target.value }))}
+                                onClick={e => e.stopPropagation()}
+                              >
+                                <option value="">Todos</option>
+                                {filterOptions?.estados?.map(e => (
+                                  <option key={e} value={e}>{e}</option>
+                                ))}
+                              </select>
+                            ) : null}
+                          </th>
+                        ))}
+                        <th className="w-[80px]" />
                       </tr>
                     </thead>
                     <tbody>
-                      {results.data.map(row => (
+                      {filteredData.map(row => (
                         <RowWithExpand
                           key={row.tarea_id}
                           row={row}
@@ -493,10 +560,10 @@ export default function SearchPage() {
           {drawerTarea && (
             <>
               <SheetHeader>
-                <SheetTitle>{drawerTarea.tarea_id}</SheetTitle>
+                <p className="text-xs text-muted-foreground font-mono">{drawerTarea.tarea_id}</p>
+                <SheetTitle className="text-lg font-semibold">{drawerTarea.tarea}</SheetTitle>
               </SheetHeader>
               <div className="px-6 pb-6 space-y-4">
-                <h3 className="font-medium">{drawerTarea.tarea}</h3>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <span className="text-muted-foreground">Responsable</span>
@@ -523,14 +590,14 @@ export default function SearchPage() {
                   ) : drawerAcciones.length === 0 ? (
                     <p className="text-sm text-muted-foreground">Sin acciones.</p>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       {drawerAcciones.map(acc => (
-                        <div key={acc.id} className="rounded border p-2 text-sm">
-                          <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">{formatDate(acc.fecha_accion)}</span>
+                        <div key={acc.id} className="rounded border px-2 py-1.5 text-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground shrink-0">{formatDate(acc.fecha_accion)}</span>
+                            <span className="flex-1 truncate">{acc.accion}</span>
                             <EstadoBadge estado={acc.estado} size="sm" />
                           </div>
-                          <p className="mt-1">{acc.accion}</p>
                         </div>
                       ))}
                     </div>
@@ -646,10 +713,36 @@ function RowWithExpand({ row, columns, renderCell, expanded, onToggleExpand, acc
             {renderCell(row, col)}
           </td>
         ))}
+        <td className="px-2 py-3 text-center">
+          <div className="flex items-center justify-center gap-0.5">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="rounded p-1 hover:bg-muted text-muted-foreground hover:text-foreground"
+                  onClick={(e) => { e.stopPropagation(); toast.info('Proximamente') }}
+                >
+                  <ListPlus className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Añadir Accion</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="rounded p-1 hover:bg-muted text-muted-foreground hover:text-foreground"
+                  onClick={(e) => { e.stopPropagation(); toast.info('Proximamente') }}
+                >
+                  <CalendarClock className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Cambiar Fecha Siguiente Accion</TooltipContent>
+            </Tooltip>
+          </div>
+        </td>
       </tr>
       {expanded && (
         <tr className="border-b bg-muted/20">
-          <td colSpan={columns.length + 2} className="px-6 py-4">
+          <td colSpan={columns.length + 3} className="px-6 py-4">
             <div className="space-y-3">
               {row.descripcion && (
                 <div>

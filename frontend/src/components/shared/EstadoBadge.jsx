@@ -2,13 +2,19 @@ import { Badge } from '@/components/ui/badge'
 
 function getEstadoVariant(estado) {
   if (!estado) return 'outline'
-  switch (estado) {
-    case 'En Curso':
+  const normalized = estado.toLowerCase()
+  switch (normalized) {
+    case 'en curso':
+    case 'pendiente':
       return 'destructive'
-    case 'Completado':
-    case 'Continuar en otra tarea':
+    case 'completado':
+    case 'completada':
+    case 'continuar en otra tarea':
       return 'success'
-    case 'Cancelado':
+    case 'en progreso':
+      return 'warning'
+    case 'cancelado':
+    case 'cancelada':
       return 'secondary'
     default:
       return 'outline'
