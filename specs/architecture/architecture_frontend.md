@@ -76,7 +76,7 @@ frontend/
 │   ├── api/
 │   │   └── client.js              # Axios instance + Clerk JWT interceptors
 │   ├── components/
-│   │   ├── ui/                    # 20 shadcn-style UI components
+│   │   ├── ui/                    # 21 shadcn-style UI components
 │   │   │   ├── accordion.jsx
 │   │   │   ├── badge.jsx
 │   │   │   ├── button.jsx
@@ -92,6 +92,7 @@ frontend/
 │   │   │   ├── input.jsx
 │   │   │   ├── label.jsx
 │   │   │   ├── multi-select.jsx
+│   │   │   ├── popover.jsx
 │   │   │   ├── select.jsx
 │   │   │   ├── sheet.jsx
 │   │   │   ├── skeleton.jsx
@@ -122,6 +123,8 @@ frontend/
 │   │   │   └── SearchPage.jsx     # Task search with filters, table, pagination
 │   │   ├── detail/
 │   │   │   └── DetailPage.jsx     # Task info card + acciones CRUD table
+│   │   ├── shared/
+│   │   │   └── ActionDialogs.jsx  # Reusable AddAccionDialog + CambiarFechaDialog
 │   │   └── chat/
 │   │       ├── ChatPage.jsx       # AI assistant chat page
 │   │       └── ChatContext.jsx    # Chat state provider (conversation persistence)
@@ -176,7 +179,8 @@ frontend/
 
 - **5 labeled filter criteria**: tarea_id, tarea (nombre), responsable, tema, estado — each with visible label
 - **Lateral filter sidebar** on xl+ screens; collapsible accordion on smaller screens
-- **Inline column filters**: Client-side filter row below column headers for quick text/dropdown filtering of visible results
+- **Column filter popovers**: Filterable column headers display a funnel icon that opens a popover with filter input on click; icon turns colored when filter is active
+- **Active filter tags**: Removable badge tags next to result count showing all active server-side filters; clicking X removes the filter and re-triggers search
 - **Default filter**: estado defaults to "En Curso"; "Limpiar" resets to "En Curso"
 - **Default sort**: fecha_siguiente_accion ascending
 - **Auto-search** on initial page load with default filters
@@ -188,7 +192,7 @@ frontend/
 - **Reorderable columns** via ColumnConfigurator with drag-and-drop; order persisted to localStorage
 - **Inline detail accordion**: Each row has an expand button showing descripcion, notas_anteriores, and acciones inline
 - **Side drawer quick view**: PanelRightOpen button opens a Sheet from the right with tarea summary (tarea_id de-emphasized, tarea name as title) and compact acciones list
-- **Placeholder action buttons**: Each row has icon buttons for "Añadir Accion" and "Cambiar Fecha Siguiente Accion" (non-functional, future feature)
+- **Action buttons**: Each row has icon buttons for "Añadir Accion" (opens AddAccionDialog) and "Cambiar Fecha Siguiente Accion" (opens CambiarFechaDialog) using shared dialog components from `features/shared/ActionDialogs.jsx`
 - **Nueva Tarea dialog**: Create new tarea with button (tooltip shows Ctrl+Shift+N shortcut)
 - **Full-width layout**: No max-width constraint; uses all available width
 - **Server-side pagination** with configurable page size
@@ -197,8 +201,8 @@ frontend/
 
 #### 6.3 Detail Page (`/detail/:tarea_id`)
 
-- **Header**: tarea_id (small muted monospace), tarea name (primary heading, text-2xl), EstadoBadge (colored estado), responsable Badge, fecha_siguiente_accion Badge with Calendar icon, edit button
-- **Acciones Realizadas** (primary content, first section): Compact CRUD table sorted by fecha_accion descending, with sticky headers and EstadoBadge (size=sm) for estado; full width on lg+ screens
+- **Header**: tarea_id (small muted monospace), tarea name (primary heading, text-2xl), EstadoBadge (colored estado), responsable Badge, fecha_siguiente_accion Badge with Calendar icon, CalendarClock button to change fecha (opens CambiarFechaDialog), edit button
+- **Acciones Realizadas** (primary content, first section): Compact CRUD table sorted by fecha_accion descending, with sticky headers and EstadoBadge (size=sm) for estado; "Nueva Accion" button opens AddAccionDialog (creates accion with estado Pendiente and updates tarea's fecha_siguiente_accion); full width on lg+ screens
 - **Notas Anteriores** (second section, accordion): Collapsible accordion (closed by default), read-only display of original notas text (shown only when non-empty)
 - **Datos de la Tarea** (third section, accordion): Collapsible accordion (collapsed by default) showing all tarea fields with formatted dates and EstadoBadge
 - **Keyboard shortcuts**: Ctrl+Shift+F navigates to Search page with focus on tarea filter input
@@ -242,7 +246,7 @@ ClerkProvider
 
 #### 8.1 UI Components (`components/ui/`)
 
-20 reusable components following Shadcn/ui patterns:
+21 reusable components following Shadcn/ui patterns:
 
 | Component | Description |
 |-----------|-------------|
@@ -261,6 +265,7 @@ ClerkProvider
 | `input.jsx` | Text input field |
 | `label.jsx` | Form label |
 | `multi-select.jsx` | Multi-select dropdown with checkboxes |
+| `popover.jsx` | Click-triggered floating panel with click-outside and Escape-to-close |
 | `select.jsx` | Single-select dropdown |
 | `sheet.jsx` | Sliding side panel (portal-based) |
 | `skeleton.jsx` | Loading skeleton placeholder |
@@ -367,5 +372,7 @@ VITE_APP_NAME=Task Manager
 **Spanish UI:** All user-facing text is in Spanish. Code identifiers use Spanish column names without accents (e.g., `descripcion`, `accion`).
 
 **Error Handling:** `ErrorBoundary` wraps each protected route for graceful error recovery with a retry button.
+
+**Shared Feature Components:** Reusable dialog components in `features/shared/ActionDialogs.jsx` are used by both SearchPage and DetailPage for "Añadir Accion" and "Cambiar Fecha Siguiente Accion" operations. Each dialog manages its own form state, API calls, and toast notifications, and accepts an `onSuccess` callback to refresh the parent page's data.
 
 **Code Splitting:** All protected routes use `React.lazy()` with `Suspense` and page-specific skeleton fallbacks for optimal loading performance.

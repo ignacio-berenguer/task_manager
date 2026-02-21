@@ -106,7 +106,7 @@ task_manager/
 │   ├── src/
 │   │   ├── api/client.js            # Axios + Clerk JWT interceptors
 │   │   ├── components/
-│   │   │   ├── ui/                  # 20 shadcn-style components
+│   │   │   ├── ui/                  # 21 shadcn-style components
 │   │   │   ├── layout/              # Navbar, Footer, Layout, GlobalSearch
 │   │   │   ├── theme/               # ThemeProvider, ModeToggle, ColorTheme
 │   │   │   └── shared/              # ProtectedRoute, ColumnConfigurator, EstadoBadge, ErrorBoundary, etc.
@@ -114,6 +114,7 @@ task_manager/
 │   │   │   ├── landing/             # Public landing page (hero + changelog)
 │   │   │   ├── search/              # Task search + data grid
 │   │   │   ├── detail/              # Task detail + acciones CRUD
+│   │   │   ├── shared/              # Shared dialogs (AddAccion, CambiarFecha)
 │   │   │   └── chat/                # AI assistant chat
 │   │   ├── lib/                     # changelog, estadoOrder, formatDate, logger, storage, utils, version, themes
 │   │   └── providers/               # Clerk, Query, Theme, Chat, Toaster
@@ -222,8 +223,8 @@ During migration, the `Notas` column from the Excel tareas data is:
 |-------|--------|-------------|
 | `/` | Public | Landing page with hero section and changelog |
 | `/sign-in`, `/sign-up` | Public | Clerk authentication |
-| `/search` | Private | Task search with labeled filters, lateral sidebar (xl+), inline column filters, sortable/reorderable columns, colored estado tags, sticky title bar, inline detail accordion, side drawer quick view, placeholder action buttons, keyboard shortcuts, new tarea dialog |
-| `/detail/:tarea_id` | Private | Task header with tarea name prominent + tarea_id muted, estado + responsable + fecha_siguiente_accion badges, compact acciones CRUD table (sorted desc, sticky headers), notas accordion (collapsed), datos accordion (collapsed), Ctrl+Shift+F shortcut, back navigation with state preservation |
+| `/search` | Private | Task search with labeled filters, lateral sidebar (xl+), column filter popovers (funnel icon), active filter tags (removable badges), sortable/reorderable columns, colored estado tags, sticky title bar, inline detail accordion, side drawer quick view, quick action buttons (add accion, change fecha), keyboard shortcuts, new tarea dialog |
+| `/detail/:tarea_id` | Private | Task header with tarea name prominent + tarea_id muted, estado + responsable + fecha_siguiente_accion badges + cambiar fecha button, compact acciones CRUD table (sorted desc, sticky headers), add accion dialog, notas accordion (collapsed), datos accordion (collapsed), Ctrl+Shift+F shortcut, back navigation with state preservation |
 | `/chat` | Private | AI assistant with SSE streaming |
 
 ## MCP Tools

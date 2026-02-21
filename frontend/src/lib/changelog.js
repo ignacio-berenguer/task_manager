@@ -1,5 +1,17 @@
 export const CHANGELOG = [
   {
+    version: "1.006",
+    feature: 6,
+    title: "Acciones Rapidas",
+    summary: "Añadir acciones y cambiar fecha siguiente accion directamente desde la pagina de busqueda y detalle. Los botones de accion en la tabla de resultados ahora son funcionales con dialogos modales."
+  },
+  {
+    version: "1.005",
+    feature: 5,
+    title: "Tags de Filtros Activos y Filtros por Columna en Popover",
+    summary: "Los filtros activos de busqueda se muestran como tags removibles junto al conteo de resultados. Los filtros por columna se acceden mediante un icono de embudo en el encabezado de cada columna, liberando espacio vertical en la tabla."
+  },
+  {
     version: "1.004",
     feature: 4,
     title: "Mejoras de Interfaz",

@@ -11,9 +11,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { ColumnConfigurator } from '@/components/shared/ColumnConfigurator'
 import { EstadoBadge } from '@/components/shared/EstadoBadge'
+import { AddAccionDialog, CambiarFechaDialog } from '@/features/shared/ActionDialogs'
 import { formatDate } from '@/lib/formatDate'
 import { createStorage } from '@/lib/storage'
-import { Search, X, Plus, ChevronDown, ChevronRight, PanelRightOpen, ListPlus, CalendarClock } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
+import { Search, X, Plus, ChevronDown, ChevronRight, PanelRightOpen, ListPlus, CalendarClock, Filter } from 'lucide-react'
 import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
 import apiClient from '@/api/client'
@@ -36,6 +39,10 @@ const ALL_COLUMNS = [
 ]
 
 const COLUMN_LABELS = Object.fromEntries(ALL_COLUMNS.map(c => [c.id, c.label]))
+
+const FILTERABLE_COLUMNS = ['tarea_id', 'tarea', 'responsable', 'tema', 'estado']
+
+const FILTER_LABELS = { tarea_id: 'ID', tarea: 'Tarea', responsable: 'Responsable', tema: 'Tema', estado: 'Estado' }
 
 const searchStorage = createStorage('search')
 
@@ -106,6 +113,10 @@ export default function SearchPage() {
   const [newTareaOpen, setNewTareaOpen] = useState(false)
   const [newTareaForm, setNewTareaForm] = useState({ tarea_id: '', tarea: '', responsable: '', tema: '', estado: '' })
   const [newTareaLoading, setNewTareaLoading] = useState(false)
+
+  // Action dialogs (shared components)
+  const [addAccionTarget, setAddAccionTarget] = useState(null)
+  const [cambiarFechaTarget, setCambiarFechaTarget] = useState(null)
 
   // Fetch filter options on first load
   useEffect(() => {
@@ -308,6 +319,36 @@ export default function SearchPage() {
 
   const totalPages = results ? Math.ceil(results.total / pageSize) : 0
 
+  // Active filter tags (server-side filters)
+  const activeFilterTags = useMemo(() =>
+    Object.entries(filters)
+      .filter(([, value]) => value)
+      .map(([key, value]) => ({ key, label: FILTER_LABELS[key], value })),
+    [filters]
+  )
+
+  // Remove a single filter and re-search
+  const removeFilterTag = useCallback((key) => {
+    const next = { ...filters, [key]: '' }
+    setFilters(next)
+    // Need to search with the updated filters — use a ref-based approach
+    // since doSearch depends on filters state which won't be updated yet.
+    // We schedule a search via setTimeout(0) to run after state update.
+    setTimeout(() => {}, 0)
+  }, [filters])
+
+  // Watch for filter removal to trigger search
+  const prevFiltersRef = useRef(filters)
+  useEffect(() => {
+    const prev = prevFiltersRef.current
+    prevFiltersRef.current = filters
+    // If any filter was cleared (went from non-empty to empty), auto-search
+    const wasCleared = Object.keys(filters).some(k => prev[k] && !filters[k])
+    if (wasCleared && results) {
+      doSearch(0)
+    }
+  }, [filters]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Render a cell value
   const renderCell = (row, col) => {
     const val = row[col]
@@ -445,17 +486,31 @@ export default function SearchPage() {
             {/* Results */}
             {results && (
               <div className="rounded-lg border bg-card">
-                <div className="flex items-center justify-between border-b px-4 py-3">
+                <div className="flex flex-wrap items-center gap-2 border-b px-4 py-3">
                   <span className="text-sm text-muted-foreground">
                     {results.total} resultado{results.total !== 1 ? 's' : ''}
                   </span>
-                  <ColumnConfigurator
-                    selectedColumns={columns}
-                    onColumnsChange={handleColumnsChange}
-                    onReset={() => {}}
-                    allColumns={ALL_COLUMNS}
-                    defaultColumns={DEFAULT_COLUMNS}
-                  />
+                  {activeFilterTags.map(tag => (
+                    <Badge key={tag.key} variant="outline" className="gap-1 pl-2 pr-1 py-0.5 text-xs">
+                      <span className="text-muted-foreground">{tag.label}:</span>
+                      <span>{tag.value}</span>
+                      <button
+                        className="ml-0.5 rounded-full p-0.5 hover:bg-muted"
+                        onClick={() => removeFilterTag(tag.key)}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                  <div className="ml-auto">
+                    <ColumnConfigurator
+                      selectedColumns={columns}
+                      onColumnsChange={handleColumnsChange}
+                      onReset={() => {}}
+                      allColumns={ALL_COLUMNS}
+                      defaultColumns={DEFAULT_COLUMNS}
+                    />
+                  </div>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -469,45 +524,71 @@ export default function SearchPage() {
                             className="cursor-pointer px-4 py-3 text-left font-medium hover:bg-muted"
                             onClick={() => handleSort(col)}
                           >
-                            {COLUMN_LABELS[col] || col}
-                            {sortField === col && (sortDir === 'asc' ? ' ↑' : ' ↓')}
+                            <div className="flex items-center gap-1">
+                              <span>{COLUMN_LABELS[col] || col}</span>
+                              {sortField === col && (
+                                <span>{sortDir === 'asc' ? ' ↑' : ' ↓'}</span>
+                              )}
+                              {FILTERABLE_COLUMNS.includes(col) && (
+                                <Popover>
+                                  <PopoverTrigger>
+                                    <Filter className={cn(
+                                      'h-3.5 w-3.5 ml-1',
+                                      columnFilters[col] ? 'text-primary' : 'text-muted-foreground/50 hover:text-muted-foreground'
+                                    )} />
+                                  </PopoverTrigger>
+                                  <PopoverContent align="start" className="p-2 min-w-[10rem]">
+                                    <div className="flex items-center gap-1">
+                                      {col === 'estado' ? (
+                                        <select
+                                          autoFocus
+                                          className="h-8 w-full rounded-md border bg-background px-2 text-xs"
+                                          value={columnFilters[col] || ''}
+                                          onChange={e => setColumnFilters(f => ({ ...f, [col]: e.target.value }))}
+                                          onClick={e => e.stopPropagation()}
+                                        >
+                                          <option value="">Todos</option>
+                                          {filterOptions?.estados?.map(e => (
+                                            <option key={e} value={e}>{e}</option>
+                                          ))}
+                                        </select>
+                                      ) : (
+                                        <Input
+                                          autoFocus
+                                          className="h-8 text-xs"
+                                          placeholder={`Filtrar ${COLUMN_LABELS[col]}...`}
+                                          value={columnFilters[col] || ''}
+                                          onChange={e => setColumnFilters(f => ({ ...f, [col]: e.target.value }))}
+                                          onClick={e => e.stopPropagation()}
+                                        />
+                                      )}
+                                      {columnFilters[col] && (
+                                        <button
+                                          className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                          onClick={(e) => { e.stopPropagation(); setColumnFilters(f => ({ ...f, [col]: '' })) }}
+                                          title="Limpiar filtro"
+                                        >
+                                          <X className="h-3.5 w-3.5" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                              )}
+                            </div>
                           </th>
                         ))}
                         <th className="w-[80px] px-2 py-3 text-center font-medium">Acciones</th>
                       </tr>
-                      <tr className="border-b">
-                        <th className="w-8" />
-                        <th className="w-8" />
-                        {columns.map(col => (
-                          <th key={`filter-${col}`} className="px-4 py-1">
-                            {['tarea_id', 'tarea', 'responsable', 'tema'].includes(col) ? (
-                              <Input
-                                className="h-7 text-xs"
-                                placeholder="Filtrar..."
-                                value={columnFilters[col] || ''}
-                                onChange={e => setColumnFilters(f => ({ ...f, [col]: e.target.value }))}
-                                onClick={e => e.stopPropagation()}
-                              />
-                            ) : col === 'estado' ? (
-                              <select
-                                className="h-7 w-full rounded-md border bg-background px-2 text-xs"
-                                value={columnFilters[col] || ''}
-                                onChange={e => setColumnFilters(f => ({ ...f, [col]: e.target.value }))}
-                                onClick={e => e.stopPropagation()}
-                              >
-                                <option value="">Todos</option>
-                                {filterOptions?.estados?.map(e => (
-                                  <option key={e} value={e}>{e}</option>
-                                ))}
-                              </select>
-                            ) : null}
-                          </th>
-                        ))}
-                        <th className="w-[80px]" />
-                      </tr>
                     </thead>
                     <tbody>
-                      {filteredData.map(row => (
+                      {filteredData.length === 0 ? (
+                        <tr>
+                          <td colSpan={columns.length + 3} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                            No se encontraron resultados con los filtros de columna aplicados.
+                          </td>
+                        </tr>
+                      ) : filteredData.map(row => (
                         <RowWithExpand
                           key={row.tarea_id}
                           row={row}
@@ -518,6 +599,8 @@ export default function SearchPage() {
                           accionesCache={accionesCache}
                           onRowClick={() => goToDetail(row.tarea_id)}
                           onOpenDrawer={(e) => openDrawer(e, row)}
+                          onAddAccion={() => setAddAccionTarget({ tarea_id: row.tarea_id })}
+                          onCambiarFecha={() => setCambiarFechaTarget({ tarea_id: row.tarea_id, fecha_siguiente_accion: row.fecha_siguiente_accion })}
                         />
                       ))}
                     </tbody>
@@ -676,12 +759,29 @@ export default function SearchPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Add Accion Dialog (shared) */}
+      <AddAccionDialog
+        open={!!addAccionTarget}
+        onOpenChange={(open) => { if (!open) setAddAccionTarget(null) }}
+        tareaId={addAccionTarget?.tarea_id}
+        onSuccess={() => doSearch(page)}
+      />
+
+      {/* Cambiar Fecha Dialog (shared) */}
+      <CambiarFechaDialog
+        open={!!cambiarFechaTarget}
+        onOpenChange={(open) => { if (!open) setCambiarFechaTarget(null) }}
+        tareaId={cambiarFechaTarget?.tarea_id}
+        currentFecha={cambiarFechaTarget?.fecha_siguiente_accion}
+        onSuccess={() => doSearch(page)}
+      />
     </Layout>
   )
 }
 
 // Row component with expand/collapse
-function RowWithExpand({ row, columns, renderCell, expanded, onToggleExpand, accionesCache, onRowClick, onOpenDrawer }) {
+function RowWithExpand({ row, columns, renderCell, expanded, onToggleExpand, accionesCache, onRowClick, onOpenDrawer, onAddAccion, onCambiarFecha }) {
   const cachedAcciones = accionesCache.current.get(row.tarea_id) || []
 
   return (
@@ -719,7 +819,7 @@ function RowWithExpand({ row, columns, renderCell, expanded, onToggleExpand, acc
               <TooltipTrigger asChild>
                 <button
                   className="rounded p-1 hover:bg-muted text-muted-foreground hover:text-foreground"
-                  onClick={(e) => { e.stopPropagation(); toast.info('Proximamente') }}
+                  onClick={(e) => { e.stopPropagation(); onAddAccion?.() }}
                 >
                   <ListPlus className="h-4 w-4" />
                 </button>
@@ -730,7 +830,7 @@ function RowWithExpand({ row, columns, renderCell, expanded, onToggleExpand, acc
               <TooltipTrigger asChild>
                 <button
                   className="rounded p-1 hover:bg-muted text-muted-foreground hover:text-foreground"
-                  onClick={(e) => { e.stopPropagation(); toast.info('Proximamente') }}
+                  onClick={(e) => { e.stopPropagation(); onCambiarFecha?.() }}
                 >
                   <CalendarClock className="h-4 w-4" />
                 </button>
