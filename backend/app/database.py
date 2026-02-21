@@ -3,23 +3,13 @@ Database connection setup for the backend API.
 """
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from pathlib import Path
 
 from app.config import settings
 
-# Calculate database path: use configured path or auto-detect relative to project root
-if settings.DATABASE_PATH:
-    _db_path = Path(settings.DATABASE_PATH)
-else:
-    _backend_dir = Path(__file__).parent.parent
-    _project_root = _backend_dir.parent
-    _db_path = _project_root / "db" / "task_manager.db"
-
-DATABASE_URL = f"sqlite:///{_db_path}"
+DATABASE_URL = f"postgresql://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
 
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False},  # SQLite specific
     echo=settings.DATABASE_ECHO,
 )
 

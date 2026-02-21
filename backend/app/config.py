@@ -19,8 +19,12 @@ class Settings(BaseSettings):
     API_TITLE: str = "Task Manager API"
     API_VERSION: str = "1.0.0"
 
-    # Database
-    DATABASE_PATH: str = ""  # Empty = auto-detect relative to project root
+    # Database (PostgreSQL)
+    DB_HOST: str = "127.0.0.1"
+    DB_PORT: int = 5432
+    DB_USER: str = "task_user"
+    DB_PASSWORD: str = "your_secure_password"
+    DB_NAME: str = "tasksmanager"
     DATABASE_ECHO: bool = False
 
     # CORS

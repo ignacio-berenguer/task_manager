@@ -4,19 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Task Manager — a full-stack task management system. The system imports tasks from an Excel workbook into a SQLite database, exposes them through a REST API, and provides a web application with search, detail views, and CRUD operations.
+Task Manager — a full-stack task management system. The system imports tasks from an Excel workbook into a PostgreSQL database, exposes them through a REST API, and provides a web application with search, detail views, and CRUD operations.
 
 **Four Modules:**
 
 | Module | Technology | Purpose |
 |--------|-----------|---------|
-| `management/` | Python 3.12 + pandas | CLI tool: Excel-to-SQLite migration |
-| `backend/` | Python 3.12 + FastAPI + SQLAlchemy | REST API with CRUD, flexible search, AI agent |
+| `management/` | Python 3.12 + pandas + psycopg2 | CLI tool: Excel-to-PostgreSQL migration |
+| `backend/` | Python 3.12 + FastAPI + SQLAlchemy + psycopg2 | REST API with CRUD, flexible search, AI agent |
 | `frontend/` | React 19 + Vite + Tailwind CSS | SPA with landing, search, detail, AI chat |
 | `mcp_server/` | Python 3.12 + MCP SDK + httpx | MCP server for AI agents: 6 tools |
 
 **Shared Resources:**
-- `db/` — SQLite database + schema DDL
+- `db/` — PostgreSQL schema DDL
 - `logs/` — Centralized log directory (all modules)
 - `specs/` — Technical specifications, architecture docs, feature specs
 
@@ -28,13 +28,12 @@ Task Manager — a full-stack task management system. The system imports tasks f
 cd management
 uv sync
 uv run python manage.py complete_process       # Full pipeline: recreate + migrate
-uv run python manage.py init                    # Create .db file + schema
+uv run python manage.py init                    # Initialize schema on PostgreSQL
 uv run python manage.py recreate_tables         # Drop all tables, recreate from schema.sql
-uv run python manage.py migrate                 # Excel -> SQLite
-uv run python manage.py migrate --db custom.db  # Custom database path
+uv run python manage.py migrate                 # Excel -> PostgreSQL
 ```
 
-**Dependencies:** pandas, openpyxl (managed via `uv`)
+**Dependencies:** pandas, openpyxl, psycopg2-binary (managed via `uv`)
 
 ### Backend (FastAPI API)
 
@@ -46,7 +45,7 @@ uv run python -m app.main                    # Uses API_PORT from .env (default:
 
 - Swagger UI: http://localhost:8080/api/v1/docs
 
-**Dependencies:** fastapi, uvicorn, sqlalchemy, pydantic, pydantic-settings, python-dotenv, anthropic, httpx
+**Dependencies:** fastapi, uvicorn, sqlalchemy, psycopg2-binary, pydantic, pydantic-settings, python-dotenv, anthropic, httpx
 
 ### Frontend (React SPA)
 
@@ -89,14 +88,14 @@ task_manager/
 │       └── migrate/                 # engine.py
 │
 ├── db/
-│   ├── schema.sql                   # Complete DDL (5 tables)
-│   └── task_manager.db              # SQLite database (gitignored)
+│   ├── schema.sql                   # PostgreSQL DDL (5 tables)
+│   └── create_user.sql              # PostgreSQL user/permissions setup
 │
 ├── backend/                         # FastAPI REST API
 │   ├── app/
 │   │   ├── main.py                  # Entry point + CORS + router registration
 │   │   ├── config.py                # Environment config
-│   │   ├── database.py              # SQLite connection
+│   │   ├── database.py              # PostgreSQL connection
 │   │   ├── models.py                # 5 SQLAlchemy ORM models
 │   │   ├── schemas.py               # Pydantic validation schemas
 │   │   ├── crud.py                  # Reusable CRUD operations
@@ -176,16 +175,16 @@ task_manager/
 
 | Table | Primary Key | Description |
 |-------|-------------|-------------|
-| `tareas` | `tarea_id` (TEXT) | Core task records |
-| `acciones_realizadas` | `id` (INTEGER, autoincrement) | Actions linked to tasks via `tarea_id` FK |
-| `estados_tareas` | `id` (INTEGER, autoincrement) | Parametric: task status values |
-| `estados_acciones` | `id` (INTEGER, autoincrement) | Parametric: action status values |
-| `responsables` | `id` (INTEGER, autoincrement) | Parametric: responsable values (seeded from migration) |
+| `tareas` | `tarea_id` (SERIAL) | Core task records |
+| `acciones_realizadas` | `id` (SERIAL) | Actions linked to tasks via `tarea_id` FK |
+| `estados_tareas` | `id` (SERIAL) | Parametric: task status values |
+| `estados_acciones` | `id` (SERIAL) | Parametric: action status values |
+| `responsables` | `id` (SERIAL) | Parametric: responsable values (seeded from migration) |
 
 **Table Details:**
 
-- **tareas**: `tarea_id` (TEXT PK), `tarea`, `responsable`, `descripcion`, `fecha_siguiente_accion`, `tema`, `estado`, `notas_anteriores`, `fecha_creacion`, `fecha_actualizacion`
-- **acciones_realizadas**: `id` (INTEGER PK), `tarea_id` (FK to tareas, ON DELETE CASCADE), `accion`, `fecha_accion`, `estado`, `fecha_creacion`, `fecha_actualizacion`
+- **tareas**: `tarea_id` (SERIAL PK), `tarea`, `responsable`, `descripcion`, `fecha_siguiente_accion` (DATE), `tema`, `estado`, `notas_anteriores`, `fecha_creacion` (TIMESTAMP), `fecha_actualizacion` (TIMESTAMP)
+- **acciones_realizadas**: `id` (SERIAL PK), `tarea_id` (INTEGER FK to tareas.tarea_id, ON DELETE CASCADE), `accion`, `fecha_accion` (DATE), `estado`, `fecha_creacion` (TIMESTAMP), `fecha_actualizacion` (TIMESTAMP)
 - **estados_tareas**: `id`, `valor` (UNIQUE), `orden`, `color` — seeded with: Pendiente, En Progreso, Completada, Cancelada
 - **estados_acciones**: `id`, `valor` (UNIQUE), `orden`, `color` — seeded with: Pendiente, En Progreso, Completada
 - **responsables**: `id`, `valor` (UNIQUE), `orden` — seeded during migration from unique Excel responsable values
@@ -282,12 +281,16 @@ Each module has its own `.env` file (use `.env.example` as template). At minimum
 ```env
 LOG_LEVEL=INFO
 LOG_FILE=task_manager.log
-DATABASE_PATH=                    # Empty = auto-detect relative to project root
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_USER=task_user
+DB_PASSWORD=your_secure_password
+DB_NAME=tasksmanager
 EXCEL_SOURCE_DIR=./excel_source
 EXCEL_SOURCE_FILE=tareas.xlsx
 EXCEL_SHEET_TAREAS=Tareas
-EXCEL_SHEET_ACCIONES=Acciones
-BATCH_COMMIT_SIZE=500
+EXCEL_TABLE_TAREAS=Tareas
+BATCH_COMMIT_SIZE=100
 ```
 
 ### Backend
@@ -298,7 +301,11 @@ LOG_FILE=task_manager_backend.log
 API_PREFIX=/api/v1
 API_TITLE=Task Manager API
 API_VERSION=1.0.0
-DATABASE_PATH=                    # Empty = auto-detect relative to project root
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_USER=task_user
+DB_PASSWORD=your_secure_password
+DB_NAME=tasksmanager
 DATABASE_ECHO=false               # Set to true to log SQL queries
 CORS_ORIGINS=["http://localhost:5173"]
 ANTHROPIC_API_KEY=                # Required for AI agent
@@ -341,7 +348,7 @@ MCP_PORT=8001
 
 ### Data Handling
 
-- **Dates**: Stored as ISO 8601 TEXT in SQLite
+- **Dates**: `fecha_siguiente_accion` and `fecha_accion` use PostgreSQL `DATE` type; `fecha_creacion` and `fecha_actualizacion` use `TIMESTAMP` type. API serializes as ISO 8601 strings.
 - **Cascade deletes**: Deleting a tarea cascades to its acciones_realizadas (ON DELETE CASCADE)
 
 ### AI Agent
@@ -390,10 +397,10 @@ After implementing each feature:
 ## Testing
 
 ```bash
-# Management - Create and migrate
+# Management - Initialize schema and migrate
 cd management
-uv run python manage.py init --db test.db
-uv run python manage.py migrate --db test.db
+uv run python manage.py init
+uv run python manage.py migrate
 
 # Backend - Import check
 cd backend

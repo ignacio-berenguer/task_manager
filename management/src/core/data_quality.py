@@ -5,7 +5,6 @@ Kept generic — all functions are small utilities reusable across domains.
 """
 
 import re
-import sqlite3
 import unicodedata
 import logging
 from datetime import datetime, date
@@ -239,7 +238,7 @@ def normalize_multiline_text(value: Any) -> Optional[str]:
 
 # Data quality issues are now logged via the standard logging module in migrate.py
 def log_quality_issue(
-    conn: sqlite3.Connection,
+    conn,
     tabla_origen: str,
     registro_id: Optional[str],
     tipo_problema: str,
@@ -330,7 +329,7 @@ def normalize_portfolio_id(value: Any) -> Optional[str]:
 
 
 def validate_row_data(
-    conn: sqlite3.Connection,
+    conn,
     tabla: str,
     registro_id: Optional[str],
     row_data: dict,
@@ -409,7 +408,7 @@ def validate_row_data(
     return normalized
 
 
-def get_quality_summary(conn: sqlite3.Connection) -> pd.DataFrame:
+def get_quality_summary(conn) -> pd.DataFrame:
     """
     Get summary of data quality issues.
 

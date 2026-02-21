@@ -1,5 +1,6 @@
 """Pydantic validation schemas for Task Manager."""
 
+from datetime import date
 from typing import Any
 from pydantic import BaseModel
 
@@ -30,11 +31,10 @@ class PaginatedResponse(BaseModel):
 # --- Tareas ---
 
 class TareaCreate(BaseModel):
-    tarea_id: str
     tarea: str
     responsable: str | None = None
     descripcion: str | None = None
-    fecha_siguiente_accion: str | None = None
+    fecha_siguiente_accion: date | None = None
     tema: str | None = None
     estado: str | None = None
     notas_anteriores: str | None = None
@@ -44,7 +44,7 @@ class TareaUpdate(BaseModel):
     tarea: str | None = None
     responsable: str | None = None
     descripcion: str | None = None
-    fecha_siguiente_accion: str | None = None
+    fecha_siguiente_accion: date | None = None
     tema: str | None = None
     estado: str | None = None
     notas_anteriores: str | None = None
@@ -53,15 +53,15 @@ class TareaUpdate(BaseModel):
 # --- Acciones ---
 
 class AccionCreate(BaseModel):
-    tarea_id: str
+    tarea_id: int
     accion: str
-    fecha_accion: str | None = None
+    fecha_accion: date | None = None
     estado: str | None = None
 
 
 class AccionUpdate(BaseModel):
     accion: str | None = None
-    fecha_accion: str | None = None
+    fecha_accion: date | None = None
     estado: str | None = None
 
 

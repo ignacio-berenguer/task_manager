@@ -10,7 +10,7 @@ The backend provides a RESTful API for the Task Manager system. It is built usin
 
 - **Framework:** FastAPI (Python 3.12+)
 - **ORM:** SQLAlchemy 2.0 (declarative mapping)
-- **Database:** SQLite
+- **Database:** PostgreSQL
 - **Validation:** Pydantic v2
 - **Configuration:** pydantic-settings with python-dotenv
 - **AI Agent:** Anthropic SDK + httpx (async)
@@ -25,7 +25,7 @@ backend/
 │   ├── __init__.py          # Package init
 │   ├── main.py              # Entry point, CORS, middleware, router registration
 │   ├── config.py            # Environment configuration (pydantic-settings)
-│   ├── database.py          # SQLite connection setup & SessionLocal
+│   ├── database.py          # PostgreSQL connection setup & SessionLocal
 │   ├── models.py            # 5 SQLAlchemy ORM models
 │   ├── schemas.py           # Pydantic models for search, CRUD validation
 │   ├── crud.py              # Generic CRUDBase class
@@ -60,7 +60,7 @@ backend/
 
 | Model | Table | Primary Key | Description |
 |-------|-------|-------------|-------------|
-| `Tarea` | `tareas` | `tarea_id` (TEXT) | Main tasks with responsable, tema, estado, descripcion, fecha_siguiente_accion, notas_anteriores |
+| `Tarea` | `tareas` | `tarea_id` (SERIAL) | Main tasks with tarea, responsable, tema, estado, descripcion, fecha_siguiente_accion, notas_anteriores |
 | `AccionRealizada` | `acciones_realizadas` | `id` (INTEGER, auto) | Actions performed on tasks, FK to tareas (CASCADE). Includes fecha_accion |
 | `EstadoTarea` | `estados_tareas` | `id` (INTEGER, auto) | Parametric: valid task estados with orden and color |
 | `EstadoAccion` | `estados_acciones` | `id` (INTEGER, auto) | Parametric: valid action estados with orden and color |
@@ -255,8 +255,12 @@ API_PREFIX=/api/v1
 API_TITLE=Task Manager API
 API_VERSION=1.0.0
 
-# Database
-DATABASE_PATH=              # Empty = auto-detect relative to project root
+# Database (PostgreSQL)
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_USER=task_user
+DB_PASSWORD=your_secure_password
+DB_NAME=tasksmanager
 DATABASE_ECHO=false         # Log SQL queries
 
 # CORS
@@ -315,5 +319,6 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "anthropic>=0.40.0",
     "httpx>=0.27.0",
+    "psycopg2-binary>=2.9.0",
 ]
 ```

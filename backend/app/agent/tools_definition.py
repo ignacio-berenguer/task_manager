@@ -33,7 +33,7 @@ AGENT_TOOLS = [
         "input_schema": {
             "type": "object",
             "properties": {
-                "tarea_id": {"type": "string", "description": "Identificador de la tarea"}
+                "tarea_id": {"type": "integer", "description": "Identificador numerico de la tarea"}
             },
             "required": ["tarea_id"]
         }
@@ -44,7 +44,7 @@ AGENT_TOOLS = [
         "input_schema": {
             "type": "object",
             "properties": {
-                "tarea_id": {"type": "string", "description": "Identificador de la tarea"}
+                "tarea_id": {"type": "integer", "description": "Identificador numerico de la tarea"}
             },
             "required": ["tarea_id"]
         }

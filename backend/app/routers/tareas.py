@@ -56,37 +56,34 @@ def list_tareas(
 
 
 @router.get("/{tarea_id}")
-def get_tarea(tarea_id: str, db: Session = Depends(get_db)):
-    """Get a tarea by ID."""
+def get_tarea(tarea_id: int, db: Session = Depends(get_db)):
+    """Get a tarea by tarea_id."""
     item = crud_tareas.get(db, tarea_id)
     if not item:
-        raise HTTPException(status_code=404, detail=f"Tarea '{tarea_id}' no encontrada")
+        raise HTTPException(status_code=404, detail=f"Tarea {tarea_id} no encontrada")
     return model_to_dict(item)
 
 
 @router.post("/", status_code=201)
 def create_tarea(tarea_in: TareaCreate, db: Session = Depends(get_db)):
     """Create a new tarea."""
-    existing = crud_tareas.get(db, tarea_in.tarea_id)
-    if existing:
-        raise HTTPException(status_code=409, detail=f"Tarea '{tarea_in.tarea_id}' ya existe")
     item = crud_tareas.create(db, tarea_in.model_dump())
     return model_to_dict(item)
 
 
 @router.put("/{tarea_id}")
-def update_tarea(tarea_id: str, tarea_in: TareaUpdate, db: Session = Depends(get_db)):
+def update_tarea(tarea_id: int, tarea_in: TareaUpdate, db: Session = Depends(get_db)):
     """Update a tarea."""
     item = crud_tareas.get(db, tarea_id)
     if not item:
-        raise HTTPException(status_code=404, detail=f"Tarea '{tarea_id}' no encontrada")
+        raise HTTPException(status_code=404, detail=f"Tarea {tarea_id} no encontrada")
     updated = crud_tareas.update(db, item, tarea_in.model_dump(exclude_unset=True))
     return model_to_dict(updated)
 
 
 @router.delete("/{tarea_id}")
-def delete_tarea(tarea_id: str, db: Session = Depends(get_db)):
+def delete_tarea(tarea_id: int, db: Session = Depends(get_db)):
     """Delete a tarea (cascades to acciones)."""
     if not crud_tareas.delete(db, tarea_id):
-        raise HTTPException(status_code=404, detail=f"Tarea '{tarea_id}' no encontrada")
-    return {"detail": f"Tarea '{tarea_id}' eliminada"}
+        raise HTTPException(status_code=404, detail=f"Tarea {tarea_id} no encontrada")
+    return {"detail": f"Tarea {tarea_id} eliminada"}

@@ -17,7 +17,7 @@ crud_acciones = CRUDBase(AccionRealizada)
 
 
 @router.get("/tarea/{tarea_id}")
-def get_acciones_by_tarea(tarea_id: str, db: Session = Depends(get_db)):
+def get_acciones_by_tarea(tarea_id: int, db: Session = Depends(get_db)):
     """Get all acciones for a specific tarea."""
     items = db.query(AccionRealizada).filter(AccionRealizada.tarea_id == tarea_id).all()
     return [model_to_dict(item) for item in items]

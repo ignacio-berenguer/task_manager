@@ -1,3 +1,3 @@
 """Database initialization module."""
 
-from .db_init import create_database, recreate_tables
+from .db_init import init_schema, recreate_tables

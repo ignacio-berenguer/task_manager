@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.007",
+    feature: 7,
+    title: "Migracion a PostgreSQL",
+    summary: "Migracion de base de datos SQLite a PostgreSQL. Campos de fecha convertidos de TEXT a tipos DATE/TIMESTAMP nativos. Configuracion de conexion via variables de entorno individuales (DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME)."
+  },
+  {
     version: "1.006",
     feature: 6,
     title: "Acciones Rapidas",

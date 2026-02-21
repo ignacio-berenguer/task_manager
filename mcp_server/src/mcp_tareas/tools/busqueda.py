@@ -31,6 +31,6 @@ def register(mcp, api_client):
         return api_client.search("tareas", body)
 
     @mcp.tool()
-    def buscar_acciones(tarea_id: str) -> list:
+    def buscar_acciones(tarea_id: int) -> list:
         """Obtiene todas las acciones realizadas de una tarea especifica."""
         return api_client.list_records(f"acciones/tarea/{tarea_id}")

@@ -1,13 +1,13 @@
 # Task Manager
 
-Full-stack task management system. Imports task data from Excel workbooks into a normalized SQLite database, exposes it through a REST API, and provides a React web application with search, detail views, and an AI chat assistant.
+Full-stack task management system. Imports task data from Excel workbooks into a PostgreSQL database, exposes it through a REST API, and provides a React web application with search, detail views, and an AI chat assistant.
 
 ## Architecture
 
 | Module | Technology | Purpose |
 |--------|-----------|---------|
-| `management/` | Python 3.12, pandas, openpyxl | CLI tool for Excel-to-SQLite migration |
-| `backend/` | Python 3.12, FastAPI, SQLAlchemy, anthropic, httpx | REST API with CRUD, flexible search, and AI agent |
+| `management/` | Python 3.12, pandas, openpyxl, psycopg2 | CLI tool for Excel-to-PostgreSQL migration |
+| `backend/` | Python 3.12, FastAPI, SQLAlchemy, psycopg2, anthropic, httpx | REST API with CRUD, flexible search, and AI agent |
 | `frontend/` | React 19, Vite, Tailwind CSS | SPA with search, task detail, and AI chat |
 | `mcp_server/` | Python 3.12, MCP SDK, httpx | MCP server for AI agents -- read-only task access via 6 tools |
 
@@ -17,6 +17,7 @@ Full-stack task management system. Imports task data from Excel workbooks into a
 
 - Python 3.12+ with [`uv`](https://docs.astral.sh/uv/) package manager
 - Node.js 18+ with `npm`
+- PostgreSQL 14+ (running on `127.0.0.1:5432`)
 
 ### 1. Migration (populate the database)
 
@@ -79,7 +80,7 @@ task_manager/
 │   ├── app/
 │   │   ├── main.py                  # Entry point + CORS + router registration
 │   │   ├── config.py                # Environment config
-│   │   ├── database.py              # SQLite connection
+│   │   ├── database.py              # PostgreSQL connection
 │   │   ├── models.py                # 5 SQLAlchemy ORM models
 │   │   ├── schemas.py               # Pydantic validation schemas
 │   │   ├── crud.py                  # Generic CRUDBase class
@@ -142,11 +143,11 @@ task_manager/
 
 ## Database Schema
 
-**5 tables** in SQLite:
+**5 tables** in PostgreSQL:
 
 | Table | Primary Key | Description |
 |-------|-------------|-------------|
-| `tareas` | `tarea_id` (TEXT) | Main tasks table with responsable, tema, estado, notas_anteriores |
+| `tareas` | `tarea_id` (SERIAL) | Main tasks table with tarea, responsable, tema, estado, notas_anteriores |
 | `acciones_realizadas` | `id` (INTEGER, auto) | Actions performed on tasks, FK to tareas. Includes `fecha_accion` |
 | `estados_tareas` | `id` (INTEGER, auto) | Parametric table of valid task estados |
 | `estados_acciones` | `id` (INTEGER, auto) | Parametric table of valid action estados |
@@ -248,7 +249,11 @@ During migration, the `Notas` column from the Excel tareas data is:
 |----------|---------|-------------|
 | `LOG_LEVEL` | `INFO` | Logging level |
 | `LOG_FILE` | `task_manager_migration.log` | Log file name |
-| `DATABASE_PATH` | `PROJECT_ROOT/db/task_manager.db` | SQLite database path |
+| `DB_HOST` | `127.0.0.1` | PostgreSQL host |
+| `DB_PORT` | `5432` | PostgreSQL port |
+| `DB_USER` | `task_user` | PostgreSQL user |
+| `DB_PASSWORD` | `your_secure_password` | PostgreSQL password |
+| `DB_NAME` | `tasksmanager` | PostgreSQL database name |
 | `EXCEL_SOURCE_DIR` | `excel_source` | Directory containing Excel files |
 | `EXCEL_SOURCE_FILE` | `tareas.xlsx` | Excel workbook file name |
 | `EXCEL_SHEET_TAREAS` | `Tareas` | Sheet name containing tareas data |
@@ -266,7 +271,11 @@ During migration, the `Notas` column from the Excel tareas data is:
 | `API_PREFIX` | `/api/v1` | API route prefix |
 | `API_TITLE` | `Task Manager API` | Swagger title |
 | `API_VERSION` | `1.0.0` | API version |
-| `DATABASE_PATH` | _(auto-detect)_ | SQLite database path |
+| `DB_HOST` | `127.0.0.1` | PostgreSQL host |
+| `DB_PORT` | `5432` | PostgreSQL port |
+| `DB_USER` | `task_user` | PostgreSQL user |
+| `DB_PASSWORD` | `your_secure_password` | PostgreSQL password |
+| `DB_NAME` | `tasksmanager` | PostgreSQL database name |
 | `DATABASE_ECHO` | `false` | Log SQL queries |
 | `CORS_ORIGINS` | `["http://localhost:5173"]` | Allowed CORS origins |
 | `ANTHROPIC_API_KEY` | -- | Anthropic API key (required for AI agent) |

@@ -54,7 +54,7 @@ class CRUDBase(Generic[ModelType]):
             if value is not None:
                 setattr(db_obj, field, value)
         if hasattr(db_obj, "fecha_actualizacion"):
-            db_obj.fecha_actualizacion = datetime.now().isoformat()
+            db_obj.fecha_actualizacion = datetime.now()
         db.commit()
         db.refresh(db_obj)
         return db_obj

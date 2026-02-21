@@ -59,8 +59,8 @@ async def _obtener_tarea(tool_input: dict, api_client: AgentAPIClient) -> dict:
     """Get tarea details + acciones."""
     tarea_id = tool_input["tarea_id"]
 
-    tarea = await api_client.get_record("tareas", tarea_id)
-    acciones = await api_client.list_records("acciones/tarea/" + tarea_id)
+    tarea = await api_client.get_record("tareas", str(tarea_id))
+    acciones = await api_client.list_records(f"acciones/tarea/{tarea_id}")
 
     return {
         "tarea": tarea,
@@ -71,7 +71,7 @@ async def _obtener_tarea(tool_input: dict, api_client: AgentAPIClient) -> dict:
 async def _buscar_acciones(tool_input: dict, api_client: AgentAPIClient) -> dict:
     """Get acciones for a tarea."""
     tarea_id = tool_input["tarea_id"]
-    acciones = await api_client.list_records("acciones/tarea/" + tarea_id)
+    acciones = await api_client.list_records(f"acciones/tarea/{tarea_id}")
     return {"tarea_id": tarea_id, "acciones": acciones}
 
 

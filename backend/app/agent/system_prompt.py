@@ -16,7 +16,7 @@ Hoy es {today.strftime('%d/%m/%Y')}.
 
 ### Tabla: tareas
 Tabla principal con las tareas a gestionar.
-- **tarea_id**: Identificador unico de la tarea (texto)
+- **tarea_id**: Identificador unico de la tarea (entero, auto-incremental)
 - **tarea**: Descripcion breve de la tarea
 - **responsable**: Persona responsable
 - **descripcion**: Descripcion detallada

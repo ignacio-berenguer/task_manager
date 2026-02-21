@@ -111,7 +111,7 @@ export default function SearchPage() {
 
   // New tarea dialog
   const [newTareaOpen, setNewTareaOpen] = useState(false)
-  const [newTareaForm, setNewTareaForm] = useState({ tarea_id: '', tarea: '', responsable: '', tema: '', estado: '' })
+  const [newTareaForm, setNewTareaForm] = useState({ tarea: '', responsable: '', tema: '', estado: '' })
   const [newTareaLoading, setNewTareaLoading] = useState(false)
 
   // Action dialogs (shared components)
@@ -130,7 +130,7 @@ export default function SearchPage() {
     setColumnFilters({})
     try {
       const searchFilters = []
-      if (filters.tarea_id) searchFilters.push({ field: 'tarea_id', operator: 'ilike', value: `%${filters.tarea_id}%` })
+      if (filters.tarea_id) searchFilters.push({ field: 'tarea_id', operator: 'eq', value: Number(filters.tarea_id) })
       if (filters.tarea) searchFilters.push({ field: 'tarea', operator: 'ilike', value: `%${filters.tarea}%` })
       if (filters.responsable) searchFilters.push({ field: 'responsable', operator: 'eq', value: filters.responsable })
       if (filters.tema) searchFilters.push({ field: 'tema', operator: 'eq', value: filters.tema })
@@ -290,12 +290,12 @@ export default function SearchPage() {
 
   // New tarea
   const handleNewTarea = async () => {
-    if (!newTareaForm.tarea_id || !newTareaForm.tarea) return
+    if (!newTareaForm.tarea) return
     setNewTareaLoading(true)
     try {
       await apiClient.post('/tareas', newTareaForm)
       setNewTareaOpen(false)
-      setNewTareaForm({ tarea_id: '', tarea: '', responsable: '', tema: '', estado: '' })
+      setNewTareaForm({ tarea: '', responsable: '', tema: '', estado: '' })
       doSearch(0)
     } catch (err) {
       LOG.error('Error creating tarea', err)
@@ -702,14 +702,6 @@ export default function SearchPage() {
           <DialogHeader><DialogTitle>Nueva Tarea</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
-              <label className="text-sm font-medium">ID Tarea *</label>
-              <Input
-                value={newTareaForm.tarea_id}
-                onChange={e => setNewTareaForm(f => ({ ...f, tarea_id: e.target.value }))}
-                placeholder="Ej: T-001"
-              />
-            </div>
-            <div>
               <label className="text-sm font-medium">Tarea *</label>
               <Input
                 value={newTareaForm.tarea}
@@ -753,7 +745,7 @@ export default function SearchPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setNewTareaOpen(false)}>Cancelar</Button>
-            <Button onClick={handleNewTarea} disabled={newTareaLoading || !newTareaForm.tarea_id || !newTareaForm.tarea}>
+            <Button onClick={handleNewTarea} disabled={newTareaLoading || !newTareaForm.tarea}>
               Crear
             </Button>
           </DialogFooter>
