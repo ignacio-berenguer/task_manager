@@ -8,9 +8,11 @@ import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { EstadoBadge } from '@/components/shared/EstadoBadge'
+import { AddAccionDialog, CambiarFechaDialog } from '@/features/shared/ActionDialogs'
 import { formatDate } from '@/lib/formatDate'
-import { ArrowLeft, Plus, Pencil, Trash2, Calendar } from 'lucide-react'
+import { ArrowLeft, Plus, Pencil, Trash2, Calendar, CalendarClock } from 'lucide-react'
 import { createLogger } from '@/lib/logger'
 import apiClient from '@/api/client'
 
@@ -45,9 +47,15 @@ export default function DetailPage() {
   const [editOpen, setEditOpen] = useState(false)
   const [editForm, setEditForm] = useState({})
 
-  // Accion modal
-  const [accionOpen, setAccionOpen] = useState(false)
-  const [accionForm, setAccionForm] = useState({ accion: '', fecha_accion: '', estado: '' })
+  // Add accion dialog (shared component)
+  const [addAccionOpen, setAddAccionOpen] = useState(false)
+
+  // Cambiar fecha dialog (shared component)
+  const [cambiarFechaOpen, setCambiarFechaOpen] = useState(false)
+
+  // Edit accion modal (inline — keeps estado editing)
+  const [editAccionOpen, setEditAccionOpen] = useState(false)
+  const [editAccionForm, setEditAccionForm] = useState({ accion: '', fecha_accion: '', estado: '' })
   const [editingAccionId, setEditingAccionId] = useState(null)
 
   const fetchData = async () => {
@@ -106,28 +114,18 @@ export default function DetailPage() {
   }
 
   // Accion handlers
-  const openNewAccion = () => {
-    setAccionForm({ accion: '', fecha_accion: '', estado: 'Pendiente' })
-    setEditingAccionId(null)
-    setAccionOpen(true)
-  }
-
   const openEditAccion = (acc) => {
-    setAccionForm({ accion: acc.accion, fecha_accion: acc.fecha_accion || '', estado: acc.estado || '' })
+    setEditAccionForm({ accion: acc.accion, fecha_accion: acc.fecha_accion || '', estado: acc.estado || '' })
     setEditingAccionId(acc.id)
-    setAccionOpen(true)
+    setEditAccionOpen(true)
   }
 
-  const saveAccion = async () => {
+  const saveEditAccion = async () => {
     try {
-      const payload = { ...accionForm }
+      const payload = { ...editAccionForm }
       if (!payload.fecha_accion) delete payload.fecha_accion
-      if (editingAccionId) {
-        await apiClient.put(`/acciones/${editingAccionId}`, payload)
-      } else {
-        await apiClient.post('/acciones', { tarea_id, ...payload })
-      }
-      setAccionOpen(false)
+      await apiClient.put(`/acciones/${editingAccionId}`, payload)
+      setEditAccionOpen(false)
       fetchData()
     } catch (err) {
       LOG.error('Error saving accion', err)
@@ -186,6 +184,17 @@ export default function DetailPage() {
                     {formatDate(tarea.fecha_siguiente_accion)}
                   </Badge>
                 )}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      className="rounded p-1 hover:bg-muted text-muted-foreground hover:text-foreground"
+                      onClick={() => setCambiarFechaOpen(true)}
+                    >
+                      <CalendarClock className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Cambiar Fecha Siguiente Accion</TooltipContent>
+                </Tooltip>
               </div>
             </div>
             <Button variant="outline" onClick={openEdit} className="shrink-0">
@@ -199,7 +208,7 @@ export default function DetailPage() {
         <Card className="mb-6 p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Acciones Realizadas ({acciones.length})</h2>
-            <Button size="sm" onClick={openNewAccion}>
+            <Button size="sm" onClick={() => setAddAccionOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Nueva Accion
             </Button>
@@ -331,32 +340,49 @@ export default function DetailPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Accion Dialog */}
-        <Dialog open={accionOpen} onOpenChange={setAccionOpen}>
+        {/* Add Accion Dialog (shared) */}
+        <AddAccionDialog
+          open={addAccionOpen}
+          onOpenChange={setAddAccionOpen}
+          tareaId={tarea.tarea_id}
+          onSuccess={fetchData}
+        />
+
+        {/* Cambiar Fecha Dialog (shared) */}
+        <CambiarFechaDialog
+          open={cambiarFechaOpen}
+          onOpenChange={setCambiarFechaOpen}
+          tareaId={tarea.tarea_id}
+          currentFecha={tarea.fecha_siguiente_accion}
+          onSuccess={fetchData}
+        />
+
+        {/* Edit Accion Dialog */}
+        <Dialog open={editAccionOpen} onOpenChange={setEditAccionOpen}>
           <DialogContent>
-            <DialogHeader><DialogTitle>{editingAccionId ? 'Editar Accion' : 'Nueva Accion'}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Editar Accion</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div>
                 <label className="text-sm font-medium">Accion</label>
                 <textarea
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                   rows={3}
-                  value={accionForm.accion}
-                  onChange={e => setAccionForm(f => ({ ...f, accion: e.target.value }))}
+                  value={editAccionForm.accion}
+                  onChange={e => setEditAccionForm(f => ({ ...f, accion: e.target.value }))}
                 />
               </div>
               <div>
                 <label className="text-sm font-medium">Fecha</label>
-                <Input type="date" value={accionForm.fecha_accion} onChange={e => setAccionForm(f => ({ ...f, fecha_accion: e.target.value }))} />
+                <Input type="date" value={editAccionForm.fecha_accion} onChange={e => setEditAccionForm(f => ({ ...f, fecha_accion: e.target.value }))} />
               </div>
               <div>
                 <label className="text-sm font-medium">Estado</label>
-                <Input value={accionForm.estado} onChange={e => setAccionForm(f => ({ ...f, estado: e.target.value }))} />
+                <Input value={editAccionForm.estado} onChange={e => setEditAccionForm(f => ({ ...f, estado: e.target.value }))} />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setAccionOpen(false)}>Cancelar</Button>
-              <Button onClick={saveAccion}>Guardar</Button>
+              <Button variant="outline" onClick={() => setEditAccionOpen(false)}>Cancelar</Button>
+              <Button onClick={saveEditAccion}>Guardar</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
