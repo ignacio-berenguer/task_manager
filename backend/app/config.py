@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     # CORS
     CORS_ORIGINS: list[str] = ["http://localhost:5173"]
 
+    # Authentication
+    CLERK_JWKS_URL: str = ""
+    CLERK_AUTHORIZED_PARTIES: list[str] = ["http://localhost:5173"]
+    API_KEY: str = ""
+
     # Agent (AI Chat)
     ANTHROPIC_API_KEY: str = ""
     AGENT_MODEL: str = "claude-sonnet-4-20250514"

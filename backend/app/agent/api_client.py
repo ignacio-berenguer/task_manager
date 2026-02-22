@@ -3,6 +3,7 @@
 import logging
 import httpx
 from .config import AGENT_API_BASE_URL
+from ..config import settings as app_settings
 
 LOG = logging.getLogger("task_manager_agent")
 
@@ -20,7 +21,10 @@ class AgentAPIClient:
 
     def __init__(self, base_url: str = None):
         self.base_url = (base_url or AGENT_API_BASE_URL).rstrip("/")
-        self.client = httpx.AsyncClient(base_url=self.base_url, timeout=30.0)
+        headers = {}
+        if app_settings.API_KEY:
+            headers["X-API-Key"] = app_settings.API_KEY
+        self.client = httpx.AsyncClient(base_url=self.base_url, timeout=30.0, headers=headers)
 
     async def search(self, table: str, body: dict) -> dict:
         """POST /{table}/search with flexible filters."""

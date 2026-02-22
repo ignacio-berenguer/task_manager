@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.008",
+    feature: 8,
+    title: "Seguridad API con Clerk JWT",
+    summary: "Proteccion del backend FastAPI con autenticacion Clerk JWT. Todas las rutas CRUD requieren un token JWT valido (frontend) o API key (servicios internos). Verificacion de tokens via JWKS con PyJWT. Soporte dual: JWT para usuarios del navegador y API key para MCP server y agente IA."
+  },
+  {
     version: "1.007",
     feature: 7,
     title: "Migracion a PostgreSQL",

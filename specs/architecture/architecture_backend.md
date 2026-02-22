@@ -13,6 +13,7 @@ The backend provides a RESTful API for the Task Manager system. It is built usin
 - **Database:** PostgreSQL
 - **Validation:** Pydantic v2
 - **Configuration:** pydantic-settings with python-dotenv
+- **Authentication:** PyJWT + cryptography (Clerk JWT verification)
 - **AI Agent:** Anthropic SDK + httpx (async)
 
 ---
@@ -24,6 +25,7 @@ backend/
 ├── app/
 │   ├── __init__.py          # Package init
 │   ├── main.py              # Entry point, CORS, middleware, router registration
+│   ├── auth.py              # Clerk JWT + API key authentication
 │   ├── config.py            # Environment configuration (pydantic-settings)
 │   ├── database.py          # PostgreSQL connection setup & SessionLocal
 │   ├── models.py            # 5 SQLAlchemy ORM models
@@ -266,6 +268,11 @@ DATABASE_ECHO=false         # Log SQL queries
 # CORS
 CORS_ORIGINS=["http://localhost:5173"]
 
+# Authentication
+CLERK_JWKS_URL=https://your-slug.clerk.accounts.dev/.well-known/jwks.json
+CLERK_AUTHORIZED_PARTIES=["http://localhost:5173"]
+API_KEY=
+
 # AI Agent (Chat)
 ANTHROPIC_API_KEY=sk-ant-...
 AGENT_MODEL=claude-sonnet-4-20250514
@@ -292,7 +299,40 @@ AGENT_API_BASE_URL=http://localhost:8080/api/v1
 
 ---
 
-## 11. Running the API
+## 11. Authentication (auth.py)
+
+The API uses a dual authentication mechanism applied at the router level via FastAPI dependencies.
+
+### Mechanisms
+
+| Mechanism | Consumer | Header | Verification |
+|-----------|----------|--------|--------------|
+| **Clerk JWT** | Frontend (React SPA) | `Authorization: Bearer <token>` | RS256 via JWKS (PyJWT) |
+| **API Key** | MCP Server, Agent internal calls | `X-API-Key: <key>` | Constant-time comparison (hmac) |
+
+### Public Endpoints (no auth)
+
+- `GET /` — Root info
+- `GET /health` — Health check
+- `GET /api/v1/docs`, `/redoc`, `/openapi.json` — API documentation
+
+### Protected Endpoints (auth required)
+
+All router endpoints under `/api/v1/*`: tareas, acciones, estados-tareas, estados-acciones, responsables, agent.
+
+Auth is applied via `dependencies=[Depends(verify_auth)]` on each `APIRouter()`.
+
+### Configuration
+
+```env
+CLERK_JWKS_URL=https://your-slug.clerk.accounts.dev/.well-known/jwks.json
+CLERK_AUTHORIZED_PARTIES=["http://localhost:5173"]
+API_KEY=                          # Pre-shared key for service clients
+```
+
+---
+
+## 12. Running the API
 
 ```bash
 cd backend
@@ -320,5 +360,6 @@ dependencies = [
     "anthropic>=0.40.0",
     "httpx>=0.27.0",
     "psycopg2-binary>=2.9.0",
+    "PyJWT[crypto]>=2.8.0",
 ]
 ```

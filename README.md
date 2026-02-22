@@ -79,6 +79,7 @@ task_manager/
 ├── backend/                         # FastAPI REST API
 │   ├── app/
 │   │   ├── main.py                  # Entry point + CORS + router registration
+│   │   ├── auth.py                  # Clerk JWT + API key authentication
 │   │   ├── config.py                # Environment config
 │   │   ├── database.py              # PostgreSQL connection
 │   │   ├── models.py                # 5 SQLAlchemy ORM models
@@ -167,6 +168,25 @@ During migration, the `Notas` column from the Excel tareas data is:
    - Lines starting with a date (`DD/MM/YYYY` or `DD/MM`) → accion with `estado = COMPLETADO`
    - Lines starting with `NBA:` → accion with `estado = PENDIENTE` and future date (today + 7 days)
    - Text is normalized: first letter capitalized, leading spaces/punctuation trimmed
+
+## Authentication
+
+The backend API is secured with a dual authentication mechanism:
+
+| Mechanism | Consumer | Header |
+|-----------|----------|--------|
+| **Clerk JWT** | Frontend (React SPA) | `Authorization: Bearer <token>` |
+| **API Key** | MCP Server, Agent internal calls | `X-API-Key: <key>` |
+
+**Public endpoints** (no auth required): `/`, `/health`, `/api/v1/docs`, `/api/v1/redoc`, `/api/v1/openapi.json`
+
+**Protected endpoints** (auth required): All `/api/v1/*` CRUD and search routes.
+
+### Setup
+
+1. **Backend:** Set `CLERK_JWKS_URL` and `API_KEY` in `backend/.env`
+2. **MCP Server:** Set `API_KEY` in `mcp_server/.env` (must match backend)
+3. **Frontend:** Already sends Clerk JWT tokens via Axios interceptors — no changes needed
 
 ## Backend API
 
@@ -278,6 +298,9 @@ During migration, the `Notas` column from the Excel tareas data is:
 | `DB_NAME` | `tasksmanager` | PostgreSQL database name |
 | `DATABASE_ECHO` | `false` | Log SQL queries |
 | `CORS_ORIGINS` | `["http://localhost:5173"]` | Allowed CORS origins |
+| `CLERK_JWKS_URL` | -- | Clerk JWKS URL for JWT verification |
+| `CLERK_AUTHORIZED_PARTIES` | `["http://localhost:5173"]` | Allowed JWT origins (azp claim) |
+| `API_KEY` | -- | Pre-shared API key for service clients |
 | `ANTHROPIC_API_KEY` | -- | Anthropic API key (required for AI agent) |
 | `AGENT_MODEL` | `claude-sonnet-4-20250514` | AI agent model ID |
 | `AGENT_MAX_TOKENS` | `4096` | Max tokens per agent response |
@@ -303,6 +326,7 @@ During migration, the `Notas` column from the Excel tareas data is:
 | `LOG_LEVEL` | `INFO` | Logging level |
 | `LOG_FILE` | `task_manager_mcp.log` | Log file name |
 | `MCP_TRANSPORT` | `stdio` | Transport mode: "stdio" or "sse" |
+| `API_KEY` | -- | API key for backend authentication (must match backend) |
 | `MCP_HOST` | `0.0.0.0` | SSE bind host |
 | `MCP_PORT` | `8001` | SSE bind port |
 

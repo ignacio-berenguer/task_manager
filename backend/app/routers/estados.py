@@ -5,6 +5,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from app.auth import verify_auth
 from app.database import get_db
 from app.models import EstadoTarea, EstadoAccion
 from app.schemas import EstadoCreate, EstadoUpdate
@@ -14,7 +15,7 @@ LOG = logging.getLogger("task_manager_backend")
 
 # --- Estados Tareas ---
 
-router_tareas = APIRouter(prefix="/estados-tareas", tags=["estados"])
+router_tareas = APIRouter(prefix="/estados-tareas", tags=["estados"], dependencies=[Depends(verify_auth)])
 crud_estados_tareas = CRUDBase(EstadoTarea)
 
 
@@ -52,7 +53,7 @@ def delete_estado_tarea(id: int, db: Session = Depends(get_db)):
 
 # --- Estados Acciones ---
 
-router_acciones = APIRouter(prefix="/estados-acciones", tags=["estados"])
+router_acciones = APIRouter(prefix="/estados-acciones", tags=["estados"], dependencies=[Depends(verify_auth)])
 crud_estados_acciones = CRUDBase(EstadoAccion)
 
 

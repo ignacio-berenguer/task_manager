@@ -28,6 +28,9 @@ class _Settings:
     _project_root = _mcp_server_dir.parent
     LOG_FILE_PATH: Path = _project_root / "logs" / LOG_FILE
 
+    # Authentication
+    API_KEY: str = os.getenv("API_KEY", "")
+
     # Query limits
     MAX_QUERY_ROWS: int = int(os.getenv("MAX_QUERY_ROWS", "500"))
     DEFAULT_QUERY_ROWS: int = int(os.getenv("DEFAULT_QUERY_ROWS", "50"))

@@ -19,7 +19,10 @@ class TaskAPIClient:
 
     def __init__(self, base_url: str = None):
         self.base_url = (base_url or settings.API_BASE_URL).rstrip("/")
-        self.client = httpx.Client(base_url=self.base_url, timeout=settings.API_TIMEOUT)
+        headers = {}
+        if settings.API_KEY:
+            headers["X-API-Key"] = settings.API_KEY
+        self.client = httpx.Client(base_url=self.base_url, timeout=settings.API_TIMEOUT, headers=headers)
 
     def search(self, table: str, body: dict) -> dict:
         """POST /{table}/search."""

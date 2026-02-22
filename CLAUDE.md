@@ -45,7 +45,7 @@ uv run python -m app.main                    # Uses API_PORT from .env (default:
 
 - Swagger UI: http://localhost:8080/api/v1/docs
 
-**Dependencies:** fastapi, uvicorn, sqlalchemy, psycopg2-binary, pydantic, pydantic-settings, python-dotenv, anthropic, httpx
+**Dependencies:** fastapi, uvicorn, sqlalchemy, psycopg2-binary, pydantic, pydantic-settings, python-dotenv, anthropic, httpx, PyJWT[crypto]
 
 ### Frontend (React SPA)
 
@@ -94,6 +94,7 @@ task_manager/
 ├── backend/                         # FastAPI REST API
 │   ├── app/
 │   │   ├── main.py                  # Entry point + CORS + router registration
+│   │   ├── auth.py                  # Clerk JWT + API key authentication
 │   │   ├── config.py                # Environment config
 │   │   ├── database.py              # PostgreSQL connection
 │   │   ├── models.py                # 5 SQLAlchemy ORM models
@@ -190,6 +191,15 @@ task_manager/
 - **responsables**: `id`, `valor` (UNIQUE), `orden` — seeded during migration from unique Excel responsable values
 
 ## Backend API
+
+### Authentication
+
+All `/api/v1/*` routes are protected. Two authentication mechanisms:
+
+- **Clerk JWT**: Frontend sends `Authorization: Bearer <token>`. Verified via JWKS (PyJWT).
+- **API Key**: MCP server and agent send `X-API-Key: <key>`. Compared with `API_KEY` env var.
+
+Public endpoints (no auth): `/`, `/health`, `/api/v1/docs`, `/api/v1/redoc`, `/api/v1/openapi.json`.
 
 ### Tareas (`/api/v1/tareas`)
 
@@ -308,6 +318,9 @@ DB_PASSWORD=your_secure_password
 DB_NAME=tasksmanager
 DATABASE_ECHO=false               # Set to true to log SQL queries
 CORS_ORIGINS=["http://localhost:5173"]
+CLERK_JWKS_URL=https://your-slug.clerk.accounts.dev/.well-known/jwks.json
+CLERK_AUTHORIZED_PARTIES=["http://localhost:5173"]
+API_KEY=                         # Pre-shared key for service clients
 ANTHROPIC_API_KEY=                # Required for AI agent
 AGENT_MODEL=claude-sonnet-4-20250514
 AGENT_MAX_TOKENS=4096
@@ -330,6 +343,7 @@ VITE_APP_NAME=Task Manager
 ```env
 API_BASE_URL=http://localhost:8080/api/v1
 API_TIMEOUT=30
+API_KEY=                         # Must match backend API_KEY
 LOG_LEVEL=INFO
 LOG_FILE=task_manager_mcp.log
 MAX_QUERY_ROWS=500

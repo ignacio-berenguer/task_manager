@@ -6,6 +6,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from app.auth import verify_auth
 from app.database import get_db
 from app.models import Tarea
 from app.schemas import TareaCreate, TareaUpdate, SearchRequest
@@ -14,7 +15,7 @@ from app.search import search
 
 LOG = logging.getLogger("task_manager_backend")
 
-router = APIRouter(prefix="/tareas", tags=["tareas"])
+router = APIRouter(prefix="/tareas", tags=["tareas"], dependencies=[Depends(verify_auth)])
 crud_tareas = CRUDBase(Tarea)
 
 

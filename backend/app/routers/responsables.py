@@ -5,6 +5,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.auth import verify_auth
 from app.database import get_db
 from app.models import Responsable
 from app.schemas import ResponsableCreate, ResponsableUpdate
@@ -12,7 +13,7 @@ from app.crud import CRUDBase, model_to_dict
 
 LOG = logging.getLogger("task_manager_backend")
 
-router = APIRouter(prefix="/responsables", tags=["responsables"])
+router = APIRouter(prefix="/responsables", tags=["responsables"], dependencies=[Depends(verify_auth)])
 crud_responsables = CRUDBase(Responsable)
 
 

@@ -2,16 +2,17 @@
 
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from ..agent.orchestrator import stream_agent_response
+from ..auth import verify_auth
 from ..config import settings
 
 logger = logging.getLogger("task_manager_agent")
 
-router = APIRouter(prefix="/agent", tags=["agent"])
+router = APIRouter(prefix="/agent", tags=["agent"], dependencies=[Depends(verify_auth)])
 
 
 class AgentChatRequest(BaseModel):
