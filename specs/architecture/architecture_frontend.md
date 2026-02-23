@@ -197,8 +197,8 @@ frontend/
 - **Nueva Tarea dialog**: Create new tarea with button (tooltip shows Ctrl+Shift+N shortcut)
 - **Full-width layout**: No max-width constraint; uses all available width
 - **Server-side pagination** with configurable page size
-- **Click-to-detail**: Clicking a row navigates to `/detail/:tarea_id` (saves search state to sessionStorage)
-- **State preservation**: Search state (filters, results, page, sort) saved to sessionStorage before navigation and restored on return
+- **Click-to-detail**: Clicking a row navigates to `/detail/:tarea_id`
+- **State preservation**: Search state (filters, results, page, sort, column filters, scroll position) is automatically saved to a module-level cache on unmount and restored on mount. Survives in-app navigation; clears on page refresh.
 
 #### 6.3 Detail Page (`/detail/:tarea_id`)
 
@@ -372,7 +372,9 @@ VITE_APP_NAME=Task Manager
 
 **Estado Workflow Order:** All estado dropdowns use the canonical order from `lib/estadoOrder.js`, not alphabetical sorting.
 
-**localStorage Persistence:** Search filters, column configurations, page sizes, and theme preferences are persisted via the `createStorage()` utility.
+**localStorage Persistence:** Column configurations, page sizes, and theme preferences are persisted via the `createStorage()` utility.
+
+**Module-Level State Cache:** The Search page uses a module-level JavaScript variable (`searchStateCache`) to preserve state (filters, results, pagination, sort, column filters, scroll position) across in-app navigation. The variable survives component unmount/remount within the SPA but resets on full page refresh. State is saved via `useEffect` cleanup on unmount and restored via `useState` initializers on mount. A `stateRef` pattern avoids stale closures in the cleanup function.
 
 **Spanish UI:** All user-facing text is in Spanish. Code identifiers use Spanish column names without accents (e.g., `descripcion`, `accion`).
 

@@ -46,26 +46,8 @@ const FILTER_LABELS = { tarea_id: 'ID', tarea: 'Tarea', responsable: 'Responsabl
 
 const searchStorage = createStorage('search')
 
-const SESSION_KEY = 'search-session-state'
-
-function saveSessionState(state) {
-  try {
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(state))
-  } catch { /* ignore */ }
-}
-
-function loadSessionState() {
-  try {
-    const s = sessionStorage.getItem(SESSION_KEY)
-    return s ? JSON.parse(s) : null
-  } catch {
-    return null
-  }
-}
-
-function clearSessionState() {
-  sessionStorage.removeItem(SESSION_KEY)
-}
+// Module-level cache: survives in-app navigation, clears on page refresh
+let searchStateCache = null
 
 export default function SearchPage() {
   usePageTitle('Busqueda')
@@ -74,11 +56,13 @@ export default function SearchPage() {
   const sidebarTareaRef = useRef(null)
   const mobileTareaRef = useRef(null)
 
-  // Restore session state if coming back
-  const savedSession = useRef(loadSessionState())
+  // Restore state from module-level cache (survives in-app navigation)
+  if (searchStateCache) {
+    LOG.debug('Restoring search state from cache')
+  }
 
   const [filters, setFilters] = useState(() =>
-    savedSession.current?.filters || {
+    searchStateCache?.filters || {
       tarea_id: '',
       tarea: '',
       responsable: '',
@@ -86,19 +70,49 @@ export default function SearchPage() {
       estado: 'En Curso',
     }
   )
-  const [results, setResults] = useState(() => savedSession.current?.results || null)
+  const [results, setResults] = useState(() => searchStateCache?.results || null)
   const [loading, setLoading] = useState(false)
-  const [page, setPage] = useState(() => savedSession.current?.page || 0)
+  const [page, setPage] = useState(() => searchStateCache?.page || 0)
   const [pageSize] = useState(DEFAULT_PAGE_SIZE)
-  const [sortField, setSortField] = useState(() => savedSession.current?.sortField || 'fecha_siguiente_accion')
-  const [sortDir, setSortDir] = useState(() => savedSession.current?.sortDir || 'asc')
+  const [sortField, setSortField] = useState(() => searchStateCache?.sortField || 'fecha_siguiente_accion')
+  const [sortDir, setSortDir] = useState(() => searchStateCache?.sortDir || 'asc')
   const [filterOptions, setFilterOptions] = useState(null)
   const [columns, setColumns] = useState(() =>
     searchStorage.loadJSON('columns', DEFAULT_COLUMNS)
   )
 
   // Column filters (client-side)
-  const [columnFilters, setColumnFilters] = useState({})
+  const [columnFilters, setColumnFilters] = useState(() => searchStateCache?.columnFilters || {})
+
+  // Ref that always holds latest state (avoids stale closures in unmount cleanup)
+  const stateRef = useRef()
+  stateRef.current = { filters, results, page, sortField, sortDir, columnFilters }
+
+  // Cached scroll position to restore after mount
+  const cachedScrollTop = useRef(searchStateCache?.scrollTop || 0)
+
+  // Save state to module-level cache on unmount
+  useEffect(() => {
+    return () => {
+      searchStateCache = {
+        ...stateRef.current,
+        scrollTop: window.scrollY || 0,
+      }
+      LOG.debug('Search state saved to cache')
+    }
+  }, [])
+
+  // Restore scroll position after results are rendered
+  useEffect(() => {
+    if (cachedScrollTop.current && results) {
+      const scrollTop = cachedScrollTop.current
+      cachedScrollTop.current = 0
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollTop)
+        LOG.debug('Restored scroll position:', scrollTop)
+      })
+    }
+  }, [results])
 
   // Expanded rows (inline accordion)
   const [expandedRows, setExpandedRows] = useState(new Set())
@@ -156,19 +170,14 @@ export default function SearchPage() {
     }
   }, [filters, sortField, sortDir, pageSize])
 
-  // Auto-search on initial load (if no restored session, or if filter options just loaded)
-  const initialSearchDone = useRef(!!savedSession.current?.results)
+  // Auto-search on initial load (skip if results restored from cache)
+  const initialSearchDone = useRef(!!searchStateCache?.results)
   useEffect(() => {
     if (filterOptions && !initialSearchDone.current) {
       initialSearchDone.current = true
       doSearch(0)
     }
   }, [filterOptions, doSearch])
-
-  // Clear restored session after initial use
-  useEffect(() => {
-    clearSessionState()
-  }, [])
 
   const clearFilters = () => {
     setFilters({ tarea_id: '', tarea: '', responsable: '', tema: '', estado: 'En Curso' })
@@ -241,9 +250,8 @@ export default function SearchPage() {
     }
   }
 
-  // Navigate to detail (save session state first)
+  // Navigate to detail (state is saved automatically on unmount)
   const goToDetail = (tareaId) => {
-    saveSessionState({ filters, results, page, sortField, sortDir })
     navigate(`/detail/${tareaId}`)
   }
 

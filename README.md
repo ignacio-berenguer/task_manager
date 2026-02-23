@@ -273,7 +273,7 @@ The backend API is secured with a dual authentication mechanism:
 |-------|--------|-------------|
 | `/` | Public | Landing page with hero section and changelog |
 | `/sign-in`, `/sign-up` | Public | Clerk authentication |
-| `/search` | Private | Task search with labeled filters, lateral sidebar (xl+), column filter popovers (funnel icon), active filter tags (removable badges), sortable/reorderable columns, colored estado tags, sticky title bar, inline detail accordion, side drawer quick view, quick action buttons (add accion, change fecha), keyboard shortcuts, new tarea dialog |
+| `/search` | Private | Task search with labeled filters, lateral sidebar (xl+), column filter popovers (funnel icon), active filter tags (removable badges), sortable/reorderable columns, colored estado tags, sticky title bar, inline detail accordion, side drawer quick view, quick action buttons (add accion, change fecha), keyboard shortcuts, new tarea dialog, persistent state across navigation (filters, results, pagination, sort, scroll position) |
 | `/detail/:tarea_id` | Private | Task header with tarea name prominent + tarea_id muted, estado + responsable + fecha_siguiente_accion badges + cambiar fecha button, compact acciones CRUD table (sorted desc, sticky headers), add accion dialog, notas accordion (collapsed), datos accordion (collapsed), Ctrl+Shift+F shortcut, back navigation with state preservation |
 | `/chat` | Private | AI assistant with SSE streaming |
 

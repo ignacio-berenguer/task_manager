@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.012",
+    feature: 12,
+    title: "Estado persistente de busqueda",
+    summary: "La pagina de busqueda preserva su estado completo (filtros, resultados, paginacion, ordenamiento, filtros de columna y posicion de scroll) al navegar a otra pagina y volver. El estado se almacena en memoria del modulo y se limpia automaticamente al recargar la pagina."
+  },
+  {
     version: "1.011",
     feature: 11,
     title: "Bulk inserts en migracion",
