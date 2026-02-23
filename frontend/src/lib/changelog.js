@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.011",
+    feature: 11,
+    title: "Bulk inserts en migracion",
+    summary: "La migracion de datos desde Excel ahora utiliza inserciones masivas (bulk inserts) con psycopg2 execute_values, reduciendo drasticamente los tiempos de importacion en bases de datos remotas. El tamano del lote es configurable via BATCH_COMMIT_SIZE. Se registran metricas de rendimiento (filas/segundo, lotes procesados)."
+  },
+  {
     version: "1.010",
     feature: 10,
     title: "Exportar base de datos",

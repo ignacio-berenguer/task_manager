@@ -159,6 +159,10 @@ task_manager/
 
 Seed data includes default estados: Pendiente, En Progreso, Completada, Cancelada (tareas) and Pendiente, En Progreso, Completada (acciones). Responsables are seeded during migration from Excel data.
 
+### Migration: Bulk Inserts
+
+The migration engine uses `psycopg2.extras.execute_values()` for bulk database inserts, sending multiple rows per SQL statement to minimize network round-trips. This is especially important when the PostgreSQL database is hosted on a remote server. Batch size is controlled by `BATCH_COMMIT_SIZE` (default: 100). If a bulk batch fails, the engine falls back to row-by-row inserts for that batch to isolate problematic rows. Performance metrics (rows/sec, bulk vs. fallback counts) are logged after each migration step.
+
 ### Migration: Excel Table Reading
 
 The migration engine reads data from an Excel named Table (ListObject) using openpyxl. It locates the Table specified by `EXCEL_TABLE_TAREAS` within the sheet `EXCEL_SHEET_TAREAS`. If the named Table is not found, it falls back to reading the entire sheet.
@@ -303,7 +307,7 @@ The backend API is secured with a dual authentication mechanism:
 | `EXCEL_SOURCE_FILE` | `tareas.xlsx` | Excel workbook file name |
 | `EXCEL_SHEET_TAREAS` | `Tareas` | Sheet name containing tareas data |
 | `EXCEL_TABLE_TAREAS` | `Tareas` | Excel named Table (ListObject) within the sheet |
-| `BATCH_COMMIT_SIZE` | `100` | Rows per batch commit during migration |
+| `BATCH_COMMIT_SIZE` | `100` | Rows per bulk insert batch during migration (controls `execute_values` page size and commit frequency) |
 
 ### Backend (.env)
 
