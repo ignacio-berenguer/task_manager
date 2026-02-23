@@ -16,7 +16,7 @@ import { formatDate } from '@/lib/formatDate'
 import { createStorage } from '@/lib/storage'
 import { cn } from '@/lib/utils'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
-import { Search, X, Plus, ChevronDown, ChevronRight, PanelRightOpen, ListPlus, CalendarClock, Filter } from 'lucide-react'
+import { Search, X, Plus, ChevronDown, ChevronRight, PanelRightOpen, ListPlus, CalendarClock, CalendarDays, Filter } from 'lucide-react'
 import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
 import apiClient from '@/api/client'
@@ -48,6 +48,10 @@ const searchStorage = createStorage('search')
 
 // Module-level cache: survives in-app navigation, clears on page refresh
 let searchStateCache = null
+
+// Format a Date object as YYYY-MM-DD using local timezone
+const formatLocalDate = (d) =>
+  d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
 
 export default function SearchPage() {
   usePageTitle('Busqueda')
@@ -84,9 +88,12 @@ export default function SearchPage() {
   // Column filters (client-side)
   const [columnFilters, setColumnFilters] = useState(() => searchStateCache?.columnFilters || {})
 
+  // Quick filter: Próxima semana
+  const [proximaSemana, setProximaSemana] = useState(() => searchStateCache?.proximaSemana || false)
+
   // Ref that always holds latest state (avoids stale closures in unmount cleanup)
   const stateRef = useRef()
-  stateRef.current = { filters, results, page, sortField, sortDir, columnFilters }
+  stateRef.current = { filters, results, page, sortField, sortDir, columnFilters, proximaSemana }
 
   // Cached scroll position to restore after mount
   const cachedScrollTop = useRef(searchStateCache?.scrollTop || 0)
@@ -150,6 +157,17 @@ export default function SearchPage() {
       if (filters.tema) searchFilters.push({ field: 'tema', operator: 'eq', value: filters.tema })
       if (filters.estado) searchFilters.push({ field: 'estado', operator: 'eq', value: filters.estado })
 
+      if (proximaSemana) {
+        const today = new Date()
+        const todayStr = formatLocalDate(today)
+        const endDate = new Date(today)
+        endDate.setDate(endDate.getDate() + 6)
+        const endStr = formatLocalDate(endDate)
+        searchFilters.push({ field: 'fecha_siguiente_accion', operator: 'gte', value: todayStr })
+        searchFilters.push({ field: 'fecha_siguiente_accion', operator: 'lte', value: endStr })
+        LOG.debug('Quick filter Próxima semana: ON', { from: todayStr, to: endStr })
+      }
+
       const body = {
         filters: searchFilters,
         limit: pageSize,
@@ -168,7 +186,7 @@ export default function SearchPage() {
     } finally {
       setLoading(false)
     }
-  }, [filters, sortField, sortDir, pageSize])
+  }, [filters, sortField, sortDir, pageSize, proximaSemana])
 
   // Auto-search on initial load (skip if results restored from cache)
   const initialSearchDone = useRef(!!searchStateCache?.results)
@@ -181,6 +199,11 @@ export default function SearchPage() {
 
   const clearFilters = () => {
     setFilters({ tarea_id: '', tarea: '', responsable: '', tema: '', estado: 'En Curso' })
+    setProximaSemana(false)
+  }
+
+  const toggleProximaSemana = () => {
+    setProximaSemana(prev => !prev)
   }
 
   const handleSort = (field) => {
@@ -198,6 +221,18 @@ export default function SearchPage() {
       doSearch(0)
     }
   }, [sortField, sortDir]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Re-search when quick filter toggles (only if we have results)
+  const proximaSemanaInitialized = useRef(false)
+  useEffect(() => {
+    if (!proximaSemanaInitialized.current) {
+      proximaSemanaInitialized.current = true
+      return
+    }
+    if (results) {
+      doSearch(0)
+    }
+  }, [proximaSemana]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Column persistence
   const handleColumnsChange = (newCols) => {
@@ -328,15 +363,26 @@ export default function SearchPage() {
   const totalPages = results ? Math.ceil(results.total / pageSize) : 0
 
   // Active filter tags (server-side filters)
-  const activeFilterTags = useMemo(() =>
-    Object.entries(filters)
+  const activeFilterTags = useMemo(() => {
+    const tags = Object.entries(filters)
       .filter(([, value]) => value)
-      .map(([key, value]) => ({ key, label: FILTER_LABELS[key], value })),
-    [filters]
-  )
+      .map(([key, value]) => ({ key, label: FILTER_LABELS[key], value }))
+    if (proximaSemana) {
+      const today = new Date()
+      const end = new Date(today)
+      end.setDate(end.getDate() + 6)
+      const fmtShort = (d) => String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0')
+      tags.push({ key: '_proximaSemana', label: 'Proxima semana', value: `${fmtShort(today)} - ${fmtShort(end)}` })
+    }
+    return tags
+  }, [filters, proximaSemana])
 
   // Remove a single filter and re-search
   const removeFilterTag = useCallback((key) => {
+    if (key === '_proximaSemana') {
+      setProximaSemana(false)
+      return
+    }
     const next = { ...filters, [key]: '' }
     setFilters(next)
     // Need to search with the updated filters — use a ref-based approach
@@ -431,6 +477,14 @@ export default function SearchPage() {
           </select>
         </div>
       </div>
+      <Button
+        variant={proximaSemana ? 'default' : 'outline'}
+        className="w-full"
+        onClick={toggleProximaSemana}
+      >
+        <CalendarDays className="mr-2 h-4 w-4" />
+        Proxima semana
+      </Button>
       <div className="flex gap-2">
         <Button className="flex-1" onClick={() => doSearch(0)} disabled={loading}>
           <Search className="mr-2 h-4 w-4" />

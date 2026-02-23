@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.014",
+    feature: 14,
+    title: "Filtro rapido: Proxima semana",
+    summary: "Nuevo boton de filtro rapido en la pagina de busqueda que filtra tareas con fecha siguiente accion dentro de los proximos 7 dias (hoy + 6 dias). El boton se integra con los filtros existentes, muestra estado activo/inactivo, aparece como tag removible, y su estado se preserva al navegar entre paginas."
+  },
+  {
     version: "1.013",
     feature: 13,
     title: "Mejoras de diseño responsivo movil",

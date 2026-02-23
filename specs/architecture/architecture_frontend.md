@@ -182,6 +182,7 @@ frontend/
 - **Lateral filter sidebar** on xl+ screens; collapsible accordion on smaller screens
 - **Column filter popovers**: Filterable column headers display a funnel icon that opens a popover with filter input on click; icon turns colored when filter is active
 - **Active filter tags**: Removable badge tags next to result count showing all active server-side filters; clicking X removes the filter and re-triggers search
+- **Quick filter "Proxima semana"**: Toggle button between Estado filter and Buscar/Limpiar buttons; applies `gte`/`lte` date range on `fecha_siguiente_accion` (today to today+6 days, computed client-side); active/inactive variant toggle; appears as removable badge tag with DD/MM date range; state preserved in module-level cache; cleared by "Limpiar" button
 - **Default filter**: estado defaults to "En Curso"; "Limpiar" resets to "En Curso"
 - **Default sort**: fecha_siguiente_accion ascending
 - **Auto-search** on initial page load with default filters
