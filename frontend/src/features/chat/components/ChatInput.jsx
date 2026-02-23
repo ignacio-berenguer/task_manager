@@ -106,11 +106,11 @@ export function ChatInput({ onSend, onStop, isLoading }) {
         />
         <div className="flex-shrink-0 p-1.5">
           {isLoading ? (
-            <Button size="icon" variant="destructive" onClick={onStop} className="h-8 w-8 rounded-lg">
+            <Button size="icon" variant="destructive" onClick={onStop} className="h-9 w-9 rounded-lg">
               <Square className="w-4 h-4" />
             </Button>
           ) : (
-            <Button size="icon" onClick={handleSubmit} disabled={!value.trim()} className="h-8 w-8 rounded-lg">
+            <Button size="icon" onClick={handleSubmit} disabled={!value.trim()} className="h-9 w-9 rounded-lg">
               <Send className="w-4 h-4" />
             </Button>
           )}

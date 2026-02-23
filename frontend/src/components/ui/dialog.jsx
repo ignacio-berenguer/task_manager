@@ -55,8 +55,8 @@ function DialogContent({ children, className, onClose, size = 'md' }) {
       <DialogOverlay onClose={onClose} />
       <div
         className={cn(
-          `fixed left-1/2 top-1/2 z-50 w-full ${SIZE_CLASSES[size] || SIZE_CLASSES.md} -translate-x-1/2 -translate-y-1/2`,
-          'rounded-lg border border-border/50 bg-background p-6 shadow-lg',
+          `fixed left-1/2 top-1/2 z-50 w-full max-w-[calc(100vw-2rem)] ${SIZE_CLASSES[size] || SIZE_CLASSES.md} -translate-x-1/2 -translate-y-1/2`,
+          'rounded-lg border border-border/50 bg-background p-4 sm:p-6 shadow-lg',
           'animate-in fade-in-0 zoom-in-[0.97]',
           className
         )}
@@ -65,7 +65,7 @@ function DialogContent({ children, className, onClose, size = 'md' }) {
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100 transition-opacity"
+          className="absolute right-4 top-4 rounded-sm p-1 opacity-70 hover:opacity-100 transition-opacity"
         >
           <X className="h-4 w-4" />
           <span className="sr-only">Cerrar</span>

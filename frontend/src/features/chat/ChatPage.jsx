@@ -14,7 +14,7 @@ export function ChatPage() {
     <Layout>
       <div className="flex flex-col h-[calc(100vh-8rem)]">
         {/* Header */}
-        <div className="relative flex items-center justify-between px-6 py-3">
+        <div className="relative flex items-center justify-between px-4 py-3 sm:px-6">
           <h1 className="text-lg font-semibold tracking-tight">Asistente IA</h1>
           {messages.length > 0 && (
             <Button variant="ghost" size="sm" onClick={clearChat} className="gap-1.5 text-muted-foreground hover:text-foreground">

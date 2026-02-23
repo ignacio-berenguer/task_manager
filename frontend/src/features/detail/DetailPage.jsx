@@ -187,7 +187,7 @@ export default function DetailPage() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
-                      className="rounded p-1 hover:bg-muted text-muted-foreground hover:text-foreground"
+                      className="rounded p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground"
                       onClick={() => setCambiarFechaOpen(true)}
                     >
                       <CalendarClock className="h-4 w-4" />
@@ -198,8 +198,8 @@ export default function DetailPage() {
               </div>
             </div>
             <Button variant="outline" onClick={openEdit} className="shrink-0">
-              <Pencil className="mr-2 h-4 w-4" />
-              Editar
+              <Pencil className="sm:mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Editar</span>
             </Button>
           </div>
         </div>
@@ -216,35 +216,62 @@ export default function DetailPage() {
           {acciones.length === 0 ? (
             <p className="text-sm text-muted-foreground">No hay acciones registradas.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 z-10 bg-card">
-                  <tr className="border-b">
-                    <th className="w-[100px] px-2 py-1.5 text-left font-medium">Fecha</th>
-                    <th className="px-2 py-1.5 text-left font-medium">Accion</th>
-                    <th className="w-[120px] px-2 py-1.5 text-left font-medium">Estado</th>
-                    <th className="w-[80px] px-2 py-1.5 text-right font-medium">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {acciones.map(acc => (
-                    <tr key={acc.id} className="border-b">
-                      <td className="px-2 py-1.5 text-muted-foreground">{formatDate(acc.fecha_accion)}</td>
-                      <td className="px-2 py-1.5">{acc.accion}</td>
-                      <td className="px-2 py-1.5"><EstadoBadge estado={acc.estado} size="sm" /></td>
-                      <td className="px-2 py-1.5 text-right">
-                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEditAccion(acc)}>
-                          <Pencil className="h-3.5 w-3.5" />
+            <>
+              {/* Mobile: card layout */}
+              <div className="space-y-2 sm:hidden">
+                {acciones.map(acc => (
+                  <div key={acc.id} className="rounded-lg border p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm">{acc.accion}</p>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                          <span className="text-xs text-muted-foreground">{formatDate(acc.fecha_accion)}</span>
+                          <EstadoBadge estado={acc.estado} size="sm" />
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-0.5">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEditAccion(acc)}>
+                          <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => deleteAccion(acc.id)}>
-                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => deleteAccion(acc.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
-                      </td>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Desktop: table layout */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 z-10 bg-card">
+                    <tr className="border-b">
+                      <th className="w-[100px] px-2 py-1.5 text-left font-medium">Fecha</th>
+                      <th className="px-2 py-1.5 text-left font-medium">Accion</th>
+                      <th className="w-[120px] px-2 py-1.5 text-left font-medium">Estado</th>
+                      <th className="w-[80px] px-2 py-1.5 text-right font-medium">Acciones</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {acciones.map(acc => (
+                      <tr key={acc.id} className="border-b">
+                        <td className="px-2 py-1.5 text-muted-foreground">{formatDate(acc.fecha_accion)}</td>
+                        <td className="px-2 py-1.5">{acc.accion}</td>
+                        <td className="px-2 py-1.5"><EstadoBadge estado={acc.estado} size="sm" /></td>
+                        <td className="px-2 py-1.5 text-right">
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEditAccion(acc)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => deleteAccion(acc.id)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </Card>
 
@@ -252,10 +279,10 @@ export default function DetailPage() {
         {tarea.notas_anteriores && (
           <Accordion type="single" collapsible className="mb-6">
             <AccordionItem value="notas" className="rounded-lg border bg-card">
-              <AccordionTrigger className="px-6">
+              <AccordionTrigger className="px-4 sm:px-6">
                 <span className="text-lg font-semibold">Notas Anteriores</span>
               </AccordionTrigger>
-              <AccordionContent className="px-6">
+              <AccordionContent className="px-4 sm:px-6">
                 <p className="text-sm whitespace-pre-wrap text-muted-foreground">{tarea.notas_anteriores}</p>
               </AccordionContent>
             </AccordionItem>
@@ -265,10 +292,10 @@ export default function DetailPage() {
         {/* 3. Datos de la Tarea (accordion, collapsed by default) */}
         <Accordion type="single" collapsible>
           <AccordionItem value="datos" className="rounded-lg border bg-card">
-            <AccordionTrigger className="px-6">
+            <AccordionTrigger className="px-4 sm:px-6">
               <span className="text-lg font-semibold">Datos de la Tarea</span>
             </AccordionTrigger>
-            <AccordionContent className="px-6">
+            <AccordionContent className="px-4 sm:px-6">
               <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {DISPLAY_FIELDS.map(field => (
                   <div key={field}>

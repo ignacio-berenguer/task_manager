@@ -6,9 +6,9 @@ export function NotFoundPage() {
   usePageTitle('Página no encontrada')
   return (
     <Layout>
-      <div className="container mx-auto py-16 text-center">
-        <h1 className="text-6xl font-bold text-muted-foreground mb-4">404</h1>
-        <p className="text-xl text-muted-foreground mb-8">
+      <div className="container mx-auto py-12 sm:py-16 text-center">
+        <h1 className="text-4xl sm:text-6xl font-bold text-muted-foreground mb-4">404</h1>
+        <p className="text-lg sm:text-xl text-muted-foreground mb-8">
           La página que busca no existe o ha sido movida.
         </p>
         <Link

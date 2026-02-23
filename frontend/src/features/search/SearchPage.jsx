@@ -457,8 +457,8 @@ export default function SearchPage() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button onClick={() => setNewTareaOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Nueva Tarea
+                  <Plus className="sm:mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">Nueva Tarea</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Ctrl+Shift+N</TooltipContent>
@@ -478,7 +478,7 @@ export default function SearchPage() {
           {/* Main content */}
           <div className="flex-1 min-w-0">
             {/* Mobile/tablet filters - below xl */}
-            <div className="xl:hidden mb-6 sticky top-16 z-10 bg-background">
+            <div className="xl:hidden mb-6 sticky top-[7.25rem] z-20 bg-background">
               <Accordion type="single" collapsible defaultValue="filters">
                 <AccordionItem value="filters">
                   <AccordionTrigger className="rounded-lg border bg-card px-4">
@@ -539,9 +539,9 @@ export default function SearchPage() {
                               )}
                               {FILTERABLE_COLUMNS.includes(col) && (
                                 <Popover>
-                                  <PopoverTrigger>
+                                  <PopoverTrigger className="p-0.5">
                                     <Filter className={cn(
-                                      'h-3.5 w-3.5 ml-1',
+                                      'h-4 w-4 ml-1',
                                       columnFilters[col] ? 'text-primary' : 'text-muted-foreground/50 hover:text-muted-foreground'
                                     )} />
                                   </PopoverTrigger>
@@ -654,8 +654,8 @@ export default function SearchPage() {
                 <p className="text-xs text-muted-foreground font-mono">{drawerTarea.tarea_id}</p>
                 <SheetTitle className="text-lg font-semibold">{drawerTarea.tarea}</SheetTitle>
               </SheetHeader>
-              <div className="px-6 pb-6 space-y-4">
-                <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="px-4 pb-4 sm:px-6 sm:pb-6 space-y-4">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 text-sm">
                   <div>
                     <span className="text-muted-foreground">Responsable</span>
                     <p>{drawerTarea.responsable || '-'}</p>
@@ -792,7 +792,7 @@ function RowWithExpand({ row, columns, renderCell, expanded, onToggleExpand, acc
       >
         <td className="px-2 py-3">
           <button
-            className="rounded p-1 hover:bg-muted"
+            className="rounded p-1.5 hover:bg-muted"
             onClick={(e) => { e.stopPropagation(); onToggleExpand() }}
             title="Expandir detalle"
           >
@@ -801,7 +801,7 @@ function RowWithExpand({ row, columns, renderCell, expanded, onToggleExpand, acc
         </td>
         <td className="px-2 py-3">
           <button
-            className="rounded p-1 hover:bg-muted text-muted-foreground hover:text-foreground"
+            className="rounded p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground"
             onClick={onOpenDrawer}
             title="Vista rapida"
           >
@@ -818,7 +818,7 @@ function RowWithExpand({ row, columns, renderCell, expanded, onToggleExpand, acc
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
-                  className="rounded p-1 hover:bg-muted text-muted-foreground hover:text-foreground"
+                  className="rounded p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground"
                   onClick={(e) => { e.stopPropagation(); onAddAccion?.() }}
                 >
                   <ListPlus className="h-4 w-4" />
@@ -829,7 +829,7 @@ function RowWithExpand({ row, columns, renderCell, expanded, onToggleExpand, acc
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
-                  className="rounded p-1 hover:bg-muted text-muted-foreground hover:text-foreground"
+                  className="rounded p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground"
                   onClick={(e) => { e.stopPropagation(); onCambiarFecha?.() }}
                 >
                   <CalendarClock className="h-4 w-4" />
@@ -842,7 +842,7 @@ function RowWithExpand({ row, columns, renderCell, expanded, onToggleExpand, acc
       </tr>
       {expanded && (
         <tr className="border-b bg-muted/20">
-          <td colSpan={columns.length + 3} className="px-6 py-4">
+          <td colSpan={columns.length + 3} className="px-3 py-3 sm:px-6 sm:py-4">
             <div className="space-y-3">
               {row.descripcion && (
                 <div>
@@ -862,7 +862,7 @@ function RowWithExpand({ row, columns, renderCell, expanded, onToggleExpand, acc
                   <div className="mt-1 space-y-1">
                     {cachedAcciones.map(acc => (
                       <div key={acc.id} className="flex items-center gap-3 text-sm">
-                        <span className="text-muted-foreground w-24 shrink-0">{formatDate(acc.fecha_accion)}</span>
+                        <span className="text-muted-foreground w-20 sm:w-24 shrink-0">{formatDate(acc.fecha_accion)}</span>
                         <span className="flex-1">{acc.accion}</span>
                         <EstadoBadge estado={acc.estado} size="sm" />
                       </div>

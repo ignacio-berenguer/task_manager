@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.013",
+    feature: 13,
+    title: "Mejoras de diseño responsivo movil",
+    summary: "Correcciones de renderizado en pantallas moviles. Busqueda: boton Nueva Tarea compacto, filtros con posicion sticky corregida, iconos de filtro y botones de accion mas grandes para tacto, drawer con grid adaptable. Detalle: tabla de acciones con vista de tarjetas en movil, botones de accion mas grandes, padding responsivo en acordeones. Dialogos: ancho maximo limitado al viewport, padding y boton de cierre mejorados. Chat: botones de envio mas grandes. Pagina 404: tipografia responsiva."
+  },
+  {
     version: "1.012",
     feature: 12,
     title: "Estado persistente de busqueda",

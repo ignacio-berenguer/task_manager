@@ -385,3 +385,11 @@ VITE_APP_NAME=Task Manager
 **Shared Feature Components:** Reusable dialog components in `features/shared/ActionDialogs.jsx` are used by both SearchPage and DetailPage for "Añadir Accion" and "Cambiar Fecha Siguiente Accion" operations. Each dialog manages its own form state, API calls, and toast notifications, and accepts an `onSuccess` callback to refresh the parent page's data.
 
 **Code Splitting:** All protected routes use `React.lazy()` with `Suspense` and page-specific skeleton fallbacks for optimal loading performance.
+
+**Mobile Responsive Design:** The frontend uses a mobile-first approach with Tailwind CSS responsive utilities (`sm:`, `md:`, `lg:`, `xl:`). Key patterns:
+- **Buttons**: Text labels hidden on mobile with `hidden sm:inline`, showing icon-only on small screens (e.g., "Nueva Tarea", "Editar")
+- **Dialogs**: All dialogs constrained with `max-w-[calc(100vw-2rem)]` and responsive padding `p-4 sm:p-6` to prevent overflow on any screen
+- **Detail acciones**: Responsive card layout on mobile (`sm:hidden`) vs table on desktop (`hidden sm:block`)
+- **Drawer/Sheet**: Full-screen on mobile, side-slide panel on desktop. Content uses responsive grid (`grid-cols-1 sm:grid-cols-2`)
+- **Padding**: Components use responsive padding (`px-4 sm:px-6`) to reduce whitespace on small screens
+- **Touch targets**: Interactive elements (buttons, icons) use minimum `p-1.5` padding for adequate tap areas
