@@ -7,7 +7,7 @@ import {
   SignedOut,
   UserButton,
 } from '@clerk/clerk-react'
-import { Menu, X, Search, MessageSquare, CheckSquare, Settings, Download, ChevronDown, Loader2 } from 'lucide-react'
+import { Menu, X, Search, MessageSquare, Settings, Download, ChevronDown, Loader2 } from 'lucide-react'
 import { ModeToggle } from '@/components/theme/ModeToggle'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -94,8 +94,8 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground">
-              <CheckSquare className="h-5 w-5" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#dc2626]">
+              <span className="text-lg font-bold leading-none text-white">T</span>
             </div>
             <span className="hidden font-semibold sm:inline-block">
               Task Manager

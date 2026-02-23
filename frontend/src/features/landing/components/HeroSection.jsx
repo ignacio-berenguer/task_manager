@@ -1,6 +1,6 @@
 import { useAuth } from '@clerk/clerk-react'
 import { Link } from 'react-router-dom'
-import { CheckSquare, ArrowRight } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 
 export function HeroSection() {
   const { isSignedIn } = useAuth()
@@ -9,8 +9,8 @@ export function HeroSection() {
     <section className="relative overflow-hidden bg-gradient-to-b from-background to-muted/30 py-20 sm:py-32">
       <div className="mx-auto max-w-4xl px-6 text-center">
         <div className="mb-6 flex justify-center">
-          <div className="rounded-2xl bg-primary/10 p-4">
-            <CheckSquare className="h-12 w-12 text-primary" />
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[#dc2626]">
+            <span className="text-4xl font-bold leading-none text-white">T</span>
           </div>
         </div>
         <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">
