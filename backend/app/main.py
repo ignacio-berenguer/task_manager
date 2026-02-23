@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .config import settings
-from .routers import tareas, acciones, estados, responsables, agent
+from .routers import tareas, acciones, estados, responsables, agent, admin
 
 # Setup logging
 _backend_dir = Path(__file__).parent.parent
@@ -97,6 +97,7 @@ app.include_router(estados.router_tareas, prefix=settings.API_PREFIX)
 app.include_router(estados.router_acciones, prefix=settings.API_PREFIX)
 app.include_router(responsables.router, prefix=settings.API_PREFIX)
 app.include_router(agent.router, prefix=settings.API_PREFIX)
+app.include_router(admin.router, prefix=settings.API_PREFIX)
 
 
 @app.get("/")

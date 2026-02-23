@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.010",
+    feature: 10,
+    title: "Exportar base de datos",
+    summary: "Nuevo menu Administrador en la barra de navegacion con opcion para exportar toda la base de datos en formato JSON. El archivo exportado contiene todas las tablas y puede usarse para restaurar la base de datos."
+  },
+  {
     version: "1.008",
     feature: 8,
     title: "Seguridad API con Clerk JWT",

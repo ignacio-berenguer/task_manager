@@ -48,7 +48,8 @@ backend/
 │       ├── acciones.py       # Acciones CRUD (incl. by tarea_id)
 │       ├── estados.py        # Estados parametric tables (two routers)
 │       ├── responsables.py   # Responsables parametric table CRUD
-│       └── agent.py          # AI agent chat with SSE streaming
+│       ├── agent.py          # AI agent chat with SSE streaming
+│       └── admin.py          # Admin: database export
 ├── .env                      # Environment variables (gitignored)
 ├── .env.example              # Template
 └── pyproject.toml            # Dependencies
@@ -150,7 +151,17 @@ Two separate routers for the two estado tables:
 
 **Router:** `routers/agent.py` with prefix `/agent`.
 
-### 6.6 Utility Endpoints
+### 6.6 Admin
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/admin/export` | Export all database tables as a downloadable JSON file |
+
+**Router:** `routers/admin.py` with prefix `/admin`.
+
+The export endpoint queries all 5 tables in dependency order (reference tables first, then main, then dependent) and returns a JSON response with `export_metadata` (timestamp, version, table list, record counts) and `data` (all records from each table). The response includes a `Content-Disposition` header to trigger a file download.
+
+### 6.7 Utility Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -318,7 +329,7 @@ The API uses a dual authentication mechanism applied at the router level via Fas
 
 ### Protected Endpoints (auth required)
 
-All router endpoints under `/api/v1/*`: tareas, acciones, estados-tareas, estados-acciones, responsables, agent.
+All router endpoints under `/api/v1/*`: tareas, acciones, estados-tareas, estados-acciones, responsables, agent, admin.
 
 Auth is applied via `dependencies=[Depends(verify_auth)]` on each `APIRouter()`.
 

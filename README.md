@@ -100,13 +100,16 @@ task_manager/
 │   │       ├── acciones.py          # Acciones CRUD
 │   │       ├── estados.py           # Estados parametric tables
 │   │       ├── responsables.py      # Responsables parametric table
-│   │       └── agent.py             # AI agent chat with SSE streaming
+│   │       ├── agent.py             # AI agent chat with SSE streaming
+│   │       └── admin.py             # Admin: database export
 │   ├── pyproject.toml
 │   └── .env                         # Configuration (gitignored)
 │
 ├── frontend/                        # React SPA
 │   ├── src/
-│   │   ├── api/client.js            # Axios + Clerk JWT interceptors
+│   │   ├── api/
+│   │   │   ├── client.js            # Axios + Clerk JWT interceptors
+│   │   │   └── admin.js             # Admin API (database export)
 │   │   ├── components/
 │   │   │   ├── ui/                  # 21 shadcn-style components
 │   │   │   ├── layout/              # Navbar, Footer, Layout, GlobalSearch
@@ -235,6 +238,12 @@ The backend API is secured with a dual authentication mechanism:
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/v1/agent/chat` | AI agent chat with SSE streaming |
+
+**Admin:**
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/admin/export` | Export all database tables as downloadable JSON |
 
 **Flexible Search Operators:** `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, `not_in`, `is_null`, `is_not_null`
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   SignInButton,
@@ -7,10 +7,14 @@ import {
   SignedOut,
   UserButton,
 } from '@clerk/clerk-react'
-import { Menu, X, Search, MessageSquare, CheckSquare } from 'lucide-react'
+import { Menu, X, Search, MessageSquare, CheckSquare, Settings, Download, ChevronDown, Loader2 } from 'lucide-react'
 import { ModeToggle } from '@/components/theme/ModeToggle'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { exportDatabase } from '@/api/admin'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger('Navbar')
 
 const navItems = [
   { name: 'Busqueda', href: '/search', icon: Search },
@@ -22,9 +26,51 @@ const navItems = [
  */
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isAdminOpen, setIsAdminOpen] = useState(false)
+  const [isAdminMobileOpen, setIsAdminMobileOpen] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
   const location = useLocation()
+  const adminRef = useRef(null)
 
   const isActive = (href) => location.pathname === href
+
+  // Close admin dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (adminRef.current && !adminRef.current.contains(e.target)) {
+        setIsAdminOpen(false)
+      }
+    }
+    if (isAdminOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isAdminOpen])
+
+  // Close admin dropdown on Escape
+  useEffect(() => {
+    function handleEscape(e) {
+      if (e.key === 'Escape') setIsAdminOpen(false)
+    }
+    if (isAdminOpen) {
+      document.addEventListener('keydown', handleEscape)
+      return () => document.removeEventListener('keydown', handleEscape)
+    }
+  }, [isAdminOpen])
+
+  const handleExport = async () => {
+    if (isExporting) return
+    setIsExporting(true)
+    try {
+      await exportDatabase()
+    } catch (err) {
+      logger.error('Error al exportar la base de datos', err)
+    } finally {
+      setIsExporting(false)
+      setIsAdminOpen(false)
+      setIsAdminMobileOpen(false)
+    }
+  }
 
   const navLinkClass = (href) =>
     cn(
@@ -69,6 +115,38 @@ export function Navbar() {
                   <span>{item.name}</span>
                 </Link>
               ))}
+
+              {/* Admin dropdown */}
+              <div className="relative" ref={adminRef}>
+                <button
+                  onClick={() => setIsAdminOpen(!isAdminOpen)}
+                  className={cn(
+                    'flex items-center space-x-1 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                    'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  )}
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>Administrador</span>
+                  <ChevronDown className={cn('h-3 w-3 transition-transform', isAdminOpen && 'rotate-180')} />
+                </button>
+
+                {isAdminOpen && (
+                  <div className="absolute right-0 mt-1 w-56 rounded-md border border-border bg-popover p-1 shadow-md">
+                    <button
+                      onClick={handleExport}
+                      disabled={isExporting}
+                      className="flex w-full items-center space-x-2 rounded-sm px-2 py-2 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+                    >
+                      {isExporting ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Download className="h-4 w-4" />
+                      )}
+                      <span>{isExporting ? 'Exportando...' : 'Exportar base de datos'}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </SignedIn>
           </div>
 
@@ -130,6 +208,33 @@ export function Navbar() {
                     <span>{item.name}</span>
                   </Link>
                 ))}
+
+                {/* Admin accordion */}
+                <button
+                  onClick={() => setIsAdminMobileOpen(!isAdminMobileOpen)}
+                  className="flex w-full items-center justify-between rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                >
+                  <span className="flex items-center space-x-2">
+                    <Settings className="h-5 w-5" />
+                    <span>Administrador</span>
+                  </span>
+                  <ChevronDown className={cn('h-4 w-4 transition-transform', isAdminMobileOpen && 'rotate-180')} />
+                </button>
+
+                {isAdminMobileOpen && (
+                  <button
+                    onClick={handleExport}
+                    disabled={isExporting}
+                    className="flex w-full items-center space-x-2 rounded-md px-3 py-2 pl-10 text-base font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+                  >
+                    {isExporting ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <Download className="h-5 w-5" />
+                    )}
+                    <span>{isExporting ? 'Exportando...' : 'Exportar base de datos'}</span>
+                  </button>
+                )}
               </div>
             </div>
           )}

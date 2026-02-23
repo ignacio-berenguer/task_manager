@@ -74,7 +74,8 @@ frontend/
 │   └── favicon.svg
 ├── src/
 │   ├── api/
-│   │   └── client.js              # Axios instance + Clerk JWT interceptors
+│   │   ├── client.js              # Axios instance + Clerk JWT interceptors
+│   │   └── admin.js               # Admin API (database export)
 │   ├── components/
 │   │   ├── ui/                    # 21 shadcn-style UI components
 │   │   │   ├── accordion.jsx
@@ -275,7 +276,7 @@ ClerkProvider
 
 | Component | Description |
 |-----------|-------------|
-| `Navbar.jsx` | Top navigation bar with links, auth controls, GlobalSearch |
+| `Navbar.jsx` | Top navigation bar with links, Administrador dropdown, auth controls, GlobalSearch |
 | `GlobalSearch.jsx` | Navbar search bar for quick task lookup |
 | `Layout.jsx` | Main layout wrapper (Navbar + content + Footer) |
 | `Footer.jsx` | Page footer |
@@ -319,11 +320,15 @@ ClerkProvider
 
 ---
 
-### 10. API Client (`api/client.js`)
+### 10. API Client
 
+#### `api/client.js`
 - Axios instance configured with `VITE_API_BASE_URL`
 - Request interceptor automatically injects Clerk JWT token in `Authorization` header
 - Centralized error handling
+
+#### `api/admin.js`
+- `exportDatabase()` — Calls `GET /admin/export`, creates a Blob from the JSON response (pretty-printed), and triggers a browser file download with a timestamped filename
 
 ---
 
@@ -370,6 +375,8 @@ VITE_APP_NAME=Task Manager
 **localStorage Persistence:** Search filters, column configurations, page sizes, and theme preferences are persisted via the `createStorage()` utility.
 
 **Spanish UI:** All user-facing text is in Spanish. Code identifiers use Spanish column names without accents (e.g., `descripcion`, `accion`).
+
+**Administrador Dropdown:** The Navbar includes an "Administrador" dropdown menu (desktop: click-toggle popover with click-outside/Escape dismiss; mobile: accordion in drawer). Currently contains "Exportar base de datos" which downloads the entire database as a JSON file.
 
 **Error Handling:** `ErrorBoundary` wraps each protected route for graceful error recovery with a retry button.
 
