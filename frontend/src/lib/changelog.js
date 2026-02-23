@@ -6,6 +6,12 @@ export const CHANGELOG = [
     summary: "Nuevo menu Administrador en la barra de navegacion con opcion para exportar toda la base de datos en formato JSON. El archivo exportado contiene todas las tablas y puede usarse para restaurar la base de datos."
   },
   {
+    version: "1.009",
+    feature: 9,
+    title: "Importacion de Tema desde Excel",
+    summary: "La columna Tema del Excel de origen se importa y normaliza durante la migracion, mapeandose al campo tema de la tabla tareas. Valores vacios o ausentes se almacenan como NULL."
+  },
+  {
     version: "1.008",
     feature: 8,
     title: "Seguridad API con Clerk JWT",

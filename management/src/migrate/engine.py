@@ -242,6 +242,10 @@ class TareasMigrationEngine:
             mapped_df["notas_anteriores"] = mapped_df["notas_anteriores"].apply(
                 lambda v: normalize_multiline_text(v) if pd.notna(v) else None
             )
+        if "tema" in mapped_df.columns:
+            mapped_df["tema"] = mapped_df["tema"].apply(
+                lambda v: normalize_multiline_text(v) if pd.notna(v) else None
+            )
 
         # Replace NaN with None
         mapped_df = mapped_df.where(pd.notna(mapped_df), None)
@@ -256,7 +260,7 @@ class TareasMigrationEngine:
             batch = mapped_df.iloc[i:i + batch_size]
             for _, row in batch.iterrows():
                 try:
-                    cols = [c for c in row.index if row[c] is not None]
+                    cols = [c for c in row.index if pd.notna(row[c])]
                     vals = [row[c] for c in cols]
                     placeholders = ", ".join(["%s"] * len(cols))
                     col_names = ", ".join(cols)
