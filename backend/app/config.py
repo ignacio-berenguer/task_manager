@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     AGENT_MAX_TOKENS: int = 4096
     AGENT_TEMPERATURE: float = 0.3
     AGENT_MAX_TOOL_ROUNDS: int = 10
-    AGENT_API_BASE_URL: str = "http://localhost:8080/api/v1"
+    AGENT_API_BASE_URL: str = ""  # Auto-derived from API_HOST:API_PORT if empty
 
     class Config:
         env_file = ".env"
@@ -49,3 +49,8 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# Auto-derive AGENT_API_BASE_URL from API settings if not explicitly set
+if not settings.AGENT_API_BASE_URL:
+    _host = "127.0.0.1" if settings.API_HOST == "0.0.0.0" else settings.API_HOST
+    settings.AGENT_API_BASE_URL = f"http://{_host}:{settings.API_PORT}{settings.API_PREFIX}"

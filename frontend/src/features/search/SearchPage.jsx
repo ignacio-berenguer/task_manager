@@ -74,7 +74,7 @@ export default function SearchPage() {
       tarea: '',
       responsable: '',
       tema: '',
-      estado: 'En Curso',
+      estado: 'En curso',
     }
   )
   const [results, setResults] = useState(() => searchStateCache?.results || null)
@@ -239,7 +239,7 @@ export default function SearchPage() {
   }, [filterOptions, doSearch])
 
   const clearFilters = () => {
-    setFilters({ tarea_id: '', tarea: '', responsable: '', tema: '', estado: 'En Curso' })
+    setFilters({ tarea_id: '', tarea: '', responsable: '', tema: '', estado: 'En curso' })
     setProximaSemana(false)
     setProximosDias(false)
   }

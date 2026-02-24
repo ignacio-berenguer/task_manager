@@ -24,6 +24,7 @@ class AgentAPIClient:
         headers = {}
         if app_settings.API_KEY:
             headers["X-API-Key"] = app_settings.API_KEY
+        LOG.info("Agent API client targeting: %s (API_KEY configured: %s)", self.base_url, bool(app_settings.API_KEY))
         self.client = httpx.AsyncClient(base_url=self.base_url, timeout=30.0, headers=headers)
 
     async def search(self, table: str, body: dict) -> dict:
