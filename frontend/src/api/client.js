@@ -6,8 +6,17 @@ const logger = createLogger('API')
 /**
  * Axios instance configured for the Portfolio Digital API
  */
+const isProduction = window.location.hostname !== 'localhost'
+let baseURL = import.meta.env.VITE_API_BASE_URL
+  || (isProduction ? 'https://taskapi.iridescentiris.tech/api/v1' : 'http://localhost:8080/api/v1')
+
+// Auto-upgrade to HTTPS when page is served over HTTPS (prevents mixed content)
+if (window.location.protocol === 'https:' && baseURL.startsWith('http://')) {
+  baseURL = baseURL.replace('http://', 'https://')
+}
+
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1',
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
