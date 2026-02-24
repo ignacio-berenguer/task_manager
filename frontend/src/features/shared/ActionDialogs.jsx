@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { DatePicker } from '@/components/ui/datepicker'
+import { DateInput } from '@/components/ui/date-input'
 import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
 import apiClient from '@/api/client'
@@ -59,9 +59,11 @@ export function AddAccionDialog({ open, onOpenChange, tareaId, onSuccess }) {
   }, [form, saving, tareaId, onOpenChange, onSuccess])
 
   const handleKeyDown = useCallback((e) => {
-    if (e.ctrlKey && e.key === 'Enter') {
-      e.preventDefault()
-      handleSave()
+    if (e.key === 'Enter') {
+      if (e.ctrlKey || (e.target.tagName !== 'TEXTAREA' && !e.target.closest('.rdp'))) {
+        e.preventDefault()
+        handleSave()
+      }
     }
   }, [handleSave])
 
@@ -87,7 +89,7 @@ export function AddAccionDialog({ open, onOpenChange, tareaId, onSuccess }) {
           </div>
           <div>
             <label className="text-sm font-medium">Fecha</label>
-            <DatePicker
+            <DateInput
               value={form.fecha_accion}
               onChange={val => setForm(f => ({ ...f, fecha_accion: val }))}
             />
@@ -149,9 +151,11 @@ export function CompleteAndScheduleDialog({ open, onOpenChange, tareaId, onSucce
   }, [form, saving, tareaId, onOpenChange, onSuccess])
 
   const handleKeyDown = useCallback((e) => {
-    if (e.ctrlKey && e.key === 'Enter') {
-      e.preventDefault()
-      handleSave()
+    if (e.key === 'Enter') {
+      if (e.ctrlKey || (e.target.tagName !== 'TEXTAREA' && !e.target.closest('.rdp'))) {
+        e.preventDefault()
+        handleSave()
+      }
     }
   }, [handleSave])
 
@@ -180,7 +184,7 @@ export function CompleteAndScheduleDialog({ open, onOpenChange, tareaId, onSucce
           </div>
           <div>
             <label className="text-sm font-medium">Fecha Siguiente Accion</label>
-            <DatePicker
+            <DateInput
               value={form.fecha_siguiente}
               onChange={val => setForm(f => ({ ...f, fecha_siguiente: val }))}
             />
@@ -248,9 +252,11 @@ export function CambiarFechaDialog({ open, onOpenChange, tareaId, currentFecha, 
   }, [fecha, saving, tareaId, onOpenChange, onSuccess])
 
   const handleKeyDown = useCallback((e) => {
-    if (e.ctrlKey && e.key === 'Enter') {
-      e.preventDefault()
-      handleSave()
+    if (e.key === 'Enter') {
+      if (e.ctrlKey || (e.target.tagName !== 'TEXTAREA' && !e.target.closest('.rdp'))) {
+        e.preventDefault()
+        handleSave()
+      }
     }
   }, [handleSave])
 
@@ -264,7 +270,7 @@ export function CambiarFechaDialog({ open, onOpenChange, tareaId, currentFecha, 
         </DialogHeader>
         <div onKeyDown={handleKeyDown} ref={datePickerRef}>
           <label className="text-sm font-medium">Fecha Siguiente Accion</label>
-          <DatePicker
+          <DateInput
             value={fecha}
             onChange={setFecha}
           />

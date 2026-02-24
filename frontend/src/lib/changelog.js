@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.018",
+    feature: 18,
+    title: "Fechas con +/- rapido y Enter para guardar",
+    summary: "Todos los campos de fecha en modales ahora usan un componente unificado DateInput con botones +/- para ajustar la fecha un dia. Atajos de teclado: teclas + y - cuando el campo tiene foco. Tecla Enter cierra el modal guardando los cambios (excepto en areas de texto). Homogeneizacion de todos los selectores de fecha de la aplicacion."
+  },
+  {
     version: "1.017",
     feature: 17,
     title: "Completar y Programar Siguiente Accion",

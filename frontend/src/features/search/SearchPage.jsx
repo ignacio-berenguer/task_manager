@@ -864,7 +864,11 @@ export default function SearchPage() {
       <Dialog open={newTareaOpen} onOpenChange={setNewTareaOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Nueva Tarea</DialogTitle></DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-3" onKeyDown={e => {
+            if (e.key === 'Enter' && (e.ctrlKey || (e.target.tagName !== 'TEXTAREA' && !e.target.closest('.rdp')))) {
+              e.preventDefault(); handleNewTarea()
+            }
+          }}>
             <div>
               <label className="text-sm font-medium">Tarea *</label>
               <Input

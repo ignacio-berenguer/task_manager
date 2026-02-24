@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { EstadoBadge } from '@/components/shared/EstadoBadge'
 import { AddAccionDialog, CambiarFechaDialog, CompleteAndScheduleDialog } from '@/features/shared/ActionDialogs'
+import { DateInput } from '@/components/ui/date-input'
 import { formatDate } from '@/lib/formatDate'
 import { ArrowLeft, Plus, Pencil, Trash2, Calendar, CalendarClock, ListChecks } from 'lucide-react'
 import { createLogger } from '@/lib/logger'
@@ -329,7 +330,11 @@ export default function DetailPage() {
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogContent>
             <DialogHeader><DialogTitle>Editar Tarea</DialogTitle></DialogHeader>
-            <div className="space-y-3">
+            <div className="space-y-3" onKeyDown={e => {
+              if (e.key === 'Enter' && (e.ctrlKey || (e.target.tagName !== 'TEXTAREA' && !e.target.closest('.rdp')))) {
+                e.preventDefault(); saveEdit()
+              }
+            }}>
               <div>
                 <label className="text-sm font-medium">Tarea</label>
                 <Input value={editForm.tarea || ''} onChange={e => setEditForm(f => ({ ...f, tarea: e.target.value }))} />
@@ -358,7 +363,7 @@ export default function DetailPage() {
               </div>
               <div>
                 <label className="text-sm font-medium">Fecha Siguiente Accion</label>
-                <Input type="date" value={editForm.fecha_siguiente_accion || ''} onChange={e => setEditForm(f => ({ ...f, fecha_siguiente_accion: e.target.value }))} />
+                <DateInput value={editForm.fecha_siguiente_accion || ''} onChange={val => setEditForm(f => ({ ...f, fecha_siguiente_accion: val }))} />
               </div>
               <div>
                 <label className="text-sm font-medium">Tema</label>
@@ -405,7 +410,11 @@ export default function DetailPage() {
         <Dialog open={editAccionOpen} onOpenChange={setEditAccionOpen}>
           <DialogContent>
             <DialogHeader><DialogTitle>Editar Accion</DialogTitle></DialogHeader>
-            <div className="space-y-3">
+            <div className="space-y-3" onKeyDown={e => {
+              if (e.key === 'Enter' && (e.ctrlKey || (e.target.tagName !== 'TEXTAREA' && !e.target.closest('.rdp')))) {
+                e.preventDefault(); saveEditAccion()
+              }
+            }}>
               <div>
                 <label className="text-sm font-medium">Accion</label>
                 <textarea
@@ -417,7 +426,7 @@ export default function DetailPage() {
               </div>
               <div>
                 <label className="text-sm font-medium">Fecha</label>
-                <Input type="date" value={editAccionForm.fecha_accion} onChange={e => setEditAccionForm(f => ({ ...f, fecha_accion: e.target.value }))} />
+                <DateInput value={editAccionForm.fecha_accion} onChange={val => setEditAccionForm(f => ({ ...f, fecha_accion: val }))} />
               </div>
               <div>
                 <label className="text-sm font-medium">Estado</label>

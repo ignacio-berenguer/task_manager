@@ -187,7 +187,7 @@ frontend/
 - **Default filter**: estado defaults to "En Curso"; "Limpiar" resets to "En Curso"
 - **Default sort**: fecha_siguiente_accion ascending
 - **Auto-search** on initial page load with default filters
-- **Keyboard shortcuts**: Ctrl+Shift+F (focus tarea filter), Ctrl+Shift+N (new tarea dialog), Enter (trigger search)
+- **Keyboard shortcuts**: Ctrl+Shift+F (focus tarea filter), Ctrl+Shift+N (new tarea dialog), Enter (trigger search or submit modal)
 - **Sticky title bar**: "Busqueda de Tareas" title and action buttons remain visible when scrolling
 - **Sticky results bar & table header** (XL+ only): The results/filters bar (result count, filter chips, column configurator) and the table header row use `position: sticky` to remain visible while scrolling. A `ResizeObserver` dynamically measures the filter bar height to position the table header below it via a CSS custom property (`--thead-top`). The table wrapper uses `max-xl:overflow-x-auto` to remove the scroll context on XL+, allowing viewport-relative sticky positioning.
 - **Sortable data grid** with configurable columns and sticky column headers
@@ -210,7 +210,8 @@ frontend/
 - **Notas Anteriores** (second section, accordion): Collapsible accordion (closed by default), read-only display of original notas text (shown only when non-empty)
 - **Datos de la Tarea** (third section, accordion): Collapsible accordion (collapsed by default) showing all tarea fields with formatted dates and EstadoBadge
 - **Keyboard shortcuts**: Ctrl+Shift+F navigates to Search page with focus on tarea filter input
-- **Edit tarea dialog**: Responsable uses a dropdown populated from `/api/v1/responsables`
+- **Edit tarea dialog**: Responsable uses a dropdown populated from `/api/v1/responsables`; Enter submits, Ctrl+Enter submits from anywhere
+- **Modal keyboard**: All modals support Enter to submit (except in textareas), +/- keys to adjust dates when DateInput is focused
 - **Back navigation**: Uses `navigate(-1)` (browser history) to preserve Search page state
 
 #### 6.4 Chat Page (`/chat`)
@@ -263,7 +264,8 @@ ClerkProvider
 | `combobox.jsx` | Searchable select dropdown |
 | `confirm-dialog.jsx` | Confirmation dialog with cancel/confirm actions |
 | `currency-input.jsx` | Monetary input with locale formatting |
-| `datepicker.jsx` | Date picker with calendar popup |
+| `date-input.jsx` | Date input with +/- day buttons, keyboard accelerators (+/=/-), wraps DatePicker |
+| `datepicker.jsx` | Date picker with calendar popup (used internally by DateInput) |
 | `dialog.jsx` | Modal dialog |
 | `dropdown-menu.jsx` | Dropdown menu with items |
 | `input.jsx` | Text input field |
