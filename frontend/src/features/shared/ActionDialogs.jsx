@@ -105,8 +105,9 @@ export function AddAccionDialog({ open, onOpenChange, tareaId, onSuccess }) {
 }
 
 /**
- * Dialog to complete a current action and schedule the next one atomically.
- * Creates accion1 (Completada, today) + accion2 (Pendiente, future date) and updates tarea.
+ * Dialog to complete a current action and optionally schedule the next one.
+ * Creates accion1 (Completada, today), optionally accion2 (Pendiente, future date),
+ * and updates tarea's fecha_siguiente_accion.
  */
 export function CompleteAndScheduleDialog({ open, onOpenChange, tareaId, onSuccess }) {
   const [form, setForm] = useState({ accion_completada: '', accion_siguiente: '', fecha_siguiente: getTodayISO() })
@@ -121,17 +122,22 @@ export function CompleteAndScheduleDialog({ open, onOpenChange, tareaId, onSucce
   }, [open])
 
   const handleSave = useCallback(async () => {
-    if (!form.accion_completada.trim() || !form.accion_siguiente.trim() || !form.fecha_siguiente || saving) return
+    if (!form.accion_completada.trim() || !form.fecha_siguiente || saving) return
     setSaving(true)
     try {
-      await apiClient.post('/acciones/complete-and-schedule', {
+      const payload = {
         tarea_id: tareaId,
         accion_completada: form.accion_completada.trim(),
-        accion_siguiente: form.accion_siguiente.trim(),
         fecha_siguiente: form.fecha_siguiente,
-      })
+      }
+      if (form.accion_siguiente.trim()) {
+        payload.accion_siguiente = form.accion_siguiente.trim()
+      }
+      await apiClient.post('/acciones/complete-and-schedule', payload)
       LOG.info(`Complete & schedule for tarea ${tareaId}`)
-      toast.success('Accion completada y siguiente programada')
+      toast.success(form.accion_siguiente.trim()
+        ? 'Accion completada y siguiente programada'
+        : 'Accion completada y fecha actualizada')
       onOpenChange(false)
       onSuccess?.()
     } catch (err) {
@@ -151,7 +157,7 @@ export function CompleteAndScheduleDialog({ open, onOpenChange, tareaId, onSucce
 
   const handleClose = useCallback(() => onOpenChange(false), [onOpenChange])
 
-  const isValid = form.accion_completada.trim() && form.accion_siguiente.trim() && form.fecha_siguiente
+  const isValid = form.accion_completada.trim() && form.fecha_siguiente
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -172,8 +178,15 @@ export function CompleteAndScheduleDialog({ open, onOpenChange, tareaId, onSucce
             />
             <p className="text-xs text-muted-foreground">Se registrara con fecha de hoy y estado Completada</p>
           </div>
+          <div>
+            <label className="text-sm font-medium">Fecha Siguiente Accion</label>
+            <DatePicker
+              value={form.fecha_siguiente}
+              onChange={val => setForm(f => ({ ...f, fecha_siguiente: val }))}
+            />
+          </div>
           <div className="space-y-2 rounded-md border p-3">
-            <label className="text-sm font-medium">Siguiente Accion</label>
+            <label className="text-sm font-medium">Siguiente Accion <span className="text-muted-foreground font-normal">(opcional)</span></label>
             <textarea
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
               rows={2}
@@ -181,14 +194,7 @@ export function CompleteAndScheduleDialog({ open, onOpenChange, tareaId, onSucce
               onChange={e => setForm(f => ({ ...f, accion_siguiente: e.target.value }))}
               placeholder="Descripcion de la proxima accion..."
             />
-            <div>
-              <label className="text-sm font-medium">Fecha Siguiente Accion</label>
-              <DatePicker
-                value={form.fecha_siguiente}
-                onChange={val => setForm(f => ({ ...f, fecha_siguiente: val }))}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">Se registrara como Pendiente</p>
+            <p className="text-xs text-muted-foreground">Si se completa, se registrara como Pendiente con la fecha indicada</p>
           </div>
         </div>
         <DialogFooter>

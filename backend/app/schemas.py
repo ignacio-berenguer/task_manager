@@ -68,7 +68,7 @@ class AccionUpdate(BaseModel):
 class CompleteAndScheduleRequest(BaseModel):
     tarea_id: int
     accion_completada: str
-    accion_siguiente: str
+    accion_siguiente: str | None = None
     fecha_siguiente: date
 
 

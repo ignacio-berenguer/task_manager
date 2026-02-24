@@ -31,29 +31,39 @@ def complete_and_schedule(req: CompleteAndScheduleRequest, db: Session = Depends
         fecha_accion=date.today(),
         estado="Completada",
     )
-    accion2 = AccionRealizada(
-        tarea_id=req.tarea_id,
-        accion=req.accion_siguiente,
-        fecha_accion=req.fecha_siguiente,
-        estado="Pendiente",
-    )
+    db.add(accion1)
+
+    accion2 = None
+    if req.accion_siguiente:
+        accion2 = AccionRealizada(
+            tarea_id=req.tarea_id,
+            accion=req.accion_siguiente,
+            fecha_accion=req.fecha_siguiente,
+            estado="Pendiente",
+        )
+        db.add(accion2)
+
     tarea.fecha_siguiente_accion = req.fecha_siguiente
     tarea.fecha_actualizacion = datetime.now()
 
-    db.add(accion1)
-    db.add(accion2)
     db.commit()
     db.refresh(accion1)
-    db.refresh(accion2)
+    if accion2:
+        db.refresh(accion2)
     db.refresh(tarea)
 
-    LOG.info(f"Complete & schedule for tarea {req.tarea_id}: completed accion {accion1.id}, scheduled accion {accion2.id}")
+    if accion2:
+        LOG.info(f"Complete & schedule for tarea {req.tarea_id}: completed accion {accion1.id}, scheduled accion {accion2.id}")
+    else:
+        LOG.info(f"Complete for tarea {req.tarea_id}: completed accion {accion1.id}, fecha updated to {req.fecha_siguiente}")
 
-    return {
+    result = {
         "accion_completada": model_to_dict(accion1),
-        "accion_siguiente": model_to_dict(accion2),
         "tarea": model_to_dict(tarea),
     }
+    if accion2:
+        result["accion_siguiente"] = model_to_dict(accion2)
+    return result
 
 
 @router.get("/tarea/{tarea_id}")
