@@ -1,6 +1,7 @@
 """
 Configuration management for the backend API.
 """
+import os
 from pydantic_settings import BaseSettings
 
 
@@ -52,5 +53,8 @@ settings = Settings()
 
 # Auto-derive AGENT_API_BASE_URL if not explicitly set.
 # Always use 127.0.0.1 because the agent calls itself (same process).
+# Check PORT env var first — many PaaS platforms (Railway, Render, Heroku)
+# set PORT to control the listening port, which may differ from API_PORT.
 if not settings.AGENT_API_BASE_URL:
-    settings.AGENT_API_BASE_URL = f"http://127.0.0.1:{settings.API_PORT}{settings.API_PREFIX}"
+    port = int(os.environ.get("PORT", settings.API_PORT))
+    settings.AGENT_API_BASE_URL = f"http://127.0.0.1:{port}{settings.API_PREFIX}"

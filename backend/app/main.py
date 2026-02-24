@@ -121,11 +121,13 @@ def health():
 
 
 if __name__ == "__main__":
+    import os
     import uvicorn
 
+    port = int(os.environ.get("PORT", settings.API_PORT))
     uvicorn.run(
         "app.main:app",
         host=settings.API_HOST,
-        port=settings.API_PORT,
+        port=port,
         reload=True,
     )
