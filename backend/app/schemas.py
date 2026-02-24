@@ -65,6 +65,13 @@ class AccionUpdate(BaseModel):
     estado: str | None = None
 
 
+class CompleteAndScheduleRequest(BaseModel):
+    tarea_id: int
+    accion_completada: str
+    accion_siguiente: str
+    fecha_siguiente: date
+
+
 # --- Estados (parametric) ---
 
 class EstadoCreate(BaseModel):

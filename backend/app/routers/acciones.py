@@ -1,20 +1,59 @@
 """Acciones realizadas CRUD endpoints."""
 
 import logging
+from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.auth import verify_auth
 from app.database import get_db
-from app.models import AccionRealizada
-from app.schemas import AccionCreate, AccionUpdate
+from app.models import AccionRealizada, Tarea
+from app.schemas import AccionCreate, AccionUpdate, CompleteAndScheduleRequest
 from app.crud import CRUDBase, model_to_dict
 
 LOG = logging.getLogger("task_manager_backend")
 
 router = APIRouter(prefix="/acciones", tags=["acciones"], dependencies=[Depends(verify_auth)])
 crud_acciones = CRUDBase(AccionRealizada)
+
+
+@router.post("/complete-and-schedule", status_code=201)
+def complete_and_schedule(req: CompleteAndScheduleRequest, db: Session = Depends(get_db)):
+    """Complete a current action and schedule the next one atomically."""
+    tarea = db.query(Tarea).filter(Tarea.tarea_id == req.tarea_id).first()
+    if not tarea:
+        raise HTTPException(status_code=404, detail=f"Tarea {req.tarea_id} no encontrada")
+
+    accion1 = AccionRealizada(
+        tarea_id=req.tarea_id,
+        accion=req.accion_completada,
+        fecha_accion=date.today(),
+        estado="Completada",
+    )
+    accion2 = AccionRealizada(
+        tarea_id=req.tarea_id,
+        accion=req.accion_siguiente,
+        fecha_accion=req.fecha_siguiente,
+        estado="Pendiente",
+    )
+    tarea.fecha_siguiente_accion = req.fecha_siguiente
+    tarea.fecha_actualizacion = datetime.now()
+
+    db.add(accion1)
+    db.add(accion2)
+    db.commit()
+    db.refresh(accion1)
+    db.refresh(accion2)
+    db.refresh(tarea)
+
+    LOG.info(f"Complete & schedule for tarea {req.tarea_id}: completed accion {accion1.id}, scheduled accion {accion2.id}")
+
+    return {
+        "accion_completada": model_to_dict(accion1),
+        "accion_siguiente": model_to_dict(accion2),
+        "tarea": model_to_dict(tarea),
+    }
 
 
 @router.get("/tarea/{tarea_id}")

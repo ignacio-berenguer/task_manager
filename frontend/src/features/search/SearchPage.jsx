@@ -11,12 +11,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { ColumnConfigurator } from '@/components/shared/ColumnConfigurator'
 import { EstadoBadge } from '@/components/shared/EstadoBadge'
-import { AddAccionDialog, CambiarFechaDialog } from '@/features/shared/ActionDialogs'
+import { AddAccionDialog, CambiarFechaDialog, CompleteAndScheduleDialog } from '@/features/shared/ActionDialogs'
 import { formatDate } from '@/lib/formatDate'
 import { createStorage } from '@/lib/storage'
 import { cn } from '@/lib/utils'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
-import { Search, X, Plus, ChevronDown, ChevronRight, PanelRightOpen, ListPlus, CalendarClock, CalendarDays, Filter, ClipboardCopy, Check } from 'lucide-react'
+import { Search, X, Plus, ChevronDown, ChevronRight, PanelRightOpen, ListPlus, CalendarClock, CalendarDays, Filter, ClipboardCopy, Check, ListChecks } from 'lucide-react'
 import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
 import apiClient from '@/api/client'
@@ -154,6 +154,7 @@ export default function SearchPage() {
   // Action dialogs (shared components)
   const [addAccionTarget, setAddAccionTarget] = useState(null)
   const [cambiarFechaTarget, setCambiarFechaTarget] = useState(null)
+  const [completeScheduleTarget, setCompleteScheduleTarget] = useState(null)
 
   // Fetch filter options on first load
   useEffect(() => {
@@ -740,7 +741,7 @@ export default function SearchPage() {
                             </div>
                           </th>
                         ))}
-                        <th className="w-[80px] px-2 py-3 text-center font-medium">Acciones</th>
+                        <th className="w-[110px] px-2 py-3 text-center font-medium">Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -763,6 +764,7 @@ export default function SearchPage() {
                           onOpenDrawer={(e) => openDrawer(e, row)}
                           onAddAccion={() => setAddAccionTarget({ tarea_id: row.tarea_id })}
                           onCambiarFecha={() => setCambiarFechaTarget({ tarea_id: row.tarea_id, fecha_siguiente_accion: row.fecha_siguiente_accion })}
+                          onCompleteSchedule={() => setCompleteScheduleTarget({ tarea_id: row.tarea_id })}
                         />
                       ))}
                     </tbody>
@@ -930,12 +932,20 @@ export default function SearchPage() {
         currentFecha={cambiarFechaTarget?.fecha_siguiente_accion}
         onSuccess={() => doSearch(page)}
       />
+
+      {/* Complete & Schedule Dialog (shared) */}
+      <CompleteAndScheduleDialog
+        open={!!completeScheduleTarget}
+        onOpenChange={(open) => { if (!open) setCompleteScheduleTarget(null) }}
+        tareaId={completeScheduleTarget?.tarea_id}
+        onSuccess={() => doSearch(page)}
+      />
     </Layout>
   )
 }
 
 // Row component with expand/collapse
-function RowWithExpand({ row, columns, renderCell, expanded, onToggleExpand, accionesCache, onRowClick, onOpenDrawer, onAddAccion, onCambiarFecha }) {
+function RowWithExpand({ row, columns, renderCell, expanded, onToggleExpand, accionesCache, onRowClick, onOpenDrawer, onAddAccion, onCambiarFecha, onCompleteSchedule }) {
   const cachedAcciones = accionesCache.current.get(row.tarea_id) || []
 
   return (
@@ -979,6 +989,17 @@ function RowWithExpand({ row, columns, renderCell, expanded, onToggleExpand, acc
                 </button>
               </TooltipTrigger>
               <TooltipContent>Añadir Accion</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="rounded p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground"
+                  onClick={(e) => { e.stopPropagation(); onCompleteSchedule?.() }}
+                >
+                  <ListChecks className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Completar y Programar Siguiente</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>

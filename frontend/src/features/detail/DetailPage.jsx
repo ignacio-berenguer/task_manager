@@ -10,9 +10,9 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { EstadoBadge } from '@/components/shared/EstadoBadge'
-import { AddAccionDialog, CambiarFechaDialog } from '@/features/shared/ActionDialogs'
+import { AddAccionDialog, CambiarFechaDialog, CompleteAndScheduleDialog } from '@/features/shared/ActionDialogs'
 import { formatDate } from '@/lib/formatDate'
-import { ArrowLeft, Plus, Pencil, Trash2, Calendar, CalendarClock } from 'lucide-react'
+import { ArrowLeft, Plus, Pencil, Trash2, Calendar, CalendarClock, ListChecks } from 'lucide-react'
 import { createLogger } from '@/lib/logger'
 import apiClient from '@/api/client'
 
@@ -52,6 +52,9 @@ export default function DetailPage() {
 
   // Cambiar fecha dialog (shared component)
   const [cambiarFechaOpen, setCambiarFechaOpen] = useState(false)
+
+  // Complete & schedule dialog (shared component)
+  const [completeScheduleOpen, setCompleteScheduleOpen] = useState(false)
 
   // Edit accion modal (inline — keeps estado editing)
   const [editAccionOpen, setEditAccionOpen] = useState(false)
@@ -208,10 +211,16 @@ export default function DetailPage() {
         <Card className="mb-6 p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Acciones Realizadas ({acciones.length})</h2>
-            <Button size="sm" onClick={() => setAddAccionOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Nueva Accion
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => setCompleteScheduleOpen(true)}>
+                <ListChecks className="sm:mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Completar y Programar</span>
+              </Button>
+              <Button size="sm" onClick={() => setAddAccionOpen(true)}>
+                <Plus className="sm:mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Nueva Accion</span>
+              </Button>
+            </div>
           </div>
           {acciones.length === 0 ? (
             <p className="text-sm text-muted-foreground">No hay acciones registradas.</p>
@@ -381,6 +390,14 @@ export default function DetailPage() {
           onOpenChange={setCambiarFechaOpen}
           tareaId={tarea.tarea_id}
           currentFecha={tarea.fecha_siguiente_accion}
+          onSuccess={fetchData}
+        />
+
+        {/* Complete & Schedule Dialog (shared) */}
+        <CompleteAndScheduleDialog
+          open={completeScheduleOpen}
+          onOpenChange={setCompleteScheduleOpen}
+          tareaId={tarea.tarea_id}
           onSuccess={fetchData}
         />
 

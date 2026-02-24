@@ -119,7 +119,7 @@ task_manager/
 │   │   │   ├── landing/             # Public landing page (hero + changelog)
 │   │   │   ├── search/              # Task search + data grid
 │   │   │   ├── detail/              # Task detail + acciones CRUD
-│   │   │   ├── shared/              # Shared dialogs (AddAccion, CambiarFecha)
+│   │   │   ├── shared/              # Shared dialogs (AddAccion, CambiarFecha, CompleteAndSchedule)
 │   │   │   └── chat/                # AI assistant chat
 │   │   ├── lib/                     # changelog, estadoOrder, formatDate, logger, storage, utils, version, themes
 │   │   └── providers/               # Clerk, Query, Theme, Chat, Toaster
@@ -234,6 +234,7 @@ The backend API is secured with a dual authentication mechanism:
 | GET | `/api/v1/acciones/{id}` | Get accion by ID |
 | GET | `/api/v1/acciones/tarea/{tarea_id}` | Get acciones for a tarea |
 | POST | `/api/v1/acciones` | Create accion |
+| POST | `/api/v1/acciones/complete-and-schedule` | Complete an action and schedule the next one atomically |
 | PUT | `/api/v1/acciones/{id}` | Update accion |
 | DELETE | `/api/v1/acciones/{id}` | Delete accion |
 

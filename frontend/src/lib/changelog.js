@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.017",
+    feature: 17,
+    title: "Completar y Programar Siguiente Accion",
+    summary: "Nueva funcionalidad para completar una accion actual y programar la siguiente en un solo paso. Un modal permite registrar la accion completada (con fecha de hoy y estado Completada) y la proxima accion (con fecha futura y estado Pendiente), actualizando automaticamente la fecha siguiente accion de la tarea. Accesible desde la pagina de busqueda y la pagina de detalle."
+  },
+  {
     version: "1.016",
     feature: 16,
     title: "Mejoras UI: filtros compactos, filtro rapido 2 dias, y exportar al portapapeles",

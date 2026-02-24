@@ -125,7 +125,7 @@ frontend/
 │   │   ├── detail/
 │   │   │   └── DetailPage.jsx     # Task info card + acciones CRUD table
 │   │   ├── shared/
-│   │   │   └── ActionDialogs.jsx  # Reusable AddAccionDialog + CambiarFechaDialog
+│   │   │   └── ActionDialogs.jsx  # Reusable AddAccionDialog + CambiarFechaDialog + CompleteAndScheduleDialog
 │   │   └── chat/
 │   │       ├── ChatPage.jsx       # AI assistant chat page
 │   │       └── ChatContext.jsx    # Chat state provider (conversation persistence)
@@ -196,7 +196,7 @@ frontend/
 - **Reorderable columns** via ColumnConfigurator with drag-and-drop; order persisted to localStorage
 - **Inline detail accordion**: Each row has an expand button showing descripcion, notas_anteriores, and acciones inline
 - **Side drawer quick view**: PanelRightOpen button opens a Sheet from the right with tarea summary (tarea_id de-emphasized, tarea name as title) and compact acciones list
-- **Action buttons**: Each row has icon buttons for "Añadir Accion" (opens AddAccionDialog) and "Cambiar Fecha Siguiente Accion" (opens CambiarFechaDialog) using shared dialog components from `features/shared/ActionDialogs.jsx`
+- **Action buttons**: Each row has icon buttons for "Añadir Accion" (opens AddAccionDialog), "Completar y Programar Siguiente" (opens CompleteAndScheduleDialog), and "Cambiar Fecha Siguiente Accion" (opens CambiarFechaDialog) using shared dialog components from `features/shared/ActionDialogs.jsx`
 - **Nueva Tarea dialog**: Create new tarea with button (tooltip shows Ctrl+Shift+N shortcut)
 - **Full-width layout**: No max-width constraint; uses all available width
 - **Server-side pagination** with configurable page size
@@ -206,7 +206,7 @@ frontend/
 #### 6.3 Detail Page (`/detail/:tarea_id`)
 
 - **Header**: tarea_id (small muted monospace), tarea name (primary heading, text-2xl), EstadoBadge (colored estado), responsable Badge, fecha_siguiente_accion Badge with Calendar icon, CalendarClock button to change fecha (opens CambiarFechaDialog), edit button
-- **Acciones Realizadas** (primary content, first section): Compact CRUD table sorted by fecha_accion descending, with sticky headers and EstadoBadge (size=sm) for estado; "Nueva Accion" button opens AddAccionDialog (creates accion with estado Pendiente and updates tarea's fecha_siguiente_accion); full width on lg+ screens
+- **Acciones Realizadas** (primary content, first section): Compact CRUD table sorted by fecha_accion descending, with sticky headers and EstadoBadge (size=sm) for estado; "Nueva Accion" button opens AddAccionDialog (creates accion with estado Pendiente and updates tarea's fecha_siguiente_accion); "Completar y Programar" button opens CompleteAndScheduleDialog (atomically completes current action and schedules next); full width on lg+ screens
 - **Notas Anteriores** (second section, accordion): Collapsible accordion (closed by default), read-only display of original notas text (shown only when non-empty)
 - **Datos de la Tarea** (third section, accordion): Collapsible accordion (collapsed by default) showing all tarea fields with formatted dates and EstadoBadge
 - **Keyboard shortcuts**: Ctrl+Shift+F navigates to Search page with focus on tarea filter input
@@ -385,7 +385,7 @@ VITE_APP_NAME=Task Manager
 
 **Error Handling:** `ErrorBoundary` wraps each protected route for graceful error recovery with a retry button.
 
-**Shared Feature Components:** Reusable dialog components in `features/shared/ActionDialogs.jsx` are used by both SearchPage and DetailPage for "Añadir Accion" and "Cambiar Fecha Siguiente Accion" operations. Each dialog manages its own form state, API calls, and toast notifications, and accepts an `onSuccess` callback to refresh the parent page's data.
+**Shared Feature Components:** Reusable dialog components in `features/shared/ActionDialogs.jsx` are used by both SearchPage and DetailPage for "Añadir Accion", "Cambiar Fecha Siguiente Accion", and "Completar y Programar Siguiente" operations. Each dialog manages its own form state, API calls, and toast notifications, and accepts an `onSuccess` callback to refresh the parent page's data. The CompleteAndScheduleDialog atomically completes an action (estado Completada, fecha today) and schedules the next one (estado Pendiente, future date), updating the tarea's fecha_siguiente_accion via a single backend endpoint.
 
 **Code Splitting:** All protected routes use `React.lazy()` with `Suspense` and page-specific skeleton fallbacks for optimal loading performance.
 

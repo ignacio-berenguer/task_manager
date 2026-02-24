@@ -114,12 +114,15 @@ Key behaviors:
 | GET | `/api/v1/acciones/tarea/{tarea_id}` | Get acciones for a specific tarea |
 | GET | `/api/v1/acciones/{id}` | Get accion by ID |
 | POST | `/api/v1/acciones` | Create a new accion |
+| POST | `/api/v1/acciones/complete-and-schedule` | Atomically complete an action and schedule the next one |
 | PUT | `/api/v1/acciones/{id}` | Update an existing accion |
 | DELETE | `/api/v1/acciones/{id}` | Delete an accion |
 
 **Router:** `routers/acciones.py` with prefix `/acciones`.
 
-**Important:** The `GET /tarea/{tarea_id}` route is defined before `GET /{id}` to avoid FastAPI route conflicts.
+**Important:** The `POST /complete-and-schedule` and `GET /tarea/{tarea_id}` routes are defined before `GET /{id}` to avoid FastAPI route conflicts.
+
+**Complete & Schedule endpoint:** Creates two acciones in a single transaction — one with estado "Completada" (fecha_accion = today, server-side) and one with estado "Pendiente" (fecha_accion = user-specified future date) — and updates the parent tarea's `fecha_siguiente_accion` to the scheduled date.
 
 ### 6.3 Estados (Parametric)
 

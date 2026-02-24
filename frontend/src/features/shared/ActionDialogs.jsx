@@ -105,6 +105,104 @@ export function AddAccionDialog({ open, onOpenChange, tareaId, onSuccess }) {
 }
 
 /**
+ * Dialog to complete a current action and schedule the next one atomically.
+ * Creates accion1 (Completada, today) + accion2 (Pendiente, future date) and updates tarea.
+ */
+export function CompleteAndScheduleDialog({ open, onOpenChange, tareaId, onSuccess }) {
+  const [form, setForm] = useState({ accion_completada: '', accion_siguiente: '', fecha_siguiente: getTodayISO() })
+  const [saving, setSaving] = useState(false)
+  const textareaRef = useRef(null)
+
+  useEffect(() => {
+    if (open) {
+      setForm({ accion_completada: '', accion_siguiente: '', fecha_siguiente: getTodayISO() })
+      setTimeout(() => textareaRef.current?.focus(), 50)
+    }
+  }, [open])
+
+  const handleSave = useCallback(async () => {
+    if (!form.accion_completada.trim() || !form.accion_siguiente.trim() || !form.fecha_siguiente || saving) return
+    setSaving(true)
+    try {
+      await apiClient.post('/acciones/complete-and-schedule', {
+        tarea_id: tareaId,
+        accion_completada: form.accion_completada.trim(),
+        accion_siguiente: form.accion_siguiente.trim(),
+        fecha_siguiente: form.fecha_siguiente,
+      })
+      LOG.info(`Complete & schedule for tarea ${tareaId}`)
+      toast.success('Accion completada y siguiente programada')
+      onOpenChange(false)
+      onSuccess?.()
+    } catch (err) {
+      LOG.error('Error in complete & schedule', err)
+      toast.error('Error al completar y programar')
+    } finally {
+      setSaving(false)
+    }
+  }, [form, saving, tareaId, onOpenChange, onSuccess])
+
+  const handleKeyDown = useCallback((e) => {
+    if (e.ctrlKey && e.key === 'Enter') {
+      e.preventDefault()
+      handleSave()
+    }
+  }, [handleSave])
+
+  const handleClose = useCallback(() => onOpenChange(false), [onOpenChange])
+
+  const isValid = form.accion_completada.trim() && form.accion_siguiente.trim() && form.fecha_siguiente
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent size="md" onClose={handleClose}>
+        <DialogHeader>
+          <DialogTitle>Completar y Programar Siguiente</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4" onKeyDown={handleKeyDown}>
+          <div className="space-y-2 rounded-md border p-3">
+            <label className="text-sm font-medium">Accion Completada</label>
+            <textarea
+              ref={textareaRef}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              rows={2}
+              value={form.accion_completada}
+              onChange={e => setForm(f => ({ ...f, accion_completada: e.target.value }))}
+              placeholder="Descripcion de la accion realizada..."
+            />
+            <p className="text-xs text-muted-foreground">Se registrara con fecha de hoy y estado Completada</p>
+          </div>
+          <div className="space-y-2 rounded-md border p-3">
+            <label className="text-sm font-medium">Siguiente Accion</label>
+            <textarea
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              rows={2}
+              value={form.accion_siguiente}
+              onChange={e => setForm(f => ({ ...f, accion_siguiente: e.target.value }))}
+              placeholder="Descripcion de la proxima accion..."
+            />
+            <div>
+              <label className="text-sm font-medium">Fecha Siguiente Accion</label>
+              <DatePicker
+                value={form.fecha_siguiente}
+                onChange={val => setForm(f => ({ ...f, fecha_siguiente: val }))}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">Se registrara como Pendiente</p>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={handleClose}>Cancelar</Button>
+          <Button onClick={handleSave} disabled={saving || !isValid}>
+            {saving ? 'Guardando...' : 'Guardar'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+/**
  * Dialog to change a tarea's fecha_siguiente_accion.
  */
 export function CambiarFechaDialog({ open, onOpenChange, tareaId, currentFecha, onSuccess }) {
