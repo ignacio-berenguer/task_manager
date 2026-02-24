@@ -33,9 +33,19 @@ export function ChatProvider({ children }) {
     abortRef.current = abortController
 
     try {
+      const headers = { 'Content-Type': 'application/json' }
+      if (window.Clerk?.session) {
+        try {
+          const token = await window.Clerk.session.getToken()
+          if (token) headers['Authorization'] = `Bearer ${token}`
+        } catch (err) {
+          logger.warning('Failed to get auth token', err)
+        }
+      }
+
       const response = await fetch(`${API_BASE_URL}/agent/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ messages: updatedMessages }),
         signal: abortController.signal,
       })
