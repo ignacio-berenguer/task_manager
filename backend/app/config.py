@@ -50,7 +50,7 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# Auto-derive AGENT_API_BASE_URL from API settings if not explicitly set
+# Auto-derive AGENT_API_BASE_URL if not explicitly set.
+# Always use 127.0.0.1 because the agent calls itself (same process).
 if not settings.AGENT_API_BASE_URL:
-    _host = "127.0.0.1" if settings.API_HOST == "0.0.0.0" else settings.API_HOST
-    settings.AGENT_API_BASE_URL = f"http://{_host}:{settings.API_PORT}{settings.API_PREFIX}"
+    settings.AGENT_API_BASE_URL = f"http://127.0.0.1:{settings.API_PORT}{settings.API_PREFIX}"
