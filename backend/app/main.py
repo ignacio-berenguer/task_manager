@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from .config import settings
 from .routers import tareas, acciones, estados, responsables, agent, admin
@@ -86,6 +87,9 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["Content-Type", "Authorization"],
 )
+
+# Trust proxy headers (X-Forwarded-Proto, X-Forwarded-For) so redirects use HTTPS
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 # Request logging middleware
 app.add_middleware(RequestLoggingMiddleware)
