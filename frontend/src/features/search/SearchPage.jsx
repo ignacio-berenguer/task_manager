@@ -486,7 +486,7 @@ export default function SearchPage() {
       })
       const allAcciones = await Promise.all(accionesPromises)
       const lines = allAcciones.map(({ tarea, acciones }) => {
-        const pending = acciones.filter(a => a.estado !== 'Completada').map(a => a.accion)
+        const pending = acciones.filter(a => a.estado?.toLowerCase() === 'pendiente').map(a => a.accion)
         return pending.length > 0 ? `${tarea}: ${pending.join(' / ')}` : tarea
       })
       const text = lines.join('\n')
