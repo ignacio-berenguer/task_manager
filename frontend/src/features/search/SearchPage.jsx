@@ -12,6 +12,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip
 import { ColumnConfigurator } from '@/components/shared/ColumnConfigurator'
 import { EstadoBadge } from '@/components/shared/EstadoBadge'
 import { AddAccionDialog, CambiarFechaDialog, CompleteAndScheduleDialog } from '@/features/shared/ActionDialogs'
+import { DateInput } from '@/components/ui/date-input'
 import { formatDate } from '@/lib/formatDate'
 import { createStorage } from '@/lib/storage'
 import { cn } from '@/lib/utils'
@@ -156,6 +157,19 @@ export default function SearchPage() {
   const [cambiarFechaTarget, setCambiarFechaTarget] = useState(null)
   const [completeScheduleTarget, setCompleteScheduleTarget] = useState(null)
 
+  // Multi-select
+  const [selectedIds, setSelectedIds] = useState(new Set())
+  const toggleSelect = (id) => setSelectedIds(prev => {
+    const next = new Set(prev)
+    next.has(id) ? next.delete(id) : next.add(id)
+    return next
+  })
+  const clearSelection = () => setSelectedIds(new Set())
+
+  // Bulk dialogs
+  const [bulkChangeDateOpen, setBulkChangeDateOpen] = useState(false)
+  const [bulkCompleteCreateOpen, setBulkCompleteCreateOpen] = useState(false)
+
   // Fetch filter options on first load
   useEffect(() => {
     apiClient.get('/tareas/filter-options').then(res => {
@@ -166,6 +180,7 @@ export default function SearchPage() {
   const doSearch = useCallback(async (pageOverride = 0) => {
     setLoading(true)
     setColumnFilters({})
+    setSelectedIds(new Set())
     try {
       const searchFilters = []
       if (filters.tarea_id) searchFilters.push({ field: 'tarea_id', operator: 'eq', value: Number(filters.tarea_id) })
@@ -503,6 +518,42 @@ export default function SearchPage() {
     }
   }
 
+  // Bulk export (selected only)
+  const exportSelectedToClipboard = async () => {
+    if (!selectedIds.size) return
+    setCopying('loading')
+    try {
+      const selectedRows = filteredData.filter(r => selectedIds.has(r.tarea_id))
+      const accionesPromises = selectedRows.map(async (row) => {
+        if (accionesCache.current.has(row.tarea_id)) {
+          return { tarea: row.tarea, acciones: accionesCache.current.get(row.tarea_id) }
+        }
+        try {
+          const res = await apiClient.get(`/acciones/tarea/${row.tarea_id}`)
+          accionesCache.current.set(row.tarea_id, res.data)
+          return { tarea: row.tarea, acciones: res.data }
+        } catch {
+          return { tarea: row.tarea, acciones: [] }
+        }
+      })
+      const allAcciones = await Promise.all(accionesPromises)
+      const lines = allAcciones.map(({ tarea, acciones }) => {
+        const pending = acciones.filter(a => a.estado?.toLowerCase() === 'pendiente').map(a => a.accion)
+        return pending.length > 0 ? `${tarea}: ${pending.join(' / ')}` : tarea
+      })
+      const text = lines.join('\n')
+      await navigator.clipboard.writeText(text)
+      LOG.info('Exported selected tasks to clipboard', { count: lines.length })
+      toast.success(`${lines.length} tarea${lines.length !== 1 ? 's' : ''} copiada${lines.length !== 1 ? 's' : ''} al portapapeles`)
+      setCopying('done')
+      setTimeout(() => setCopying(null), 2000)
+    } catch (err) {
+      LOG.error('Error exporting to clipboard', err)
+      toast.error('Error al copiar al portapapeles')
+      setCopying(null)
+    }
+  }
+
   // Filter Panel (reused in sidebar and mobile accordion)
   const renderFilterPanel = (tareaRef) => (
     <div className="space-y-2" onKeyDown={handleFilterKeyDown}>
@@ -648,6 +699,44 @@ export default function SearchPage() {
                       </button>
                     </Badge>
                   ))}
+                  {selectedIds.size > 0 && (
+                    <div className="flex items-center gap-1.5 ml-2 pl-2 border-l">
+                      <Badge variant="default" size="sm">{selectedIds.size}</Badge>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-8" onClick={() => setBulkChangeDateOpen(true)}>
+                            <CalendarClock className="sm:mr-1.5 h-4 w-4" />
+                            <span className="hidden sm:inline text-xs">Fecha</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Cambiar fecha de seleccionadas</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-8" onClick={() => setBulkCompleteCreateOpen(true)}>
+                            <ListChecks className="sm:mr-1.5 h-4 w-4" />
+                            <span className="hidden sm:inline text-xs">Completar</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Completar pendientes y crear accion</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-8" onClick={exportSelectedToClipboard} disabled={copying === 'loading'}>
+                            {copying === 'done'
+                              ? <Check className="h-4 w-4 text-green-500" />
+                              : <ClipboardCopy className="sm:mr-1.5 h-4 w-4" />
+                            }
+                            <span className="hidden sm:inline text-xs">Exportar</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Exportar seleccionadas al portapapeles</TooltipContent>
+                      </Tooltip>
+                      <button className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground" onClick={clearSelection} title="Deseleccionar todo">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  )}
                   <div className="ml-auto flex items-center gap-1">
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -664,7 +753,7 @@ export default function SearchPage() {
                           }
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>Copiar tareas al portapapeles</TooltipContent>
+                      <TooltipContent>Copiar todas al portapapeles</TooltipContent>
                     </Tooltip>
                     <ColumnConfigurator
                       selectedColumns={columns}
@@ -679,6 +768,21 @@ export default function SearchPage() {
                   <table className="w-full text-sm">
                     <thead className="sticky top-0 xl:top-[var(--thead-top)] z-10 bg-card">
                       <tr className="border-b bg-muted">
+                        <th className="w-8 px-2 py-3">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 rounded accent-primary cursor-pointer"
+                            checked={filteredData.length > 0 && selectedIds.size === filteredData.length}
+                            ref={el => { if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < filteredData.length }}
+                            onChange={() => {
+                              if (selectedIds.size === filteredData.length) {
+                                clearSelection()
+                              } else {
+                                setSelectedIds(new Set(filteredData.map(r => r.tarea_id)))
+                              }
+                            }}
+                          />
+                        </th>
                         <th className="w-8 px-2 py-3" />
                         <th className="w-8 px-2 py-3" />
                         {columns.map(col => (
@@ -747,7 +851,7 @@ export default function SearchPage() {
                     <tbody>
                       {filteredData.length === 0 ? (
                         <tr>
-                          <td colSpan={columns.length + 3} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                          <td colSpan={columns.length + 4} className="px-4 py-8 text-center text-sm text-muted-foreground">
                             No se encontraron resultados con los filtros de columna aplicados.
                           </td>
                         </tr>
@@ -765,6 +869,8 @@ export default function SearchPage() {
                           onAddAccion={() => setAddAccionTarget({ tarea_id: row.tarea_id })}
                           onCambiarFecha={() => setCambiarFechaTarget({ tarea_id: row.tarea_id, fecha_siguiente_accion: row.fecha_siguiente_accion })}
                           onCompleteSchedule={() => setCompleteScheduleTarget({ tarea_id: row.tarea_id })}
+                          selected={selectedIds.has(row.tarea_id)}
+                          onToggleSelect={() => toggleSelect(row.tarea_id)}
                         />
                       ))}
                     </tbody>
@@ -944,20 +1050,45 @@ export default function SearchPage() {
         tareaId={completeScheduleTarget?.tarea_id}
         onSuccess={() => doSearch(page)}
       />
+
+      {/* Bulk Change Date Dialog */}
+      <BulkChangeDateDialog
+        open={bulkChangeDateOpen}
+        onOpenChange={setBulkChangeDateOpen}
+        selectedIds={selectedIds}
+        onSuccess={() => { clearSelection(); doSearch(page) }}
+      />
+
+      {/* Bulk Complete & Create Dialog */}
+      <BulkCompleteCreateDialog
+        open={bulkCompleteCreateOpen}
+        onOpenChange={setBulkCompleteCreateOpen}
+        selectedIds={selectedIds}
+        onSuccess={() => { clearSelection(); doSearch(page) }}
+      />
     </Layout>
   )
 }
 
 // Row component with expand/collapse
-function RowWithExpand({ row, columns, renderCell, expanded, onToggleExpand, accionesCache, onRowClick, onOpenDrawer, onAddAccion, onCambiarFecha, onCompleteSchedule }) {
+function RowWithExpand({ row, columns, renderCell, expanded, onToggleExpand, accionesCache, onRowClick, onOpenDrawer, onAddAccion, onCambiarFecha, onCompleteSchedule, selected, onToggleSelect }) {
   const cachedAcciones = accionesCache.current.get(row.tarea_id) || []
 
   return (
     <>
       <tr
-        className="cursor-pointer border-b hover:bg-muted/50"
+        className={cn("cursor-pointer border-b hover:bg-muted/50", selected && "bg-primary/5")}
         onClick={onRowClick}
       >
+        <td className="px-2 py-3">
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded accent-primary cursor-pointer"
+            checked={selected}
+            onChange={(e) => { e.stopPropagation(); onToggleSelect() }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </td>
         <td className="px-2 py-3">
           <button
             className="rounded p-1.5 hover:bg-muted"
@@ -1021,7 +1152,7 @@ function RowWithExpand({ row, columns, renderCell, expanded, onToggleExpand, acc
       </tr>
       {expanded && (
         <tr className="border-b bg-muted/20">
-          <td colSpan={columns.length + 3} className="px-3 py-3 sm:px-6 sm:py-4">
+          <td colSpan={columns.length + 4} className="px-3 py-3 sm:px-6 sm:py-4">
             <div className="space-y-3">
               {row.descripcion && (
                 <div>
@@ -1029,12 +1160,7 @@ function RowWithExpand({ row, columns, renderCell, expanded, onToggleExpand, acc
                   <p className="mt-1 text-sm whitespace-pre-wrap">{row.descripcion}</p>
                 </div>
               )}
-              {row.notas_anteriores && (
-                <div>
-                  <span className="text-xs font-medium text-muted-foreground uppercase">Notas Anteriores</span>
-                  <p className="mt-1 text-sm whitespace-pre-wrap">{row.notas_anteriores}</p>
-                </div>
-              )}
+
               <div>
                 <span className="text-xs font-medium text-muted-foreground uppercase">Acciones ({cachedAcciones.length})</span>
                 {cachedAcciones.length > 0 ? (
@@ -1056,5 +1182,127 @@ function RowWithExpand({ row, columns, renderCell, expanded, onToggleExpand, acc
         </tr>
       )}
     </>
+  )
+}
+
+// Bulk Change Date Dialog
+function BulkChangeDateDialog({ open, onOpenChange, selectedIds, onSuccess }) {
+  const [fecha, setFecha] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (open) setFecha('')
+  }, [open])
+
+  const handleSave = async () => {
+    if (!fecha) return
+    setSaving(true)
+    try {
+      await apiClient.post('/tareas/bulk-update', {
+        tarea_ids: [...selectedIds],
+        operation: 'change_date',
+        fecha,
+      })
+      toast.success(`Fecha actualizada para ${selectedIds.size} tarea${selectedIds.size !== 1 ? 's' : ''}`)
+      onOpenChange(false)
+      onSuccess?.()
+    } catch (err) {
+      LOG.error('Error in bulk change date', err)
+      toast.error('Error al cambiar fecha')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent size="sm">
+        <DialogHeader><DialogTitle>Cambiar Fecha ({selectedIds.size} tarea{selectedIds.size !== 1 ? 's' : ''})</DialogTitle></DialogHeader>
+        <div className="space-y-3" onKeyDown={e => {
+          if (e.key === 'Enter' && (e.ctrlKey || (e.target.tagName !== 'TEXTAREA' && !e.target.closest('.rdp')))) {
+            e.preventDefault(); handleSave()
+          }
+        }}>
+          <div>
+            <label className="text-sm font-medium">Nueva Fecha</label>
+            <DateInput value={fecha} onChange={setFecha} />
+            <p className="text-xs text-muted-foreground mt-1">Las acciones pendientes tambien se actualizaran a esta fecha.</p>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button onClick={handleSave} disabled={saving || !fecha}>Aplicar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// Bulk Complete & Create Dialog
+function BulkCompleteCreateDialog({ open, onOpenChange, selectedIds, onSuccess }) {
+  const [form, setForm] = useState({ accion: '', fecha: '' })
+  const [saving, setSaving] = useState(false)
+  const textareaRef = useRef(null)
+
+  useEffect(() => {
+    if (open) {
+      setForm({ accion: '', fecha: '' })
+      setTimeout(() => textareaRef.current?.focus(), 50)
+    }
+  }, [open])
+
+  const handleSave = async () => {
+    if (!form.accion.trim() || !form.fecha) return
+    setSaving(true)
+    try {
+      await apiClient.post('/tareas/bulk-update', {
+        tarea_ids: [...selectedIds],
+        operation: 'complete_and_create',
+        fecha: form.fecha,
+        accion: form.accion.trim(),
+      })
+      toast.success(`Acciones completadas y nueva accion creada para ${selectedIds.size} tarea${selectedIds.size !== 1 ? 's' : ''}`)
+      onOpenChange(false)
+      onSuccess?.()
+    } catch (err) {
+      LOG.error('Error in bulk complete & create', err)
+      toast.error('Error al completar y crear accion')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Completar y Crear Accion ({selectedIds.size} tarea{selectedIds.size !== 1 ? 's' : ''})</DialogTitle></DialogHeader>
+        <div className="space-y-3" onKeyDown={e => {
+          if (e.key === 'Enter' && (e.ctrlKey || (e.target.tagName !== 'TEXTAREA' && !e.target.closest('.rdp')))) {
+            e.preventDefault(); handleSave()
+          }
+        }}>
+          <div>
+            <label className="text-sm font-medium">Nueva Accion *</label>
+            <textarea
+              ref={textareaRef}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              rows={2}
+              value={form.accion}
+              onChange={e => setForm(f => ({ ...f, accion: e.target.value }))}
+              placeholder="Descripcion de la nueva accion"
+            />
+            <p className="text-xs text-muted-foreground mt-1">Las acciones pendientes se marcaran como Completada.</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium">Fecha de la nueva accion *</label>
+            <DateInput value={form.fecha} onChange={val => setForm(f => ({ ...f, fecha: val }))} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button onClick={handleSave} disabled={saving || !form.accion.trim() || !form.fecha}>Aplicar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

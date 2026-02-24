@@ -5,10 +5,10 @@ const badgeVariants = {
   variant: {
     default: 'bg-primary text-primary-foreground hover:bg-primary/80',
     secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-    destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/80',
+    destructive: 'bg-destructive/15 text-destructive dark:bg-destructive/25',
     outline: 'text-foreground border border-input',
-    success: 'bg-success text-white hover:bg-success/80',
-    warning: 'bg-warning text-white hover:bg-warning/80',
+    success: 'bg-success/15 text-success dark:bg-success/25',
+    warning: 'bg-warning/15 text-warning dark:bg-warning/25',
   },
   size: {
     default: 'px-2.5 py-0.5 text-xs',

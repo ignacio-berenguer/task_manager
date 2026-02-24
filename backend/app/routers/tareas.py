@@ -4,12 +4,13 @@ import logging
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.auth import verify_auth
 from app.database import get_db
-from app.models import Tarea
-from app.schemas import TareaCreate, TareaUpdate, SearchRequest
+from app.models import Tarea, AccionRealizada
+from app.schemas import TareaCreate, TareaUpdate, SearchRequest, BulkUpdateRequest, BulkUpdateResponse
 from app.crud import CRUDBase, model_to_dict
 from app.search import search
 
@@ -54,6 +55,116 @@ def list_tareas(
         "limit": limit,
         "offset": offset,
     }
+
+
+def _sync_fecha_siguiente_accion(db: Session, tarea_id: int):
+    """Recalculate tarea's fecha_siguiente_accion from pending acciones."""
+    max_fecha = (
+        db.query(func.max(AccionRealizada.fecha_accion))
+        .filter(
+            AccionRealizada.tarea_id == tarea_id,
+            func.lower(AccionRealizada.estado) == "pendiente",
+        )
+        .scalar()
+    )
+    tarea = db.query(Tarea).filter(Tarea.tarea_id == tarea_id).first()
+    if tarea:
+        tarea.fecha_siguiente_accion = max_fecha
+        tarea.fecha_actualizacion = datetime.now()
+        db.commit()
+        db.refresh(tarea)
+
+
+@router.post("/bulk-update")
+def bulk_update_tareas(req: BulkUpdateRequest, db: Session = Depends(get_db)):
+    """Bulk update tareas: change dates or complete pending acciones and create new ones."""
+    if not req.tarea_ids:
+        raise HTTPException(status_code=400, detail="tarea_ids must not be empty")
+
+    if req.operation == "complete_and_create" and not req.accion:
+        raise HTTPException(status_code=400, detail="accion is required for complete_and_create operation")
+
+    updated_tareas = 0
+    updated_acciones = 0
+    created_acciones = 0
+
+    for tarea_id in req.tarea_ids:
+        tarea = db.query(Tarea).filter(Tarea.tarea_id == tarea_id).first()
+        if not tarea:
+            continue
+
+        if req.operation == "change_date":
+            tarea.fecha_siguiente_accion = req.fecha
+            tarea.fecha_actualizacion = datetime.now()
+            updated_tareas += 1
+
+            pending = db.query(AccionRealizada).filter(
+                AccionRealizada.tarea_id == tarea_id,
+                func.lower(AccionRealizada.estado) == "pendiente",
+            ).all()
+            for acc in pending:
+                acc.fecha_accion = req.fecha
+                acc.fecha_actualizacion = datetime.now()
+                updated_acciones += 1
+
+        elif req.operation == "complete_and_create":
+            pending = db.query(AccionRealizada).filter(
+                AccionRealizada.tarea_id == tarea_id,
+                func.lower(AccionRealizada.estado) == "pendiente",
+            ).all()
+            for acc in pending:
+                acc.estado = "Completada"
+                acc.fecha_actualizacion = datetime.now()
+                updated_acciones += 1
+
+            new_accion = AccionRealizada(
+                tarea_id=tarea_id,
+                accion=req.accion,
+                fecha_accion=req.fecha,
+                estado="Pendiente",
+            )
+            db.add(new_accion)
+            created_acciones += 1
+            updated_tareas += 1
+
+    db.commit()
+
+    # Sync fecha_siguiente_accion for all affected tareas
+    for tarea_id in req.tarea_ids:
+        _sync_fecha_siguiente_accion(db, tarea_id)
+
+    LOG.info(f"Bulk {req.operation}: {updated_tareas} tareas, {updated_acciones} acciones updated, {created_acciones} acciones created")
+    return BulkUpdateResponse(
+        updated_tareas=updated_tareas,
+        updated_acciones=updated_acciones,
+        created_acciones=created_acciones,
+    )
+
+
+@router.post("/{tarea_id}/complete")
+def complete_tarea(tarea_id: int, db: Session = Depends(get_db)):
+    """Mark a tarea as Completado and all non-completed acciones as Completada."""
+    tarea = db.query(Tarea).filter(Tarea.tarea_id == tarea_id).first()
+    if not tarea:
+        raise HTTPException(status_code=404, detail=f"Tarea {tarea_id} no encontrada")
+
+    tarea.estado = "Completado"
+    tarea.fecha_actualizacion = datetime.now()
+
+    pending = db.query(AccionRealizada).filter(
+        AccionRealizada.tarea_id == tarea_id,
+        ~func.lower(AccionRealizada.estado).in_(["completada", "completado"]),
+    ).all()
+
+    for acc in pending:
+        acc.estado = "Completada"
+        acc.fecha_actualizacion = datetime.now()
+
+    db.commit()
+    db.refresh(tarea)
+
+    LOG.info(f"Completed tarea {tarea_id}: {len(pending)} acciones marked as Completada")
+    return {"tarea": model_to_dict(tarea), "acciones_updated": len(pending)}
 
 
 @router.get("/{tarea_id}")

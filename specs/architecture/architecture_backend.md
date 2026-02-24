@@ -29,7 +29,7 @@ backend/
 │   ├── config.py            # Environment configuration (pydantic-settings)
 │   ├── database.py          # PostgreSQL connection setup & SessionLocal
 │   ├── models.py            # 5 SQLAlchemy ORM models
-│   ├── schemas.py           # Pydantic models for search, CRUD validation
+│   ├── schemas.py           # Pydantic models for search, CRUD, bulk operations
 │   ├── crud.py              # Generic CRUDBase class
 │   ├── search.py            # Flexible search with 12 operators
 │   ├── table_registry.py    # TABLE_MODELS mapping
@@ -103,8 +103,14 @@ Key behaviors:
 | PUT | `/api/v1/tareas/{tarea_id}` | Update an existing tarea |
 | DELETE | `/api/v1/tareas/{tarea_id}` | Delete a tarea (cascades to acciones) |
 | POST | `/api/v1/tareas/search` | Flexible search with filters |
+| POST | `/api/v1/tareas/bulk-update` | Bulk update tareas (change_date or complete_and_create operations) |
+| POST | `/api/v1/tareas/{tarea_id}/complete` | Mark tarea and all non-completed acciones as completed |
 
 **Router:** `routers/tareas.py` with prefix `/tareas`.
+
+**Bulk update endpoint:** Accepts a `BulkUpdateRequest` with a list of `tarea_id`s and an operation type (`change_date` or `complete_and_create`). Returns a `BulkUpdateResponse` with per-task success/failure results. The `change_date` operation updates `fecha_siguiente_accion` for all specified tareas. The `complete_and_create` operation marks each tarea as completed and creates a new accion.
+
+**Complete endpoint:** Marks the specified tarea's estado as "Completada" and sets all non-completed acciones to "Completada" in a single transaction.
 
 ### 6.2 Acciones
 

@@ -1,7 +1,7 @@
 """Pydantic validation schemas for Task Manager."""
 
 from datetime import date
-from typing import Any
+from typing import Any, Literal
 from pydantic import BaseModel
 
 
@@ -96,3 +96,18 @@ class ResponsableCreate(BaseModel):
 class ResponsableUpdate(BaseModel):
     valor: str | None = None
     orden: int | None = None
+
+
+# --- Bulk Operations ---
+
+class BulkUpdateRequest(BaseModel):
+    tarea_ids: list[int]
+    operation: Literal["change_date", "complete_and_create"]
+    fecha: date
+    accion: str | None = None  # required for complete_and_create
+
+
+class BulkUpdateResponse(BaseModel):
+    updated_tareas: int
+    updated_acciones: int
+    created_acciones: int

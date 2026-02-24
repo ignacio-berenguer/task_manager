@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, Children, cloneElement, isValidElement } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -10,8 +10,14 @@ import { cn } from '@/lib/utils'
 
 function Dialog({ open, onOpenChange, children }) {
   if (!open) return null
+  const close = () => onOpenChange(false)
+  const enhanced = Children.map(children, child =>
+    isValidElement(child) && child.type === DialogContent
+      ? cloneElement(child, { onClose: child.props.onClose || close })
+      : child
+  )
   return createPortal(
-    <div className="fixed inset-0 z-50">{children}</div>,
+    <div className="fixed inset-0 z-50">{enhanced}</div>,
     document.body
   )
 }

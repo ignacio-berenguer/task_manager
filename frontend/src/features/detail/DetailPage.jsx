@@ -13,7 +13,9 @@ import { EstadoBadge } from '@/components/shared/EstadoBadge'
 import { AddAccionDialog, CambiarFechaDialog, CompleteAndScheduleDialog } from '@/features/shared/ActionDialogs'
 import { DateInput } from '@/components/ui/date-input'
 import { formatDate } from '@/lib/formatDate'
-import { ArrowLeft, Plus, Pencil, Trash2, Calendar, CalendarClock, ListChecks } from 'lucide-react'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { ArrowLeft, Plus, Pencil, Trash2, Calendar, CalendarClock, ListChecks, CheckCircle2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
 import apiClient from '@/api/client'
 
@@ -41,6 +43,7 @@ export default function DetailPage() {
   const [tarea, setTarea] = useState(null)
   const [acciones, setAcciones] = useState([])
   const [responsables, setResponsables] = useState([])
+  const [estadosTarea, setEstadosTarea] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -56,6 +59,10 @@ export default function DetailPage() {
 
   // Complete & schedule dialog (shared component)
   const [completeScheduleOpen, setCompleteScheduleOpen] = useState(false)
+
+  // Mark as completado confirm dialog
+  const [completeConfirmOpen, setCompleteConfirmOpen] = useState(false)
+  const [completing, setCompleting] = useState(false)
 
   // Edit accion modal (inline — keeps estado editing)
   const [editAccionOpen, setEditAccionOpen] = useState(false)
@@ -87,11 +94,14 @@ export default function DetailPage() {
 
   useEffect(() => { fetchData() }, [tarea_id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch responsables for dropdown
+  // Fetch responsables and estados for dropdowns
   useEffect(() => {
     apiClient.get('/responsables')
       .then(res => setResponsables(res.data))
       .catch(() => setResponsables([]))
+    apiClient.get('/estados-tareas')
+      .then(res => setEstadosTarea(res.data))
+      .catch(() => setEstadosTarea([]))
   }, [])
 
   // Edit tarea handlers
@@ -143,6 +153,22 @@ export default function DetailPage() {
       fetchData()
     } catch (err) {
       LOG.error('Error deleting accion', err)
+    }
+  }
+
+  // Mark tarea as completado
+  const handleMarkComplete = async () => {
+    setCompleting(true)
+    try {
+      const res = await apiClient.post(`/tareas/${tarea_id}/complete`)
+      toast.success(`Tarea marcada como Completado (${res.data.acciones_updated} acciones actualizadas)`)
+      setCompleteConfirmOpen(false)
+      fetchData()
+    } catch (err) {
+      LOG.error('Error marking tarea as complete', err)
+      toast.error('Error al marcar como completado')
+    } finally {
+      setCompleting(false)
     }
   }
 
@@ -201,10 +227,23 @@ export default function DetailPage() {
                 </Tooltip>
               </div>
             </div>
-            <Button variant="outline" onClick={openEdit} className="shrink-0">
-              <Pencil className="sm:mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">Editar</span>
-            </Button>
+            <div className="flex items-center gap-2 shrink-0">
+              {tarea.estado?.toLowerCase() !== 'completado' && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" onClick={() => setCompleteConfirmOpen(true)}>
+                      <CheckCircle2 className="sm:mr-2 h-4 w-4" />
+                      <span className="hidden sm:inline">Completar</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Marcar tarea como Completado</TooltipContent>
+                </Tooltip>
+              )}
+              <Button variant="outline" onClick={openEdit}>
+                <Pencil className="sm:mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Editar</span>
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -371,7 +410,16 @@ export default function DetailPage() {
               </div>
               <div>
                 <label className="text-sm font-medium">Estado</label>
-                <Input value={editForm.estado || ''} onChange={e => setEditForm(f => ({ ...f, estado: e.target.value }))} />
+                <select
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  value={editForm.estado || ''}
+                  onChange={e => setEditForm(f => ({ ...f, estado: e.target.value }))}
+                >
+                  <option value="">-- Seleccionar --</option>
+                  {estadosTarea.map(e => (
+                    <option key={e.id} value={e.valor}>{e.valor}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <DialogFooter>
@@ -439,6 +487,16 @@ export default function DetailPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        {/* Confirm Mark as Completado */}
+        <ConfirmDialog
+          open={completeConfirmOpen}
+          onOpenChange={setCompleteConfirmOpen}
+          title="Marcar como Completado"
+          description="Se marcara la tarea y todas sus acciones pendientes como completadas."
+          onConfirm={handleMarkComplete}
+          confirmText="Completar"
+          loading={completing}
+        />
       </div>
     </Layout>
   )

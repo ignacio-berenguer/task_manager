@@ -225,6 +225,8 @@ The backend API is secured with a dual authentication mechanism:
 | PUT | `/api/v1/tareas/{tarea_id}` | Update tarea |
 | DELETE | `/api/v1/tareas/{tarea_id}` | Delete tarea |
 | POST | `/api/v1/tareas/search` | Flexible search with filters |
+| POST | `/api/v1/tareas/bulk-update` | Bulk update tareas (change_date or complete_and_create) |
+| POST | `/api/v1/tareas/{tarea_id}/complete` | Mark tarea and all non-completed acciones as completed |
 
 **Acciones:**
 
@@ -276,8 +278,8 @@ All accion mutation endpoints automatically recalculate the parent tarea's `fech
 |-------|--------|-------------|
 | `/` | Public | Landing page with hero section and changelog |
 | `/sign-in`, `/sign-up` | Public | Clerk authentication |
-| `/search` | Private | Task search with compact filters (no labels, placeholder text), lateral sidebar (xl+), column filter popovers (funnel icon), active filter tags (removable badges), quick date filters "2 dias" and "Semana" (mutually exclusive, toggle fecha_siguiente_accion date range), export to clipboard (copies visible tasks with pending actions), sortable/reorderable columns, colored estado tags, sticky title bar, sticky results bar and table header (XL+, dynamic height via ResizeObserver), inline detail accordion, side drawer quick view, quick action buttons (add accion, change fecha), keyboard shortcuts, new tarea dialog (Enter to submit), persistent state across navigation (filters, results, pagination, sort, scroll position). Mobile-optimized: icon-only buttons, responsive drawer grid, touch-friendly tap targets |
-| `/detail/:tarea_id` | Private | Task header with tarea name prominent + tarea_id muted, estado + responsable + fecha_siguiente_accion badges + cambiar fecha button, compact acciones CRUD table (sorted desc, sticky headers), add accion dialog, notas accordion (collapsed), datos accordion (collapsed), Ctrl+Shift+F shortcut, back navigation with state preservation. All date fields use DateInput with +/- day buttons and keyboard accelerators. All modals support Enter to submit. Mobile-optimized: card layout for acciones, responsive accordion padding, icon-only header buttons |
+| `/search` | Private | Task search with compact filters (no labels, placeholder text), lateral sidebar (xl+), column filter popovers (funnel icon), active filter tags (removable badges), quick date filters "2 dias" and "Semana" (mutually exclusive, toggle fecha_siguiente_accion date range), export to clipboard (copies visible tasks with pending actions), sortable/reorderable columns, colored estado tags (soft badge colors), sticky title bar, sticky results bar and table header (XL+, dynamic height via ResizeObserver), inline detail accordion, side drawer quick view, quick action buttons (add accion, change fecha), multi-select checkboxes with bulk operations toolbar (change date, complete & create action, export selected), keyboard shortcuts, new tarea dialog (Enter to submit), persistent state across navigation (filters, results, pagination, sort, scroll position). Mobile-optimized: icon-only buttons, responsive drawer grid, touch-friendly tap targets |
+| `/detail/:tarea_id` | Private | Task header with tarea name prominent + tarea_id muted, estado + responsable + fecha_siguiente_accion badges + cambiar fecha button, "Marcar Completado" button (marks tarea and non-completed acciones as completed with confirm dialog), compact acciones CRUD table (sorted desc, sticky headers), add accion dialog, notas accordion (collapsed), datos accordion (collapsed), edit tarea with estado dropdown (parametric), Ctrl+Shift+F shortcut, back navigation with state preservation. All date fields use DateInput with +/- day buttons and keyboard accelerators. All modals support Enter to submit. Mobile-optimized: card layout for acciones, responsive accordion padding, icon-only header buttons |
 | `/chat` | Private | AI assistant with SSE streaming |
 
 ## MCP Tools

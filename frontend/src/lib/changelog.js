@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.020",
+    feature: 20,
+    title: "Mejoras UI y operaciones masivas",
+    summary: "Colores de etiquetas mas suaves, correccion del boton cerrar en modales, dropdown de estado en edicion de tarea, seleccion multiple de tareas en busqueda con operaciones masivas (cambiar fecha, completar y crear accion, exportar seleccionadas), y boton para marcar tarea como Completado en la pagina de detalle."
+  },
+  {
     version: "1.019",
     feature: 19,
     title: "Sincronizacion automatica de fecha siguiente accion",

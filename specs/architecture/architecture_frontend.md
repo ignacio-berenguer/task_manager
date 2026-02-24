@@ -194,9 +194,11 @@ frontend/
 - **Colored estado tags**: EstadoBadge component renders estado as colored badges (red=En Curso/Pendiente, green=Completado/Completada, amber=En Progreso, gray=Cancelado)
 - **Information hierarchy**: tarea_id displayed in small muted monospace font; tarea name displayed with emphasis
 - **Reorderable columns** via ColumnConfigurator with drag-and-drop; order persisted to localStorage
-- **Inline detail accordion**: Each row has an expand button showing descripcion, notas_anteriores, and acciones inline
+- **Inline detail accordion**: Each row has an expand button showing descripcion and acciones inline
 - **Side drawer quick view**: PanelRightOpen button opens a Sheet from the right with tarea summary (tarea_id de-emphasized, tarea name as title) and compact acciones list
 - **Action buttons**: Each row has icon buttons for "Añadir Accion" (opens AddAccionDialog), "Completar y Programar Siguiente" (opens CompleteAndScheduleDialog), and "Cambiar Fecha Siguiente Accion" (opens CambiarFechaDialog) using shared dialog components from `features/shared/ActionDialogs.jsx`
+- **Multi-select checkboxes**: Each row has a checkbox for bulk selection; a header checkbox toggles select-all for the current page
+- **Bulk operations toolbar**: Appears when rows are selected. Provides "Cambiar Fecha" (bulk date change), "Completar y Crear Accion" (bulk complete and create action), and "Exportar Seleccion" (export selected tasks to clipboard). Operations call `POST /api/v1/tareas/bulk-update` and display per-task success/failure results
 - **Nueva Tarea dialog**: Create new tarea with button (tooltip shows Ctrl+Shift+N shortcut)
 - **Full-width layout**: No max-width constraint; uses all available width
 - **Server-side pagination** with configurable page size
@@ -210,7 +212,8 @@ frontend/
 - **Notas Anteriores** (second section, accordion): Collapsible accordion (closed by default), read-only display of original notas text (shown only when non-empty)
 - **Datos de la Tarea** (third section, accordion): Collapsible accordion (collapsed by default) showing all tarea fields with formatted dates and EstadoBadge
 - **Keyboard shortcuts**: Ctrl+Shift+F navigates to Search page with focus on tarea filter input
-- **Edit tarea dialog**: Responsable uses a dropdown populated from `/api/v1/responsables`; Enter submits, Ctrl+Enter submits from anywhere
+- **"Marcar Completado" button**: Marks the tarea and all non-completed acciones as completed via `POST /api/v1/tareas/{tarea_id}/complete`, with a confirmation dialog before execution
+- **Edit tarea dialog**: Responsable uses a dropdown populated from `/api/v1/responsables`; estado uses a dropdown populated from `/api/v1/estados-tareas` (parametric table) instead of free text; Enter submits, Ctrl+Enter submits from anywhere
 - **Modal keyboard**: All modals support Enter to submit (except in textareas), +/- keys to adjust dates when DateInput is focused
 - **Back navigation**: Uses `navigate(-1)` (browser history) to preserve Search page state
 
@@ -256,7 +259,7 @@ ClerkProvider
 | Component | Description |
 |-----------|-------------|
 | `accordion.jsx` | Collapsible content sections |
-| `badge.jsx` | Status badges with color variants |
+| `badge.jsx` | Status badges with soft color variants (lighter/pastel tones for destructive, success, warning) |
 | `button.jsx` | Button with size/variant props |
 | `card.jsx` | Card container (Card, CardHeader, CardContent, etc.) |
 | `checkbox.jsx` | Checkbox input |
@@ -266,7 +269,7 @@ ClerkProvider
 | `currency-input.jsx` | Monetary input with locale formatting |
 | `date-input.jsx` | Date input with +/- day buttons, keyboard accelerators (+/=/-), wraps DatePicker |
 | `datepicker.jsx` | Date picker with calendar popup (used internally by DateInput) |
-| `dialog.jsx` | Modal dialog |
+| `dialog.jsx` | Modal dialog (X button and overlay click to close) |
 | `dropdown-menu.jsx` | Dropdown menu with items |
 | `input.jsx` | Text input field |
 | `label.jsx` | Form label |
