@@ -4,19 +4,21 @@ import { createLogger } from '@/lib/logger'
 const logger = createLogger('API')
 
 /**
- * Axios instance configured for the Portfolio Digital API
+ * Resolve API base URL:
+ * - Production (HTTPS): always use the known production API endpoint
+ * - Development (HTTP/localhost): use env var or localhost fallback
  */
-const isProduction = window.location.hostname !== 'localhost'
-let baseURL = import.meta.env.VITE_API_BASE_URL
-  || (isProduction ? 'https://taskapi.iridescentiris.tech/api/v1' : 'http://localhost:8080/api/v1')
-
-// Auto-upgrade to HTTPS when page is served over HTTPS (prevents mixed content)
-if (window.location.protocol === 'https:' && baseURL.startsWith('http://')) {
-  baseURL = baseURL.replace('http://', 'https://')
+function resolveBaseURL() {
+  if (window.location.protocol === 'https:') {
+    return 'https://taskapi.iridescentiris.tech/api/v1'
+  }
+  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
 }
 
+export const API_BASE_URL = resolveBaseURL()
+
 const apiClient = axios.create({
-  baseURL,
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },

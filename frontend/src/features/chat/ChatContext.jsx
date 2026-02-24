@@ -1,9 +1,8 @@
 import { createContext, useContext, useState, useCallback, useRef } from 'react'
 import { createLogger } from '@/lib/logger'
+import { API_BASE_URL } from '@/api/client'
 
 const logger = createLogger('Chat')
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
 
 const ChatContext = createContext(null)
 
