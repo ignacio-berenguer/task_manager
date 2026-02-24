@@ -9,13 +9,22 @@ const logger = createLogger('API')
  * - Development (HTTP/localhost): use env var or localhost fallback
  */
 function resolveBaseURL() {
-  if (window.location.protocol === 'https:') {
-    return 'https://taskapi.iridescentiris.tech/api/v1'
+  const protocol = window.location.protocol
+  const hostname = window.location.hostname
+  const envVar = import.meta.env.VITE_API_BASE_URL
+  console.log('[API Config] protocol:', protocol, 'hostname:', hostname, 'VITE_API_BASE_URL:', envVar)
+  if (protocol === 'https:') {
+    const url = 'https://taskapi.iridescentiris.tech/api/v1'
+    console.log('[API Config] Production detected, using:', url)
+    return url
   }
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
+  const url = envVar || 'http://localhost:8080/api/v1'
+  console.log('[API Config] Development detected, using:', url)
+  return url
 }
 
 export const API_BASE_URL = resolveBaseURL()
+console.log('[API Config] Final API_BASE_URL:', API_BASE_URL)
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -30,6 +39,7 @@ const apiClient = axios.create({
  */
 apiClient.interceptors.request.use(
   async (config) => {
+    console.log('[API Request]', config.method?.toUpperCase(), config.baseURL, config.url)
     logger.debug(`${config.method?.toUpperCase()} ${config.url}`)
 
     // Get Clerk token if available
