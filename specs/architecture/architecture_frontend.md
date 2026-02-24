@@ -188,6 +188,7 @@ frontend/
 - **Auto-search** on initial page load with default filters
 - **Keyboard shortcuts**: Ctrl+Shift+F (focus tarea filter), Ctrl+Shift+N (new tarea dialog), Enter (trigger search)
 - **Sticky title bar**: "Busqueda de Tareas" title and action buttons remain visible when scrolling
+- **Sticky results bar & table header** (XL+ only): The results/filters bar (result count, filter chips, column configurator) and the table header row use `position: sticky` to remain visible while scrolling. A `ResizeObserver` dynamically measures the filter bar height to position the table header below it via a CSS custom property (`--thead-top`). The table wrapper uses `max-xl:overflow-x-auto` to remove the scroll context on XL+, allowing viewport-relative sticky positioning.
 - **Sortable data grid** with configurable columns and sticky column headers
 - **Colored estado tags**: EstadoBadge component renders estado as colored badges (red=En Curso/Pendiente, green=Completado/Completada, amber=En Progreso, gray=Cancelado)
 - **Information hierarchy**: tarea_id displayed in small muted monospace font; tarea name displayed with emphasis

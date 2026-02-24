@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.015",
+    feature: 15,
+    title: "Barra de resultados y encabezado de tabla sticky",
+    summary: "En la pagina de busqueda (pantallas XL+), la barra de resultados (conteo, filtros activos y selector de columnas) y el encabezado de la tabla permanecen fijos al hacer scroll. La altura del encabezado se calcula dinamicamente con ResizeObserver para adaptarse a multiples lineas de filtros."
+  },
+  {
     version: "1.014",
     feature: 14,
     title: "Filtro rapido: Proxima semana",

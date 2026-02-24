@@ -16,7 +16,7 @@ import { formatDate } from '@/lib/formatDate'
 import { createStorage } from '@/lib/storage'
 import { cn } from '@/lib/utils'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
-import { Search, X, Plus, ChevronDown, ChevronRight, PanelRightOpen, ListPlus, CalendarClock, CalendarDays, Filter } from 'lucide-react'
+import { Search, X, Plus, ChevronDown, ChevronRight, PanelRightOpen, ListPlus, CalendarClock, CalendarDays, Filter, ClipboardCopy, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
 import apiClient from '@/api/client'
@@ -59,6 +59,8 @@ export default function SearchPage() {
   const location = useLocation()
   const sidebarTareaRef = useRef(null)
   const mobileTareaRef = useRef(null)
+  const filterBarRef = useRef(null)
+  const [filterBarHeight, setFilterBarHeight] = useState(0)
 
   // Restore state from module-level cache (survives in-app navigation)
   if (searchStateCache) {
@@ -108,6 +110,19 @@ export default function SearchPage() {
       LOG.debug('Search state saved to cache')
     }
   }, [])
+
+  // Track filter bar height for dynamic sticky thead positioning
+  useEffect(() => {
+    const el = filterBarRef.current
+    if (!el) return
+    const observer = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        setFilterBarHeight(entry.borderBoxSize?.[0]?.blockSize ?? entry.target.offsetHeight)
+      }
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [results])
 
   // Restore scroll position after results are rendered
   useEffect(() => {
@@ -547,8 +562,8 @@ export default function SearchPage() {
 
             {/* Results */}
             {results && (
-              <div className="rounded-lg border bg-card">
-                <div className="flex flex-wrap items-center gap-2 border-b px-4 py-3">
+              <div className="rounded-lg border bg-card" style={{ '--thead-top': `calc(7.25rem + ${filterBarHeight}px)` }}>
+                <div ref={filterBarRef} className="flex flex-wrap items-center gap-2 border-b px-4 py-3 xl:sticky xl:top-[7.25rem] xl:z-20 bg-card xl:border-t xl:border-border xl:rounded-t-lg xl:-mt-px">
                   <span className="text-sm text-muted-foreground">
                     {results.total} resultado{results.total !== 1 ? 's' : ''}
                   </span>
@@ -574,10 +589,10 @@ export default function SearchPage() {
                     />
                   </div>
                 </div>
-                <div className="overflow-x-auto">
+                <div className="max-xl:overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="sticky top-0 z-10 bg-card">
-                      <tr className="border-b bg-muted/50">
+                    <thead className="sticky top-0 xl:top-[var(--thead-top)] z-10 bg-card">
+                      <tr className="border-b bg-muted">
                         <th className="w-8 px-2 py-3" />
                         <th className="w-8 px-2 py-3" />
                         {columns.map(col => (
