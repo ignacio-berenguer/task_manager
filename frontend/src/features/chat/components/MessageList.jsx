@@ -3,27 +3,19 @@ import { MessageSquare, Wrench, ChevronRight, Sparkles, Lightbulb } from 'lucide
 import { MessageBubble } from './MessageBubble'
 
 const TOOL_LABELS = {
-  buscar_iniciativas: 'Buscar iniciativas',
-  buscar_en_tabla: 'Buscar en tabla',
-  obtener_iniciativa: 'Obtener iniciativa',
-  obtener_documentos: 'Obtener documentos',
-  contar_iniciativas: 'Contar iniciativas',
-  totalizar_importes: 'Totalizar importes',
-  listar_tablas: 'Listar tablas',
-  describir_tabla: 'Describir tabla',
-  obtener_valores_campo: 'Obtener valores',
-  generar_grafico: 'Generar gráfico',
-  ejecutar_consulta_sql: 'Ejecutar SQL',
+  buscar_tareas: 'Buscar tareas',
+  obtener_tarea: 'Obtener tarea',
+  buscar_acciones: 'Buscar acciones',
+  listar_estados: 'Listar estados',
 }
 
 const EXAMPLE_QUESTIONS = [
-  '¿Cuántas iniciativas hay en ejecución?',
-  '¿Cuál es el presupuesto total de 2025 por unidad?',
-  '¿Qué iniciativas tiene la unidad Digital?',
-  'Dame los detalles de SPA_25_001',
+  '¿Qué tengo que hacer hoy?',
+  '¿Qué tengo que hacer esta semana?',
+  '¿Cuáles son mis tareas pendientes?',
 ]
 
-export function MessageList({ messages, isLoading, streamingContent, toolSteps, thinkingParts, onExampleClick }) {
+export function MessageList({ messages, isLoading, streamingContent, toolSteps, thinkingParts, onExampleClick, userName }) {
   const endRef = useRef(null)
   const containerRef = useRef(null)
 
@@ -42,9 +34,15 @@ export function MessageList({ messages, isLoading, streamingContent, toolSteps, 
           <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-primary/10 to-transparent blur-md -z-10" />
         </div>
 
-        <h2 className="text-xl font-semibold tracking-tight mb-2">Asistente IA del Portfolio</h2>
+        {userName && (
+          <p className="text-lg text-muted-foreground mb-1">
+            ¡Hola, {userName}!
+          </p>
+        )}
+
+        <h2 className="text-xl font-semibold tracking-tight mb-2">Asistente IA de Tareas</h2>
         <p className="text-muted-foreground text-sm mb-8 max-w-sm leading-relaxed">
-          Pregunta cualquier cosa sobre las iniciativas, presupuestos, estados y datos del portfolio digital.
+          Pregunta cualquier cosa sobre tus tareas, acciones, estados y responsables.
         </p>
 
         {/* Example questions as pill buttons */}

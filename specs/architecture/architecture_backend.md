@@ -238,7 +238,7 @@ AI-powered chat assistant that answers natural language questions about tasks by
 - `api_client.py` makes internal HTTP calls to the same FastAPI backend (self-calling pattern via `httpx.AsyncClient`)
 - `tools_definition.py` defines 4 tools in Anthropic API format
 - `tools_executor.py` routes tool calls to the appropriate API endpoints
-- `system_prompt.py` provides task management context to the model, including user identity detection rules (asks for user name on responsable-dependent queries)
+- `system_prompt.py` provides task management context to the model, including status semantics ("En curso" = active, "Completada" = done), and user identity (auto-resolved from email-to-responsable mapping via `AGENT_USER_MAPPINGS`, with fallback to asking for name)
 - `table_metadata.py` provides table descriptions for the system prompt
 
 ### Agent Tools (4)
@@ -302,6 +302,7 @@ AGENT_MAX_TOKENS=4096
 AGENT_TEMPERATURE=0.3
 AGENT_MAX_TOOL_ROUNDS=10
 AGENT_API_BASE_URL=http://localhost:8080/api/v1
+AGENT_USER_MAPPINGS={"ignacio.berenguer@gmail.com": "Ignacio"}  # Email-to-responsable JSON map
 ```
 
 ### Logging

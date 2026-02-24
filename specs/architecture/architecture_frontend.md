@@ -220,6 +220,9 @@ frontend/
 #### 6.4 Chat Page (`/chat`)
 
 - **AI assistant** powered by Claude via the backend agent endpoint
+- **Personalized greeting**: Shows "¡Hola, {name}!" with the user's first name from Clerk, plus "Asistente IA de Tareas" title and description
+- **Suggested starter questions**: Three clickable pill buttons ("¿Qué tengo que hacer hoy?", "¿Qué tengo que hacer esta semana?", "¿Cuáles son mis tareas pendientes?") shown on empty conversations
+- **User identity forwarding**: Sends the user's Clerk email to the backend, which resolves it to a responsable name via `AGENT_USER_MAPPINGS` config so the agent filters tasks automatically
 - **SSE streaming**: Real-time token-by-token response rendering
 - **Markdown rendering**: Responses formatted with react-markdown + remark-gfm
 - **Conversation persistence**: ChatContext provider maintains conversation history across navigation

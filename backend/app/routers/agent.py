@@ -17,6 +17,7 @@ router = APIRouter(prefix="/agent", tags=["agent"], dependencies=[Depends(verify
 
 class AgentChatRequest(BaseModel):
     messages: list[dict]
+    user_email: str | None = None
 
 
 @router.post("/chat")
@@ -31,8 +32,11 @@ async def agent_chat(request: AgentChatRequest):
     if not request.messages:
         raise HTTPException(status_code=400, detail="Se requiere al menos un mensaje.")
 
+    if request.user_email:
+        logger.info("Agent chat request from user: %s", request.user_email)
+
     return StreamingResponse(
-        stream_agent_response(request.messages),
+        stream_agent_response(request.messages, user_email=request.user_email),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

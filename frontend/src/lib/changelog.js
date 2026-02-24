@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.022",
+    feature: 22,
+    title: "Chat mejorado: saludos, preguntas sugeridas e identidad de usuario",
+    summary: "El asistente IA ahora te saluda por nombre, ofrece preguntas sugeridas relevantes para empezar (tareas de hoy, esta semana, pendientes), y sabe automaticamente quien eres para filtrar tus tareas sin preguntar. El agente entiende la semantica de estados: 'En curso' = activo, 'Completada' = terminada."
+  },
+  {
     version: "1.021",
     feature: 21,
     title: "Asistente IA pregunta por el usuario",

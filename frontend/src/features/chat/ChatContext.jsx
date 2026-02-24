@@ -46,7 +46,10 @@ export function ChatProvider({ children }) {
       const response = await fetch(`${API_BASE_URL}/agent/chat`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ messages: updatedMessages }),
+        body: JSON.stringify({
+          messages: updatedMessages,
+          user_email: window.Clerk?.user?.primaryEmailAddress?.emailAddress || null,
+        }),
         signal: abortController.signal,
       })
 

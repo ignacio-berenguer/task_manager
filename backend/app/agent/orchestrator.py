@@ -16,7 +16,7 @@ from . import config
 logger = logging.getLogger("task_manager_agent")
 
 
-async def stream_agent_response(messages: list[dict]) -> AsyncGenerator[str, None]:
+async def stream_agent_response(messages: list[dict], user_email: str | None = None) -> AsyncGenerator[str, None]:
     """Run the agentic loop and yield SSE events.
 
     Yields SSE-formatted strings:
@@ -29,6 +29,19 @@ async def stream_agent_response(messages: list[dict]) -> AsyncGenerator[str, Non
     if not config.ANTHROPIC_API_KEY:
         yield _sse_event("error", {"message": "El asistente IA no está configurado. Falta la clave ANTHROPIC_API_KEY."})
         return
+
+    # Resolve user email to responsable name
+    user_name = None
+    if user_email:
+        try:
+            mappings = json.loads(config.AGENT_USER_MAPPINGS)
+            user_name = mappings.get(user_email)
+            if user_name:
+                logger.info("User email '%s' resolved to responsable '%s'", user_email, user_name)
+            else:
+                logger.info("User email '%s' has no responsable mapping", user_email)
+        except (json.JSONDecodeError, TypeError):
+            logger.warning("Failed to parse AGENT_USER_MAPPINGS config")
 
     client = anthropic.AsyncAnthropic(api_key=config.ANTHROPIC_API_KEY)
     api_client = AgentAPIClient(base_url=config.AGENT_API_BASE_URL)
@@ -56,7 +69,7 @@ async def stream_agent_response(messages: list[dict]) -> AsyncGenerator[str, Non
                 model=config.AGENT_MODEL,
                 max_tokens=config.AGENT_MAX_TOKENS,
                 temperature=config.AGENT_TEMPERATURE,
-                system=get_system_prompt(),
+                system=get_system_prompt(user_name=user_name),
                 tools=AGENT_TOOLS,
                 messages=api_messages,
             ) as stream:

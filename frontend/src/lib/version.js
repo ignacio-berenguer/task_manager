@@ -1,2 +1,2 @@
-export const APP_VERSION = { major: 1, minor: 21 }
+export const APP_VERSION = { major: 1, minor: 22 }
 export const VERSION_STRING = `${APP_VERSION.major}.${String(APP_VERSION.minor).padStart(3, '0')}`

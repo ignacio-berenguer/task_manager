@@ -341,6 +341,7 @@ All accion mutation endpoints automatically recalculate the parent tarea's `fech
 | `AGENT_TEMPERATURE` | `0.3` | Agent temperature |
 | `AGENT_MAX_TOOL_ROUNDS` | `10` | Max tool iteration rounds |
 | `AGENT_API_BASE_URL` | `http://localhost:8080/api/v1` | Backend API URL for agent self-calls |
+| `AGENT_USER_MAPPINGS` | `{}` | JSON map of email to responsable name (e.g., `{"email@example.com": "Name"}`) |
 
 ### Frontend (.env)
 

@@ -98,7 +98,7 @@ export function ChatInput({ onSend, onStop, isLoading }) {
           value={value}
           onChange={handleInput}
           onKeyDown={handleKeyDown}
-          placeholder="Pregunta sobre el portfolio..."
+          placeholder="Pregunta sobre tus tareas..."
           disabled={isLoading}
           rows={1}
           className="flex-1 resize-none bg-transparent px-4 py-3 text-sm placeholder:text-muted-foreground focus-visible:outline-none disabled:opacity-50 transition-all duration-200"

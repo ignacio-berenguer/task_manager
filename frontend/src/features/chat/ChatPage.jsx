@@ -1,4 +1,5 @@
 import { RotateCcw } from 'lucide-react'
+import { useUser } from '@clerk/clerk-react'
 import { Layout } from '@/components/layout/Layout'
 import { Button } from '@/components/ui/button'
 import { usePageTitle } from '@/hooks/usePageTitle'
@@ -8,7 +9,10 @@ import { ChatInput } from './components/ChatInput'
 
 export function ChatPage() {
   usePageTitle('Asistente IA')
+  const { user } = useUser()
   const { messages, isLoading, streamingContent, toolSteps, thinkingParts, sendMessage, clearChat, stopGeneration } = useChatContext()
+
+  const userName = user?.firstName || null
 
   return (
     <Layout>
@@ -34,6 +38,7 @@ export function ChatPage() {
           toolSteps={toolSteps}
           thinkingParts={thinkingParts}
           onExampleClick={sendMessage}
+          userName={userName}
         />
 
         {/* Input */}

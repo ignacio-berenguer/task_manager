@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     AGENT_TEMPERATURE: float = 0.3
     AGENT_MAX_TOOL_ROUNDS: int = 10
     AGENT_API_BASE_URL: str = ""  # Auto-derived from API_HOST:API_PORT if empty
+    AGENT_USER_MAPPINGS: str = "{}"  # JSON: {"email": "ResponsableName", ...}
 
     class Config:
         env_file = ".env"
