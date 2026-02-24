@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.019",
+    feature: 19,
+    title: "Sincronizacion automatica de fecha siguiente accion",
+    summary: "Al crear, editar o eliminar una accion, la fecha siguiente accion de la tarea se recalcula automaticamente como la fecha maxima entre las acciones con estado Pendiente (sin distinguir mayusculas/minusculas). Si no hay acciones pendientes, la fecha se establece en NULL. La logica se centralizo en el backend para garantizar consistencia desde cualquier cliente."
+  },
+  {
     version: "1.018",
     feature: 18,
     title: "Fechas con +/- rapido y Enter para guardar",

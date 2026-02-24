@@ -122,7 +122,9 @@ Key behaviors:
 
 **Important:** The `POST /complete-and-schedule` and `GET /tarea/{tarea_id}` routes are defined before `GET /{id}` to avoid FastAPI route conflicts.
 
-**Complete & Schedule endpoint:** Creates two acciones in a single transaction — one with estado "Completada" (fecha_accion = today, server-side) and one with estado "Pendiente" (fecha_accion = user-specified future date) — and updates the parent tarea's `fecha_siguiente_accion` to the scheduled date.
+**Auto-sync `fecha_siguiente_accion`:** All accion mutation endpoints (POST, PUT, DELETE, complete-and-schedule) automatically recalculate the parent tarea's `fecha_siguiente_accion` as the MAX `fecha_accion` among pending acciones (case-insensitive estado match). If no pending acciones exist, the field is set to NULL. This is handled by the `_sync_fecha_siguiente_accion(db, tarea_id)` helper function in the router module.
+
+**Complete & Schedule endpoint:** Creates two acciones in a single transaction — one with estado "Completada" (fecha_accion = today, server-side) and one with estado "Pendiente" (fecha_accion = user-specified future date) — and uses the auto-sync helper to update the parent tarea's `fecha_siguiente_accion`.
 
 ### 6.3 Estados (Parametric)
 

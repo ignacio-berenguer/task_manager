@@ -43,9 +43,6 @@ export function AddAccionDialog({ open, onOpenChange, tareaId, onSuccess }) {
         fecha_accion: form.fecha_accion,
         estado: 'PENDIENTE',
       })
-      await apiClient.put(`/tareas/${tareaId}`, {
-        fecha_siguiente_accion: form.fecha_accion,
-      })
       LOG.info(`Accion created for tarea ${tareaId}`)
       toast.success('Accion creada exitosamente')
       onOpenChange(false)

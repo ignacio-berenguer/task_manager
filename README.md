@@ -233,10 +233,12 @@ The backend API is secured with a dual authentication mechanism:
 | GET | `/api/v1/acciones` | List all acciones (paginated) |
 | GET | `/api/v1/acciones/{id}` | Get accion by ID |
 | GET | `/api/v1/acciones/tarea/{tarea_id}` | Get acciones for a tarea |
-| POST | `/api/v1/acciones` | Create accion |
+| POST | `/api/v1/acciones` | Create accion (auto-syncs tarea fecha) |
 | POST | `/api/v1/acciones/complete-and-schedule` | Complete an action and schedule the next one atomically |
-| PUT | `/api/v1/acciones/{id}` | Update accion |
-| DELETE | `/api/v1/acciones/{id}` | Delete accion |
+| PUT | `/api/v1/acciones/{id}` | Update accion (auto-syncs tarea fecha) |
+| DELETE | `/api/v1/acciones/{id}` | Delete accion (auto-syncs tarea fecha) |
+
+All accion mutation endpoints automatically recalculate the parent tarea's `fecha_siguiente_accion` as the maximum `fecha_accion` among pending acciones (case-insensitive). If no pending acciones exist, the field is set to NULL.
 
 **Estados:**
 
