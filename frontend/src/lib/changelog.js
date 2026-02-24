@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.016",
+    feature: 16,
+    title: "Mejoras UI: filtros compactos, filtro rapido 2 dias, y exportar al portapapeles",
+    summary: "Tres mejoras en la pagina de busqueda: (1) Nuevo filtro rapido 'Proximos 2 dias' que filtra tareas con fecha siguiente accion entre hoy y manana, mutuamente exclusivo con 'Proxima semana'. (2) Seccion de filtros condensada: se eliminaron las etiquetas, se redujo el espaciado, y los botones de filtro rapido se muestran lado a lado. (3) Boton para copiar al portapapeles las tareas visibles con sus acciones pendientes en formato 'tarea: accion1 / accion2'."
+  },
+  {
     version: "1.015",
     feature: 15,
     title: "Barra de resultados y encabezado de tabla sticky",

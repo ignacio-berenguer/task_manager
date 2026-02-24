@@ -90,12 +90,13 @@ export default function SearchPage() {
   // Column filters (client-side)
   const [columnFilters, setColumnFilters] = useState(() => searchStateCache?.columnFilters || {})
 
-  // Quick filter: Próxima semana
+  // Quick filters
   const [proximaSemana, setProximaSemana] = useState(() => searchStateCache?.proximaSemana || false)
+  const [proximosDias, setProximosDias] = useState(() => searchStateCache?.proximosDias || false)
 
   // Ref that always holds latest state (avoids stale closures in unmount cleanup)
   const stateRef = useRef()
-  stateRef.current = { filters, results, page, sortField, sortDir, columnFilters, proximaSemana }
+  stateRef.current = { filters, results, page, sortField, sortDir, columnFilters, proximaSemana, proximosDias }
 
   // Cached scroll position to restore after mount
   const cachedScrollTop = useRef(searchStateCache?.scrollTop || 0)
@@ -172,7 +173,16 @@ export default function SearchPage() {
       if (filters.tema) searchFilters.push({ field: 'tema', operator: 'eq', value: filters.tema })
       if (filters.estado) searchFilters.push({ field: 'estado', operator: 'eq', value: filters.estado })
 
-      if (proximaSemana) {
+      if (proximosDias) {
+        const today = new Date()
+        const todayStr = formatLocalDate(today)
+        const endDate = new Date(today)
+        endDate.setDate(endDate.getDate() + 1)
+        const endStr = formatLocalDate(endDate)
+        searchFilters.push({ field: 'fecha_siguiente_accion', operator: 'gte', value: todayStr })
+        searchFilters.push({ field: 'fecha_siguiente_accion', operator: 'lte', value: endStr })
+        LOG.debug('Quick filter Próximos 2 días: ON', { from: todayStr, to: endStr })
+      } else if (proximaSemana) {
         const today = new Date()
         const todayStr = formatLocalDate(today)
         const endDate = new Date(today)
@@ -201,7 +211,7 @@ export default function SearchPage() {
     } finally {
       setLoading(false)
     }
-  }, [filters, sortField, sortDir, pageSize, proximaSemana])
+  }, [filters, sortField, sortDir, pageSize, proximaSemana, proximosDias])
 
   // Auto-search on initial load (skip if results restored from cache)
   const initialSearchDone = useRef(!!searchStateCache?.results)
@@ -215,10 +225,17 @@ export default function SearchPage() {
   const clearFilters = () => {
     setFilters({ tarea_id: '', tarea: '', responsable: '', tema: '', estado: 'En Curso' })
     setProximaSemana(false)
+    setProximosDias(false)
   }
 
   const toggleProximaSemana = () => {
     setProximaSemana(prev => !prev)
+    setProximosDias(false)
+  }
+
+  const toggleProximosDias = () => {
+    setProximosDias(prev => !prev)
+    setProximaSemana(false)
   }
 
   const handleSort = (field) => {
@@ -248,6 +265,17 @@ export default function SearchPage() {
       doSearch(0)
     }
   }, [proximaSemana]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const proximosDiasInitialized = useRef(false)
+  useEffect(() => {
+    if (!proximosDiasInitialized.current) {
+      proximosDiasInitialized.current = true
+      return
+    }
+    if (results) {
+      doSearch(0)
+    }
+  }, [proximosDias]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Column persistence
   const handleColumnsChange = (newCols) => {
@@ -379,21 +407,31 @@ export default function SearchPage() {
 
   // Active filter tags (server-side filters)
   const activeFilterTags = useMemo(() => {
+    const fmtShort = (d) => String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0')
     const tags = Object.entries(filters)
       .filter(([, value]) => value)
       .map(([key, value]) => ({ key, label: FILTER_LABELS[key], value }))
+    if (proximosDias) {
+      const today = new Date()
+      const end = new Date(today)
+      end.setDate(end.getDate() + 1)
+      tags.push({ key: '_proximosDias', label: 'Proximos 2 dias', value: `${fmtShort(today)} - ${fmtShort(end)}` })
+    }
     if (proximaSemana) {
       const today = new Date()
       const end = new Date(today)
       end.setDate(end.getDate() + 6)
-      const fmtShort = (d) => String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0')
       tags.push({ key: '_proximaSemana', label: 'Proxima semana', value: `${fmtShort(today)} - ${fmtShort(end)}` })
     }
     return tags
-  }, [filters, proximaSemana])
+  }, [filters, proximaSemana, proximosDias])
 
   // Remove a single filter and re-search
   const removeFilterTag = useCallback((key) => {
+    if (key === '_proximosDias') {
+      setProximosDias(false)
+      return
+    }
     if (key === '_proximaSemana') {
       setProximaSemana(false)
       return
@@ -428,78 +466,108 @@ export default function SearchPage() {
     return val || '-'
   }
 
+  // Clipboard export
+  const [copying, setCopying] = useState(null)
+  const exportToClipboard = async () => {
+    if (!filteredData.length) return
+    setCopying('loading')
+    try {
+      const accionesPromises = filteredData.map(async (row) => {
+        if (accionesCache.current.has(row.tarea_id)) {
+          return { tareaId: row.tarea_id, tarea: row.tarea, acciones: accionesCache.current.get(row.tarea_id) }
+        }
+        try {
+          const res = await apiClient.get(`/acciones/tarea/${row.tarea_id}`)
+          accionesCache.current.set(row.tarea_id, res.data)
+          return { tareaId: row.tarea_id, tarea: row.tarea, acciones: res.data }
+        } catch {
+          return { tareaId: row.tarea_id, tarea: row.tarea, acciones: [] }
+        }
+      })
+      const allAcciones = await Promise.all(accionesPromises)
+      const lines = allAcciones.map(({ tarea, acciones }) => {
+        const pending = acciones.filter(a => a.estado !== 'Completada').map(a => a.accion)
+        return pending.length > 0 ? `${tarea}: ${pending.join(' / ')}` : tarea
+      })
+      const text = lines.join('\n')
+      await navigator.clipboard.writeText(text)
+      LOG.info('Exported tasks to clipboard', { count: lines.length })
+      toast.success(`${lines.length} tarea${lines.length !== 1 ? 's' : ''} copiada${lines.length !== 1 ? 's' : ''} al portapapeles`)
+      setCopying('done')
+      setTimeout(() => setCopying(null), 2000)
+    } catch (err) {
+      LOG.error('Error exporting to clipboard', err)
+      toast.error('Error al copiar al portapapeles')
+      setCopying(null)
+    }
+  }
+
   // Filter Panel (reused in sidebar and mobile accordion)
   const renderFilterPanel = (tareaRef) => (
-    <div className="space-y-3" onKeyDown={handleFilterKeyDown}>
-      <div className="space-y-3">
-        <div>
-          <label className="mb-1 block text-sm font-medium text-muted-foreground">ID Tarea</label>
-          <Input
-            placeholder="ID Tarea"
-            value={filters.tarea_id}
-            onChange={e => setFilters(f => ({ ...f, tarea_id: e.target.value }))}
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-muted-foreground">
-            Tarea
-            <span className="ml-2 text-xs text-muted-foreground/60">Ctrl+Shift+F</span>
-          </label>
-          <Input
-            ref={tareaRef}
-            placeholder="Buscar por nombre..."
-            value={filters.tarea}
-            onChange={e => setFilters(f => ({ ...f, tarea: e.target.value }))}
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-muted-foreground">Responsable</label>
-          <select
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-            value={filters.responsable}
-            onChange={e => setFilters(f => ({ ...f, responsable: e.target.value }))}
-          >
-            <option value="">Todos</option>
-            {filterOptions?.responsables?.map(r => (
-              <option key={r} value={r}>{r}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-muted-foreground">Tema</label>
-          <select
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-            value={filters.tema}
-            onChange={e => setFilters(f => ({ ...f, tema: e.target.value }))}
-          >
-            <option value="">Todos</option>
-            {filterOptions?.temas?.map(t => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-muted-foreground">Estado</label>
-          <select
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-            value={filters.estado}
-            onChange={e => setFilters(f => ({ ...f, estado: e.target.value }))}
-          >
-            <option value="">Todos</option>
-            {filterOptions?.estados?.map(e => (
-              <option key={e} value={e}>{e}</option>
-            ))}
-          </select>
-        </div>
+    <div className="space-y-2" onKeyDown={handleFilterKeyDown}>
+      <div className="space-y-2">
+        <Input
+          placeholder="ID Tarea"
+          value={filters.tarea_id}
+          onChange={e => setFilters(f => ({ ...f, tarea_id: e.target.value }))}
+        />
+        <Input
+          ref={tareaRef}
+          placeholder="Tarea (Ctrl+Shift+F)"
+          value={filters.tarea}
+          onChange={e => setFilters(f => ({ ...f, tarea: e.target.value }))}
+        />
+        <select
+          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          value={filters.responsable}
+          onChange={e => setFilters(f => ({ ...f, responsable: e.target.value }))}
+        >
+          <option value="">Responsable: Todos</option>
+          {filterOptions?.responsables?.map(r => (
+            <option key={r} value={r}>{r}</option>
+          ))}
+        </select>
+        <select
+          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          value={filters.tema}
+          onChange={e => setFilters(f => ({ ...f, tema: e.target.value }))}
+        >
+          <option value="">Tema: Todos</option>
+          {filterOptions?.temas?.map(t => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
+        <select
+          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          value={filters.estado}
+          onChange={e => setFilters(f => ({ ...f, estado: e.target.value }))}
+        >
+          <option value="">Estado: Todos</option>
+          {filterOptions?.estados?.map(e => (
+            <option key={e} value={e}>{e}</option>
+          ))}
+        </select>
       </div>
-      <Button
-        variant={proximaSemana ? 'default' : 'outline'}
-        className="w-full"
-        onClick={toggleProximaSemana}
-      >
-        <CalendarDays className="mr-2 h-4 w-4" />
-        Proxima semana
-      </Button>
+      <div className="flex gap-2">
+        <Button
+          variant={proximosDias ? 'default' : 'outline'}
+          size="sm"
+          className="flex-1"
+          onClick={toggleProximosDias}
+        >
+          <CalendarDays className="mr-1.5 h-3.5 w-3.5" />
+          2 dias
+        </Button>
+        <Button
+          variant={proximaSemana ? 'default' : 'outline'}
+          size="sm"
+          className="flex-1"
+          onClick={toggleProximaSemana}
+        >
+          <CalendarDays className="mr-1.5 h-3.5 w-3.5" />
+          Semana
+        </Button>
+      </div>
       <div className="flex gap-2">
         <Button className="flex-1" onClick={() => doSearch(0)} disabled={loading}>
           <Search className="mr-2 h-4 w-4" />
@@ -579,7 +647,24 @@ export default function SearchPage() {
                       </button>
                     </Badge>
                   ))}
-                  <div className="ml-auto">
+                  <div className="ml-auto flex items-center gap-1">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          disabled={copying === 'loading' || !filteredData.length}
+                          onClick={exportToClipboard}
+                        >
+                          {copying === 'done'
+                            ? <Check className="h-4 w-4 text-green-500" />
+                            : <ClipboardCopy className="h-4 w-4" />
+                          }
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Copiar tareas al portapapeles</TooltipContent>
+                    </Tooltip>
                     <ColumnConfigurator
                       selectedColumns={columns}
                       onColumnsChange={handleColumnsChange}

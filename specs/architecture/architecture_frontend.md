@@ -178,11 +178,12 @@ frontend/
 
 #### 6.2 Search Page (`/search`)
 
-- **5 labeled filter criteria**: tarea_id, tarea (nombre), responsable, tema, estado — each with visible label
+- **5 filter criteria** (compact, no labels): tarea_id, tarea (nombre), responsable, tema, estado — using placeholder text instead of visible labels for a condensed layout
 - **Lateral filter sidebar** on xl+ screens; collapsible accordion on smaller screens
 - **Column filter popovers**: Filterable column headers display a funnel icon that opens a popover with filter input on click; icon turns colored when filter is active
 - **Active filter tags**: Removable badge tags next to result count showing all active server-side filters; clicking X removes the filter and re-triggers search
-- **Quick filter "Proxima semana"**: Toggle button between Estado filter and Buscar/Limpiar buttons; applies `gte`/`lte` date range on `fecha_siguiente_accion` (today to today+6 days, computed client-side); active/inactive variant toggle; appears as removable badge tag with DD/MM date range; state preserved in module-level cache; cleared by "Limpiar" button
+- **Quick date filters**: Two mutually exclusive toggle buttons side by side: "2 dias" (today to today+1) and "Semana" (today to today+6 days). Activating one deactivates the other. Both apply `gte`/`lte` date range on `fecha_siguiente_accion` (computed client-side); active/inactive variant toggle; appear as removable badge tags with DD/MM date range; state preserved in module-level cache; cleared by "Limpiar" button
+- **Export to clipboard**: Button in the results bar (clipboard icon) copies visible tasks to clipboard. Format per task: `tarea: action1 / action2` (only non-completed actions). Fetches acciones via API (parallelized, uses existing cache). Shows toast confirmation and brief check-icon feedback.
 - **Default filter**: estado defaults to "En Curso"; "Limpiar" resets to "En Curso"
 - **Default sort**: fecha_siguiente_accion ascending
 - **Auto-search** on initial page load with default filters
@@ -200,7 +201,7 @@ frontend/
 - **Full-width layout**: No max-width constraint; uses all available width
 - **Server-side pagination** with configurable page size
 - **Click-to-detail**: Clicking a row navigates to `/detail/:tarea_id`
-- **State preservation**: Search state (filters, results, page, sort, column filters, scroll position) is automatically saved to a module-level cache on unmount and restored on mount. Survives in-app navigation; clears on page refresh.
+- **State preservation**: Search state (filters, results, page, sort, column filters, quick date filters, scroll position) is automatically saved to a module-level cache on unmount and restored on mount. Survives in-app navigation; clears on page refresh.
 
 #### 6.3 Detail Page (`/detail/:tarea_id`)
 
