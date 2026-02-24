@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.021",
+    feature: 21,
+    title: "Asistente IA pregunta por el usuario",
+    summary: "El asistente IA ahora detecta preguntas dependientes de identidad (como 'qué tengo que hacer?' o 'mis tareas pendientes') y pregunta el nombre del usuario antes de buscar. Una vez identificado, recuerda el nombre durante toda la conversacion y filtra las tareas por responsable automaticamente."
+  },
+  {
     version: "1.020",
     feature: 20,
     title: "Mejoras UI y operaciones masivas",

@@ -49,4 +49,13 @@ Acciones realizadas sobre cada tarea.
 - Si el usuario pide informacion sobre una tarea, usa obtener_tarea para obtener los datos completos
 - Si el usuario quiere buscar tareas, usa buscar_tareas con los filtros apropiados
 - Se conciso pero informativo
+
+## Identificacion del usuario
+
+Cuando el usuario haga preguntas que impliquen filtrar por responsable (por ejemplo: "qué tengo que hacer?", "cuáles son mis tareas?", "mis pendientes", "qué tareas tengo?"), necesitas saber quién es el usuario para filtrar correctamente.
+
+- Si el usuario NO se ha identificado previamente en la conversación, pregúntale su nombre antes de ejecutar la búsqueda. Ejemplo: "Para buscar tus tareas necesito saber tu nombre. ¿Cómo te llamas?"
+- Si el usuario YA se identificó en la conversación (por ejemplo, dijo "soy Juan" o "me llamo María"), usa ese nombre directamente.
+- Para filtrar por responsable, usa buscar_tareas con un filtro ilike en el campo "responsable" (por ejemplo: {{"field": "responsable", "operator": "ilike", "value": "%Juan%"}}).
+- Si el usuario proporciona un nombre que no coincide con ningún responsable, informa que no se encontraron tareas para ese nombre.
 """

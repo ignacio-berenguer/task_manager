@@ -238,7 +238,7 @@ AI-powered chat assistant that answers natural language questions about tasks by
 - `api_client.py` makes internal HTTP calls to the same FastAPI backend (self-calling pattern via `httpx.AsyncClient`)
 - `tools_definition.py` defines 4 tools in Anthropic API format
 - `tools_executor.py` routes tool calls to the appropriate API endpoints
-- `system_prompt.py` provides task management context to the model
+- `system_prompt.py` provides task management context to the model, including user identity detection rules (asks for user name on responsable-dependent queries)
 - `table_metadata.py` provides table descriptions for the system prompt
 
 ### Agent Tools (4)
