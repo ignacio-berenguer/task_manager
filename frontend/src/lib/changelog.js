@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.023",
+    feature: 23,
+    title: "Rediseño visual y navegación por teclado",
+    summary: "Interfaz renovada con tipografía refinada, sombras más naturales, indicadores de foco unificados y transiciones pulidas. Sistema completo de atajos de teclado: presiona F1 para ver todos los atajos disponibles, / para buscar, N para nueva tarea, flechas para navegar resultados, y secuencias g→s/c/h para cambiar de página. Nuevo menú Ayuda en la barra de navegación con acceso a los atajos. Badges de atajo (kbd) junto a los botones principales. Mejoras de accesibilidad: enlace saltar al contenido, roles ARIA en listas navegables, y aria-live en resultados de búsqueda."
+  },
+  {
     version: "1.022",
     feature: 22,
     title: "Chat mejorado: saludos, preguntas sugeridas e identidad de usuario",

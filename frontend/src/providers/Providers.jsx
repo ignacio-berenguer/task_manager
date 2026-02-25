@@ -1,6 +1,7 @@
 import { ClerkProvider } from '@clerk/clerk-react'
 import { Toaster } from 'sonner'
 import { ThemeProvider } from '@/components/theme/ThemeProvider'
+import { KeyboardShortcutProvider } from './KeyboardShortcutProvider'
 import { QueryProvider } from './QueryProvider'
 import { ChatProvider } from '@/features/chat/ChatContext'
 
@@ -23,12 +24,14 @@ export function Providers({ children }) {
       afterSignOutUrl="/"
     >
       <ThemeProvider>
-        <QueryProvider>
-          <ChatProvider>
-            {children}
-            <Toaster richColors position="top-right" />
-          </ChatProvider>
-        </QueryProvider>
+        <KeyboardShortcutProvider>
+          <QueryProvider>
+            <ChatProvider>
+              {children}
+              <Toaster richColors position="top-right" />
+            </ChatProvider>
+          </QueryProvider>
+        </KeyboardShortcutProvider>
       </ThemeProvider>
     </ClerkProvider>
   )

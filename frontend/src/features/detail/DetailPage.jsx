@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Layout } from '@/components/layout/Layout'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,7 +14,9 @@ import { EstadoBadge } from '@/components/shared/EstadoBadge'
 import { AddAccionDialog, CambiarFechaDialog, CompleteAndScheduleDialog } from '@/features/shared/ActionDialogs'
 import { DateInput } from '@/components/ui/date-input'
 import { formatDate } from '@/lib/formatDate'
+import { cn } from '@/lib/utils'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { Kbd } from '@/components/ui/kbd'
 import { ArrowLeft, Plus, Pencil, Trash2, Calendar, CalendarClock, ListChecks, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
@@ -172,17 +175,92 @@ export default function DetailPage() {
     }
   }
 
-  // Keyboard shortcut: Ctrl+Shift+F → go to Search with focus on tarea input
+  // Keyboard row selection for acciones
+  const [selectedAccionIndex, setSelectedAccionIndex] = useState(-1)
+  const accionesContainerRef = useRef(null)
+
+  // Reset selection when acciones change
   useEffect(() => {
-    const handler = (e) => {
-      if (e.ctrlKey && e.shiftKey && e.key === 'F') {
-        e.preventDefault()
-        navigate('/search', { state: { focusTareaInput: true } })
-      }
+    setSelectedAccionIndex(-1)
+  }, [acciones])
+
+  // Check if any dialog is open
+  const anyDialogOpen = editOpen || addAccionOpen || cambiarFechaOpen || completeScheduleOpen || editAccionOpen || completeConfirmOpen
+
+  // Register keyboard shortcuts
+  useKeyboardShortcuts([
+    {
+      id: 'detail.ctrlShiftF',
+      keys: 'Ctrl+Shift+F',
+      key: 'F',
+      modifiers: { ctrl: true, shift: true },
+      description: 'Ir a Búsqueda',
+      category: 'Detalle',
+      action: () => navigate('/search', { state: { focusTareaInput: true } }),
+      alwaysActive: true,
+    },
+    {
+      id: 'detail.edit',
+      keys: 'e',
+      key: 'e',
+      description: 'Editar tarea',
+      category: 'Detalle',
+      action: () => { if (!anyDialogOpen && tarea) openEdit() },
+      enabled: !anyDialogOpen && !!tarea,
+    },
+    {
+      id: 'detail.addAccion',
+      keys: 'a',
+      key: 'a',
+      description: 'Nueva acción',
+      category: 'Detalle',
+      action: () => { if (!anyDialogOpen) setAddAccionOpen(true) },
+      enabled: !anyDialogOpen,
+    },
+    {
+      id: 'detail.ctrlEnter',
+      keys: 'Ctrl+Enter',
+      key: 'Enter',
+      modifiers: { ctrl: true },
+      description: 'Guardar cambios',
+      category: 'Detalle',
+      action: () => {},  // handled by dialog onKeyDown
+    },
+  ], [anyDialogOpen, tarea, navigate])
+
+  // Arrow key handlers for acciones
+  const handleAccionesKeyDown = useCallback((e) => {
+    if (acciones.length === 0) return
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setSelectedAccionIndex(prev => {
+        const next = prev < acciones.length - 1 ? prev + 1 : prev
+        scrollAccionIntoView(next)
+        return next
+      })
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setSelectedAccionIndex(prev => {
+        const next = prev > 0 ? prev - 1 : 0
+        scrollAccionIntoView(next)
+        return next
+      })
+    } else if (e.key === 'Enter' && selectedAccionIndex >= 0) {
+      e.preventDefault()
+      const acc = acciones[selectedAccionIndex]
+      if (acc) openEditAccion(acc)
+    } else if (e.key === 'Escape') {
+      setSelectedAccionIndex(-1)
     }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [navigate])
+  }, [acciones, selectedAccionIndex]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const scrollAccionIntoView = (index) => {
+    requestAnimationFrame(() => {
+      const el = accionesContainerRef.current?.querySelectorAll('[data-accion-index]')?.[index]
+      if (el) el.scrollIntoView({ block: 'nearest' })
+    })
+  }
 
   // Back navigation — use browser history to preserve Search state
   const goBack = () => {
@@ -242,13 +320,14 @@ export default function DetailPage() {
               <Button variant="outline" onClick={openEdit}>
                 <Pencil className="sm:mr-2 h-4 w-4" />
                 <span className="hidden sm:inline">Editar</span>
+                <Kbd className="ml-2 hidden lg:inline-flex">E</Kbd>
               </Button>
             </div>
           </div>
         </div>
 
         {/* 1. Acciones Realizadas (primary content, moved up) */}
-        <Card className="mb-6 p-6">
+        <Card className="mb-6 p-6" tabIndex={0} onKeyDown={handleAccionesKeyDown} ref={accionesContainerRef}>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Acciones Realizadas ({acciones.length})</h2>
             <div className="flex items-center gap-2">
@@ -259,6 +338,7 @@ export default function DetailPage() {
               <Button size="sm" onClick={() => setAddAccionOpen(true)}>
                 <Plus className="sm:mr-2 h-4 w-4" />
                 <span className="hidden sm:inline">Nueva Accion</span>
+                <Kbd className="ml-2 hidden lg:inline-flex">A</Kbd>
               </Button>
             </div>
           </div>
@@ -268,8 +348,8 @@ export default function DetailPage() {
             <>
               {/* Mobile: card layout */}
               <div className="space-y-2 sm:hidden">
-                {acciones.map(acc => (
-                  <div key={acc.id} className="rounded-lg border p-3">
+                {acciones.map((acc, idx) => (
+                  <div key={acc.id} data-accion-index={idx} className={cn("rounded-lg border p-3", idx === selectedAccionIndex && "ring-2 ring-inset ring-primary bg-primary/5")}>
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <p className="text-sm">{acc.accion}</p>
@@ -302,8 +382,8 @@ export default function DetailPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {acciones.map(acc => (
-                      <tr key={acc.id} className="border-b">
+                    {acciones.map((acc, idx) => (
+                      <tr key={acc.id} data-accion-index={idx} className={cn("border-b", idx === selectedAccionIndex && "ring-2 ring-inset ring-primary bg-primary/5")} aria-selected={idx === selectedAccionIndex}>
                         <td className="px-2 py-1.5 text-muted-foreground">{formatDate(acc.fecha_accion)}</td>
                         <td className="px-2 py-1.5">{acc.accion}</td>
                         <td className="px-2 py-1.5"><EstadoBadge estado={acc.estado} size="sm" /></td>

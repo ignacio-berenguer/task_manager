@@ -7,11 +7,12 @@ import {
   SignedOut,
   UserButton,
 } from '@clerk/clerk-react'
-import { Menu, X, Search, MessageSquare, Settings, Download, ChevronDown, Loader2 } from 'lucide-react'
+import { Menu, X, Search, MessageSquare, Settings, Download, ChevronDown, Loader2, HelpCircle, Keyboard } from 'lucide-react'
 import { ModeToggle } from '@/components/theme/ModeToggle'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { exportDatabase } from '@/api/admin'
+import { useShortcutContext } from '@/providers/KeyboardShortcutProvider'
 import { createLogger } from '@/lib/logger'
 
 const logger = createLogger('Navbar')
@@ -28,9 +29,13 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isAdminOpen, setIsAdminOpen] = useState(false)
   const [isAdminMobileOpen, setIsAdminMobileOpen] = useState(false)
+  const [isHelpOpen, setIsHelpOpen] = useState(false)
+  const [isHelpMobileOpen, setIsHelpMobileOpen] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const location = useLocation()
   const adminRef = useRef(null)
+  const helpRef = useRef(null)
+  const { openOverlay } = useShortcutContext()
 
   const isActive = (href) => location.pathname === href
 
@@ -58,6 +63,30 @@ export function Navbar() {
     }
   }, [isAdminOpen])
 
+  // Close help dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (helpRef.current && !helpRef.current.contains(e.target)) {
+        setIsHelpOpen(false)
+      }
+    }
+    if (isHelpOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isHelpOpen])
+
+  // Close help dropdown on Escape
+  useEffect(() => {
+    function handleEscape(e) {
+      if (e.key === 'Escape') setIsHelpOpen(false)
+    }
+    if (isHelpOpen) {
+      document.addEventListener('keydown', handleEscape)
+      return () => document.removeEventListener('keydown', handleEscape)
+    }
+  }, [isHelpOpen])
+
   const handleExport = async () => {
     if (isExporting) return
     setIsExporting(true)
@@ -70,6 +99,13 @@ export function Navbar() {
       setIsAdminOpen(false)
       setIsAdminMobileOpen(false)
     }
+  }
+
+  const handleOpenShortcuts = () => {
+    setIsHelpOpen(false)
+    setIsHelpMobileOpen(false)
+    setIsMobileMenuOpen(false)
+    openOverlay()
   }
 
   const navLinkClass = (href) =>
@@ -89,7 +125,7 @@ export function Navbar() {
     )
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
+    <nav className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl" aria-label="Navegación principal">
       <div className="mx-auto w-full px-6 sm:px-8 xl:px-12">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
@@ -110,6 +146,7 @@ export function Navbar() {
                   key={item.name}
                   to={item.href}
                   className={navLinkClass(item.href)}
+                  aria-current={isActive(item.href) ? 'page' : undefined}
                 >
                   <item.icon className="h-4 w-4" />
                   <span>{item.name}</span>
@@ -120,6 +157,8 @@ export function Navbar() {
               <div className="relative" ref={adminRef}>
                 <button
                   onClick={() => setIsAdminOpen(!isAdminOpen)}
+                  aria-expanded={isAdminOpen}
+                  aria-haspopup="true"
                   className={cn(
                     'flex items-center space-x-1 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                     'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
@@ -131,10 +170,11 @@ export function Navbar() {
                 </button>
 
                 {isAdminOpen && (
-                  <div className="absolute right-0 mt-1 w-56 rounded-md border border-border bg-popover p-1 shadow-md">
+                  <div className="absolute right-0 mt-1 w-56 rounded-md border border-border bg-popover p-1 shadow-md" role="menu">
                     <button
                       onClick={handleExport}
                       disabled={isExporting}
+                      role="menuitem"
                       className="flex w-full items-center space-x-2 rounded-sm px-2 py-2 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
                     >
                       {isExporting ? (
@@ -143,6 +183,37 @@ export function Navbar() {
                         <Download className="h-4 w-4" />
                       )}
                       <span>{isExporting ? 'Exportando...' : 'Exportar base de datos'}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Help dropdown */}
+              <div className="relative" ref={helpRef}>
+                <button
+                  onClick={() => setIsHelpOpen(!isHelpOpen)}
+                  aria-expanded={isHelpOpen}
+                  aria-haspopup="true"
+                  className={cn(
+                    'flex items-center space-x-1 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                    'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  )}
+                >
+                  <HelpCircle className="h-4 w-4" />
+                  <span>Ayuda</span>
+                  <ChevronDown className={cn('h-3 w-3 transition-transform', isHelpOpen && 'rotate-180')} />
+                </button>
+
+                {isHelpOpen && (
+                  <div className="absolute right-0 mt-1 w-56 rounded-md border border-border bg-popover p-1 shadow-md" role="menu">
+                    <button
+                      onClick={handleOpenShortcuts}
+                      role="menuitem"
+                      className="flex w-full items-center space-x-2 rounded-sm px-2 py-2 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <Keyboard className="h-4 w-4" />
+                      <span>Atajos de teclado</span>
+                      <kbd className="ml-auto rounded border border-border bg-muted px-1 font-mono text-[10px] text-muted-foreground">F1</kbd>
                     </button>
                   </div>
                 )}
@@ -181,6 +252,8 @@ export function Navbar() {
               <button
                 className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                aria-expanded={isMobileMenuOpen}
+                aria-label="Menú de navegación"
               >
                 {isMobileMenuOpen ? (
                   <X className="h-6 w-6" />
@@ -203,6 +276,7 @@ export function Navbar() {
                     to={item.href}
                     className={mobileNavLinkClass(item.href)}
                     onClick={() => setIsMobileMenuOpen(false)}
+                    aria-current={isActive(item.href) ? 'page' : undefined}
                   >
                     <item.icon className="h-5 w-5" />
                     <span>{item.name}</span>
@@ -212,6 +286,7 @@ export function Navbar() {
                 {/* Admin accordion */}
                 <button
                   onClick={() => setIsAdminMobileOpen(!isAdminMobileOpen)}
+                  aria-expanded={isAdminMobileOpen}
                   className="flex w-full items-center justify-between rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 >
                   <span className="flex items-center space-x-2">
@@ -233,6 +308,29 @@ export function Navbar() {
                       <Download className="h-5 w-5" />
                     )}
                     <span>{isExporting ? 'Exportando...' : 'Exportar base de datos'}</span>
+                  </button>
+                )}
+
+                {/* Help accordion */}
+                <button
+                  onClick={() => setIsHelpMobileOpen(!isHelpMobileOpen)}
+                  aria-expanded={isHelpMobileOpen}
+                  className="flex w-full items-center justify-between rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                >
+                  <span className="flex items-center space-x-2">
+                    <HelpCircle className="h-5 w-5" />
+                    <span>Ayuda</span>
+                  </span>
+                  <ChevronDown className={cn('h-4 w-4 transition-transform', isHelpMobileOpen && 'rotate-180')} />
+                </button>
+
+                {isHelpMobileOpen && (
+                  <button
+                    onClick={handleOpenShortcuts}
+                    className="flex w-full items-center space-x-2 rounded-md px-3 py-2 pl-10 text-base font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <Keyboard className="h-5 w-5" />
+                    <span>Atajos de teclado</span>
                   </button>
                 )}
               </div>

@@ -130,7 +130,8 @@ frontend/
 │   │       ├── ChatPage.jsx       # AI assistant chat page
 │   │       └── ChatContext.jsx    # Chat state provider (conversation persistence)
 │   ├── hooks/
-│   │   └── usePageTitle.js        # Dynamic document.title hook
+│   │   ├── usePageTitle.js          # Dynamic document.title hook
+│   │   └── useKeyboardShortcuts.js  # Register keyboard shortcuts per component (auto-cleanup on unmount)
 │   ├── lib/
 │   │   ├── changelog.js           # Version changelog entries
 │   │   ├── estadoOrder.js         # Canonical estado ordering
@@ -141,8 +142,9 @@ frontend/
 │   │   ├── utils.js               # General utilities (cn, etc.)
 │   │   └── version.js             # APP_VERSION constant
 │   ├── providers/
-│   │   ├── Providers.jsx          # Combined providers wrapper
-│   │   └── QueryProvider.jsx      # TanStack Query provider
+│   │   ├── Providers.jsx                  # Combined providers wrapper
+│   │   ├── KeyboardShortcutProvider.jsx   # Keyboard shortcut registry + overlay state
+│   │   └── QueryProvider.jsx              # TanStack Query provider
 │   ├── App.jsx                    # Root component with routing
 │   ├── main.jsx                   # Application entry point
 │   └── index.css                  # Tailwind CSS imports
@@ -237,16 +239,18 @@ The `Providers.jsx` wrapper composes all context providers:
 ```
 ClerkProvider
   └── ThemeProvider (next-themes)
-        └── QueryProvider (TanStack Query)
-              └── ChatProvider (conversation persistence)
-                    └── {children}
-                    └── Toaster (sonner)
+        └── KeyboardShortcutProvider (shortcut registry + overlay state)
+              └── QueryProvider (TanStack Query)
+                    └── ChatProvider (conversation persistence)
+                          └── {children}
+                          └── Toaster (sonner)
 ```
 
 | Provider | Purpose |
 |----------|---------|
 | `ClerkProvider` | Authentication, JWT tokens |
 | `ThemeProvider` | Dark/light mode (system-aware with manual toggle) |
+| `KeyboardShortcutProvider` | Centralized keyboard shortcut registry, overlay state, sequence shortcut support |
 | `QueryProvider` | TanStack Query client for data fetching |
 | `ChatProvider` | Chat conversation state persistence across navigation |
 | `Toaster` | Toast notification rendering (sonner) |
@@ -282,14 +286,15 @@ ClerkProvider
 | `sheet.jsx` | Sliding side panel (portal-based) |
 | `skeleton.jsx` | Loading skeleton placeholder |
 | `tooltip.jsx` | Hover tooltip |
+| `kbd.jsx` | Styled keyboard shortcut badge (`<kbd>` element with theme-aware inset shadow) |
 
 #### 8.2 Layout Components (`components/layout/`)
 
 | Component | Description |
 |-----------|-------------|
-| `Navbar.jsx` | Top navigation bar with links, Administrador dropdown, auth controls, GlobalSearch |
+| `Navbar.jsx` | Top navigation bar with links, Administrador dropdown, Ayuda dropdown, auth controls, GlobalSearch |
 | `GlobalSearch.jsx` | Navbar search bar for quick task lookup |
-| `Layout.jsx` | Main layout wrapper (Navbar + content + Footer) |
+| `Layout.jsx` | Main layout wrapper (Navbar + content + Footer), skip-to-content link, global keyboard shortcuts, ShortcutHelpOverlay |
 | `Footer.jsx` | Page footer |
 
 #### 8.3 Shared Components (`components/shared/`)
@@ -304,6 +309,7 @@ ClerkProvider
 | `ErrorBoundary.jsx` | Error boundary with retry button |
 | `NotFoundPage.jsx` | 404 page |
 | `skeletons/` | Page-specific loading skeletons (SearchSkeleton, DetailSkeleton) |
+| `ShortcutHelpOverlay.jsx` | Keyboard shortcut help overlay (triggered by F1 key or Ayuda menu) |
 
 #### 8.4 Theme Components (`components/theme/`)
 
@@ -390,6 +396,16 @@ VITE_APP_NAME=Task Manager
 **Spanish UI:** All user-facing text is in Spanish. Code identifiers use Spanish column names without accents (e.g., `descripcion`, `accion`).
 
 **Administrador Dropdown:** The Navbar includes an "Administrador" dropdown menu (desktop: click-toggle popover with click-outside/Escape dismiss; mobile: accordion in drawer). Currently contains "Exportar base de datos" which downloads the entire database as a JSON file.
+
+**Ayuda (Help) Dropdown:** The Navbar includes an "Ayuda" dropdown menu (same pattern as Administrador). Contains "Atajos de teclado" which opens the ShortcutHelpOverlay.
+
+**Keyboard Shortcut System:** A centralized `KeyboardShortcutProvider` context manages a shortcut registry. Components register shortcuts via the `useKeyboardShortcuts` hook (auto-cleanup on unmount). Features:
+- **Input guard:** Shortcuts are suppressed when an input/textarea/select is focused (unless marked `alwaysActive`)
+- **Sequence shortcuts:** Support for multi-key sequences (e.g., `g → s` for "Go to Search") with 1-second timeout and visual indicator
+- **Dynamic help overlay:** `ShortcutHelpOverlay` reads from the registry, grouping shortcuts by category (Global, Búsqueda, Detalle, Chat). Triggered by `F1` key or Ayuda menu
+- **Kbd hint badges:** `<Kbd>` component shows shortcut hints next to key action buttons (visible on lg+ screens)
+- **Global shortcuts:** `F1` (help), `/` (search), `n` (new task), `Esc` (close/back), `g→s/c/h` (navigate)
+- **Page shortcuts:** Search (↑↓ row navigation, Enter to open), Detail (`e` edit, `a` add acción, ↑↓ acción navigation), Chat (`/` focus)
 
 **Error Handling:** `ErrorBoundary` wraps each protected route for graceful error recovery with a retry button.
 

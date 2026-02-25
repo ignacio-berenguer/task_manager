@@ -282,6 +282,25 @@ All accion mutation endpoints automatically recalculate the parent tarea's `fech
 | `/detail/:tarea_id` | Private | Task header with tarea name prominent + tarea_id muted, estado + responsable + fecha_siguiente_accion badges + cambiar fecha button, "Marcar Completado" button (marks tarea and non-completed acciones as completed with confirm dialog), compact acciones CRUD table (sorted desc, sticky headers), add accion dialog, notas accordion (collapsed), datos accordion (collapsed), edit tarea with estado dropdown (parametric), Ctrl+Shift+F shortcut, back navigation with state preservation. All date fields use DateInput with +/- day buttons and keyboard accelerators. All modals support Enter to submit. Mobile-optimized: card layout for acciones, responsive accordion padding, icon-only header buttons |
 | `/chat` | Private | AI assistant with SSE streaming |
 
+## Keyboard Shortcuts
+
+Press `F1` anywhere in the app (or use the **Ayuda** menu in the navbar) to see all available shortcuts.
+
+| Key | Action | Scope |
+|-----|--------|-------|
+| `F1` | Show keyboard shortcuts help | Global |
+| `/` | Focus search / go to search page | Global |
+| `n` | New task | Search |
+| `Esc` | Close dialog / go back | Global |
+| `g → s` | Go to Search | Global |
+| `g → c` | Go to Chat | Global |
+| `g → h` | Go to Home | Global |
+| `↑` / `↓` | Navigate result rows / acciones | Search, Detail |
+| `Enter` | Open selected result / edit acción | Search, Detail |
+| `e` | Edit task | Detail |
+| `a` | New acción | Detail |
+| `Ctrl+Enter` | Save dialog | All dialogs |
+
 ## MCP Tools
 
 6 tools available through the MCP server (all in Spanish):

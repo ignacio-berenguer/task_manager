@@ -62,7 +62,7 @@ function DialogContent({ children, className, onClose, size = 'md' }) {
       <div
         className={cn(
           `fixed left-1/2 top-1/2 z-50 w-full max-w-[calc(100vw-2rem)] ${SIZE_CLASSES[size] || SIZE_CLASSES.md} -translate-x-1/2 -translate-y-1/2`,
-          'rounded-lg border border-border/50 bg-background p-4 sm:p-6 shadow-lg',
+          'rounded-lg border border-border/50 bg-background p-4 sm:p-6 shadow-[0_16px_70px_-12px_rgba(0,0,0,0.25)]',
           'animate-in fade-in-0 zoom-in-[0.97]',
           className
         )}

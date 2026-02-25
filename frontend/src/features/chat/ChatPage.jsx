@@ -1,8 +1,10 @@
+import { useCallback } from 'react'
 import { RotateCcw } from 'lucide-react'
 import { useUser } from '@clerk/clerk-react'
 import { Layout } from '@/components/layout/Layout'
 import { Button } from '@/components/ui/button'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useChatContext } from './ChatContext'
 import { MessageList } from './components/MessageList'
 import { ChatInput } from './components/ChatInput'
@@ -11,6 +13,49 @@ export function ChatPage() {
   usePageTitle('Asistente IA')
   const { user } = useUser()
   const { messages, isLoading, streamingContent, toolSteps, thinkingParts, sendMessage, clearChat, stopGeneration } = useChatContext()
+
+  const focusChatInput = useCallback(() => {
+    const input = document.querySelector('[data-chat-input]')
+    if (input) input.focus()
+  }, [])
+
+  // Register chat shortcuts for overlay display
+  useKeyboardShortcuts([
+    {
+      id: 'chat.focus',
+      keys: '/',
+      key: '/',
+      description: 'Enfocar campo de mensaje',
+      category: 'Chat',
+      action: focusChatInput,
+    },
+    {
+      id: 'chat.stop',
+      keys: 'Esc',
+      key: 'Escape',
+      description: 'Detener generación',
+      category: 'Chat',
+      action: () => { if (isLoading) stopGeneration() },
+      alwaysActive: true,
+      enabled: isLoading,
+    },
+    {
+      id: 'chat.send',
+      keys: 'Enter',
+      key: 'Enter',
+      description: 'Enviar mensaje',
+      category: 'Chat',
+      action: () => {},  // handled by ChatInput directly
+    },
+    {
+      id: 'chat.history',
+      keys: '↑ / ↓',
+      key: 'ArrowUp',
+      description: 'Historial de comandos',
+      category: 'Chat',
+      action: () => {},  // handled by ChatInput directly
+    },
+  ], [isLoading, stopGeneration, focusChatInput])
 
   const userName = user?.firstName || null
 

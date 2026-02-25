@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Layout } from '@/components/layout/Layout'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -17,6 +18,7 @@ import { formatDate } from '@/lib/formatDate'
 import { createStorage } from '@/lib/storage'
 import { cn } from '@/lib/utils'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
+import { Kbd } from '@/components/ui/kbd'
 import { Search, X, Plus, ChevronDown, ChevronRight, PanelRightOpen, ListPlus, CalendarClock, CalendarDays, Filter, ClipboardCopy, Check, ListChecks } from 'lucide-react'
 import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
@@ -166,6 +168,10 @@ export default function SearchPage() {
   })
   const clearSelection = () => setSelectedIds(new Set())
 
+  // Keyboard row navigation
+  const [selectedRowIndex, setSelectedRowIndex] = useState(-1)
+  const tableBodyRef = useRef(null)
+
   // Bulk dialogs
   const [bulkChangeDateOpen, setBulkChangeDateOpen] = useState(false)
   const [bulkCompleteCreateOpen, setBulkCompleteCreateOpen] = useState(false)
@@ -299,27 +305,60 @@ export default function SearchPage() {
     searchStorage.saveJSON('columns', newCols)
   }
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handler = (e) => {
-      if (e.ctrlKey && e.shiftKey && e.key === 'F') {
-        e.preventDefault()
-        // Focus the visible input (sidebar on xl+, mobile otherwise)
-        const sidebarEl = sidebarTareaRef.current
-        if (sidebarEl && sidebarEl.offsetParent !== null) {
-          sidebarEl.focus()
-        } else {
-          mobileTareaRef.current?.focus()
-        }
-      }
-      if (e.ctrlKey && e.shiftKey && e.key === 'N') {
-        e.preventDefault()
-        setNewTareaOpen(true)
-      }
+  // Focus the visible search input
+  const focusSearchInput = useCallback(() => {
+    const sidebarEl = sidebarTareaRef.current
+    if (sidebarEl && sidebarEl.offsetParent !== null) {
+      sidebarEl.focus()
+    } else {
+      mobileTareaRef.current?.focus()
     }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
   }, [])
+
+  // Register keyboard shortcuts for the overlay registry
+  useKeyboardShortcuts([
+    {
+      id: 'search.focus',
+      keys: '/',
+      key: '/',
+      description: 'Enfocar campo de búsqueda',
+      category: 'Búsqueda',
+      action: focusSearchInput,
+    },
+    {
+      id: 'search.newTarea',
+      keys: 'n',
+      key: 'n',
+      description: 'Nueva tarea',
+      category: 'Búsqueda',
+      action: () => setNewTareaOpen(true),
+    },
+    {
+      id: 'search.ctrlShiftF',
+      keys: 'Ctrl+Shift+F',
+      key: 'F',
+      modifiers: { ctrl: true, shift: true },
+      description: 'Enfocar búsqueda',
+      category: 'Búsqueda',
+      action: focusSearchInput,
+      alwaysActive: true,
+    },
+    {
+      id: 'search.ctrlShiftN',
+      keys: 'Ctrl+Shift+N',
+      key: 'N',
+      modifiers: { ctrl: true, shift: true },
+      description: 'Nueva tarea',
+      category: 'Búsqueda',
+      action: () => setNewTareaOpen(true),
+      alwaysActive: true,
+    },
+  ], [focusSearchInput])
+
+  // Reset selected row when results change
+  useEffect(() => {
+    setSelectedRowIndex(-1)
+  }, [results])
 
   // Handle focusTareaInput from navigation state (e.g. Ctrl+Shift+F from DetailPage)
   useEffect(() => {
@@ -418,6 +457,40 @@ export default function SearchPage() {
       })
     )
   }, [results?.data, columnFilters])
+
+  // Arrow key navigation on table (must be after filteredData)
+  const handleTableKeyDown = useCallback((e) => {
+    if (!filteredData || filteredData.length === 0) return
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setSelectedRowIndex(prev => {
+        const next = prev < filteredData.length - 1 ? prev + 1 : prev
+        scrollRowIntoView(next)
+        return next
+      })
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setSelectedRowIndex(prev => {
+        const next = prev > 0 ? prev - 1 : 0
+        scrollRowIntoView(next)
+        return next
+      })
+    } else if (e.key === 'Enter' && selectedRowIndex >= 0) {
+      e.preventDefault()
+      const row = filteredData[selectedRowIndex]
+      if (row) goToDetail(row.tarea_id)
+    } else if (e.key === 'Escape') {
+      setSelectedRowIndex(-1)
+    }
+  }, [filteredData, selectedRowIndex]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const scrollRowIntoView = (index) => {
+    requestAnimationFrame(() => {
+      const row = tableBodyRef.current?.querySelectorAll('tr[data-row-index]')?.[index]
+      if (row) row.scrollIntoView({ block: 'nearest' })
+    })
+  }
 
   const totalPages = results ? Math.ceil(results.total / pageSize) : 0
 
@@ -565,7 +638,8 @@ export default function SearchPage() {
         />
         <Input
           ref={tareaRef}
-          placeholder="Tarea (Ctrl+Shift+F)"
+          data-search-input
+          placeholder="Tarea (/ o Ctrl+Shift+F)"
           value={filters.tarea}
           onChange={e => setFilters(f => ({ ...f, tarea: e.target.value }))}
         />
@@ -648,9 +722,10 @@ export default function SearchPage() {
                 <Button onClick={() => setNewTareaOpen(true)}>
                   <Plus className="sm:mr-2 h-4 w-4" />
                   <span className="hidden sm:inline">Nueva Tarea</span>
+                  <Kbd className="ml-2 hidden lg:inline-flex">N</Kbd>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Ctrl+Shift+N</TooltipContent>
+              <TooltipContent>Nueva tarea (N o Ctrl+Shift+N)</TooltipContent>
             </Tooltip>
           </div>
         </div>
@@ -684,7 +759,7 @@ export default function SearchPage() {
             {results && (
               <div className="rounded-lg border bg-card" style={{ '--thead-top': `calc(7.25rem + ${filterBarHeight}px)` }}>
                 <div ref={filterBarRef} className="flex flex-wrap items-center gap-2 border-b px-4 py-3 xl:sticky xl:top-[7.25rem] xl:z-20 bg-card xl:border-t xl:border-border xl:rounded-t-lg xl:-mt-px">
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm text-muted-foreground" aria-live="polite">
                     {results.total} resultado{results.total !== 1 ? 's' : ''}
                   </span>
                   {activeFilterTags.map(tag => (
@@ -764,7 +839,7 @@ export default function SearchPage() {
                     />
                   </div>
                 </div>
-                <div className="max-xl:overflow-x-auto">
+                <div className="max-xl:overflow-x-auto" tabIndex={0} onKeyDown={handleTableKeyDown} role="grid" aria-label="Resultados de búsqueda">
                   <table className="w-full text-sm">
                     <thead className="sticky top-0 xl:top-[var(--thead-top)] z-10 bg-card">
                       <tr className="border-b bg-muted">
@@ -848,17 +923,18 @@ export default function SearchPage() {
                         <th className="w-[110px] px-2 py-3 text-center font-medium">Acciones</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody ref={tableBodyRef}>
                       {filteredData.length === 0 ? (
                         <tr>
                           <td colSpan={columns.length + 4} className="px-4 py-8 text-center text-sm text-muted-foreground">
                             No se encontraron resultados con los filtros de columna aplicados.
                           </td>
                         </tr>
-                      ) : filteredData.map(row => (
+                      ) : filteredData.map((row, rowIndex) => (
                         <RowWithExpand
                           key={row.tarea_id}
                           row={row}
+                          rowIndex={rowIndex}
                           columns={columns}
                           renderCell={renderCell}
                           expanded={expandedRows.has(row.tarea_id)}
@@ -871,6 +947,7 @@ export default function SearchPage() {
                           onCompleteSchedule={() => setCompleteScheduleTarget({ tarea_id: row.tarea_id })}
                           selected={selectedIds.has(row.tarea_id)}
                           onToggleSelect={() => toggleSelect(row.tarea_id)}
+                          isKeyboardSelected={rowIndex === selectedRowIndex}
                         />
                       ))}
                     </tbody>
@@ -1071,14 +1148,20 @@ export default function SearchPage() {
 }
 
 // Row component with expand/collapse
-function RowWithExpand({ row, columns, renderCell, expanded, onToggleExpand, accionesCache, onRowClick, onOpenDrawer, onAddAccion, onCambiarFecha, onCompleteSchedule, selected, onToggleSelect }) {
+function RowWithExpand({ row, rowIndex, columns, renderCell, expanded, onToggleExpand, accionesCache, onRowClick, onOpenDrawer, onAddAccion, onCambiarFecha, onCompleteSchedule, selected, onToggleSelect, isKeyboardSelected }) {
   const cachedAcciones = accionesCache.current.get(row.tarea_id) || []
 
   return (
     <>
       <tr
-        className={cn("cursor-pointer border-b hover:bg-muted/50", selected && "bg-primary/5")}
+        data-row-index={rowIndex}
+        className={cn(
+          "cursor-pointer border-b hover:bg-muted/50",
+          selected && "bg-primary/5",
+          isKeyboardSelected && "ring-2 ring-inset ring-primary bg-primary/5"
+        )}
         onClick={onRowClick}
+        aria-selected={isKeyboardSelected}
       >
         <td className="px-2 py-3">
           <input
