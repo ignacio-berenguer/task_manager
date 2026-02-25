@@ -1,5 +1,6 @@
 export const ESTADO_ORDER = [
   'Pendiente',
+  'En curso',
   'En Progreso',
   'Completada',
   'Cancelada'

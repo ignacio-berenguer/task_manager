@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.024",
+    feature: 24,
+    title: "Mejoras en creacion y edicion de tareas",
+    summary: "Al crear una nueva tarea, el estado se establece por defecto en 'En curso'. El dialogo de creacion ahora incluye campos para la proxima accion y su fecha, creando automaticamente una accion con estado 'Pendiente' y sincronizando la fecha siguiente accion. Al editar una tarea, el dropdown de estado muestra correctamente el valor actual e incluye 'En curso' como opcion seleccionable."
+  },
+  {
     version: "1.023",
     feature: 23,
     title: "Rediseño visual y navegación por teclado",

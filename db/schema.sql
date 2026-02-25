@@ -74,9 +74,10 @@ CREATE INDEX IF NOT EXISTS idx_acciones_fecha_accion ON acciones_realizadas(fech
 -- Default estados for tareas
 INSERT INTO estados_tareas (valor, orden) VALUES
     ('Pendiente', 1),
-    ('En Progreso', 2),
-    ('Completada', 3),
-    ('Cancelada', 4)
+    ('En curso', 2),
+    ('En Progreso', 3),
+    ('Completada', 4),
+    ('Cancelada', 5)
 ON CONFLICT DO NOTHING;
 
 -- Default estados for acciones

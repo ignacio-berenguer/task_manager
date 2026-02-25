@@ -201,7 +201,7 @@ frontend/
 - **Action buttons**: Each row has icon buttons for "Añadir Accion" (opens AddAccionDialog), "Completar y Programar Siguiente" (opens CompleteAndScheduleDialog), and "Cambiar Fecha Siguiente Accion" (opens CambiarFechaDialog) using shared dialog components from `features/shared/ActionDialogs.jsx`
 - **Multi-select checkboxes**: Each row has a checkbox for bulk selection; a header checkbox toggles select-all for the current page
 - **Bulk operations toolbar**: Appears when rows are selected. Provides "Cambiar Fecha" (bulk date change), "Completar y Crear Accion" (bulk complete and create action), and "Exportar Seleccion" (export selected tasks to clipboard). Operations call `POST /api/v1/tareas/bulk-update` and display per-task success/failure results
-- **Nueva Tarea dialog**: Create new tarea with button (tooltip shows Ctrl+Shift+N shortcut)
+- **Nueva Tarea dialog**: Create new tarea with button (tooltip shows Ctrl+Shift+N shortcut). Defaults estado to "En curso". Includes optional "Proxima Accion" and "Fecha Proxima Accion" fields; when provided, auto-creates an accion with estado "Pendiente" and syncs the tarea's fecha_siguiente_accion
 - **Full-width layout**: No max-width constraint; uses all available width
 - **Server-side pagination** with configurable page size
 - **Click-to-detail**: Clicking a row navigates to `/detail/:tarea_id`

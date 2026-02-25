@@ -499,6 +499,9 @@ export default function DetailPage() {
                   {estadosTarea.map(e => (
                     <option key={e.id} value={e.valor}>{e.valor}</option>
                   ))}
+                  {editForm.estado && !estadosTarea.some(e => e.valor === editForm.estado) && (
+                    <option key="current" value={editForm.estado}>{editForm.estado}</option>
+                  )}
                 </select>
               </div>
             </div>

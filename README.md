@@ -157,7 +157,7 @@ task_manager/
 | `estados_acciones` | `id` (INTEGER, auto) | Parametric table of valid action estados |
 | `responsables` | `id` (INTEGER, auto) | Parametric table of responsable values |
 
-Seed data includes default estados: Pendiente, En Progreso, Completada, Cancelada (tareas) and Pendiente, En Progreso, Completada (acciones). Responsables are seeded during migration from Excel data.
+Seed data includes default estados: Pendiente, En curso, En Progreso, Completada, Cancelada (tareas) and Pendiente, En Progreso, Completada (acciones). Responsables are seeded during migration from Excel data.
 
 ### Migration: Bulk Inserts
 

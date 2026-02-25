@@ -186,7 +186,7 @@ task_manager/
 
 - **tareas**: `tarea_id` (SERIAL PK), `tarea`, `responsable`, `descripcion`, `fecha_siguiente_accion` (DATE), `tema`, `estado`, `notas_anteriores`, `fecha_creacion` (TIMESTAMP), `fecha_actualizacion` (TIMESTAMP)
 - **acciones_realizadas**: `id` (SERIAL PK), `tarea_id` (INTEGER FK to tareas.tarea_id, ON DELETE CASCADE), `accion`, `fecha_accion` (DATE), `estado`, `fecha_creacion` (TIMESTAMP), `fecha_actualizacion` (TIMESTAMP)
-- **estados_tareas**: `id`, `valor` (UNIQUE), `orden`, `color` — seeded with: Pendiente, En Progreso, Completada, Cancelada
+- **estados_tareas**: `id`, `valor` (UNIQUE), `orden`, `color` — seeded with: Pendiente, En curso, En Progreso, Completada, Cancelada
 - **estados_acciones**: `id`, `valor` (UNIQUE), `orden`, `color` — seeded with: Pendiente, En Progreso, Completada
 - **responsables**: `id`, `valor` (UNIQUE), `orden` — seeded during migration from unique Excel responsable values
 

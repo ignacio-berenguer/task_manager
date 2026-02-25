@@ -151,7 +151,8 @@ export default function SearchPage() {
 
   // New tarea dialog
   const [newTareaOpen, setNewTareaOpen] = useState(false)
-  const [newTareaForm, setNewTareaForm] = useState({ tarea: '', responsable: '', tema: '', estado: '' })
+  const [newTareaForm, setNewTareaForm] = useState({ tarea: '', responsable: '', tema: '', estado: 'En curso', proxima_accion: '', fecha_proxima_accion: '' })
+  const [estadosTareaList, setEstadosTareaList] = useState([])
   const [newTareaLoading, setNewTareaLoading] = useState(false)
 
   // Action dialogs (shared components)
@@ -181,6 +182,9 @@ export default function SearchPage() {
     apiClient.get('/tareas/filter-options').then(res => {
       setFilterOptions(res.data)
     }).catch(err => LOG.error('Error loading filter options', err))
+    apiClient.get('/estados-tareas').then(res => {
+      setEstadosTareaList(res.data)
+    }).catch(() => setEstadosTareaList([]))
   }, [])
 
   const doSearch = useCallback(async (pageOverride = 0) => {
@@ -434,9 +438,21 @@ export default function SearchPage() {
     if (!newTareaForm.tarea) return
     setNewTareaLoading(true)
     try {
-      await apiClient.post('/tareas', newTareaForm)
+      const { proxima_accion, fecha_proxima_accion, ...tareaData } = newTareaForm
+      const res = await apiClient.post('/tareas', tareaData)
+      const newTareaId = res.data.tarea_id
+
+      if (proxima_accion) {
+        await apiClient.post('/acciones', {
+          tarea_id: newTareaId,
+          accion: proxima_accion,
+          fecha_accion: fecha_proxima_accion || null,
+          estado: 'Pendiente'
+        })
+      }
+
       setNewTareaOpen(false)
-      setNewTareaForm({ tarea: '', responsable: '', tema: '', estado: '' })
+      setNewTareaForm({ tarea: '', responsable: '', tema: '', estado: 'En curso', proxima_accion: '', fecha_proxima_accion: '' })
       doSearch(0)
     } catch (err) {
       LOG.error('Error creating tarea', err)
@@ -1088,10 +1104,25 @@ export default function SearchPage() {
                 onChange={e => setNewTareaForm(f => ({ ...f, estado: e.target.value }))}
               >
                 <option value="">-- Seleccionar --</option>
-                {filterOptions?.estados?.map(e => (
-                  <option key={e} value={e}>{e}</option>
+                {estadosTareaList.map(e => (
+                  <option key={e.id} value={e.valor}>{e.valor}</option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Proxima Accion</label>
+              <Input
+                value={newTareaForm.proxima_accion}
+                onChange={e => setNewTareaForm(f => ({ ...f, proxima_accion: e.target.value }))}
+                placeholder="Descripcion de la proxima accion"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Fecha Proxima Accion</label>
+              <DateInput
+                value={newTareaForm.fecha_proxima_accion}
+                onChange={val => setNewTareaForm(f => ({ ...f, fecha_proxima_accion: val }))}
+              />
             </div>
           </div>
           <DialogFooter>
