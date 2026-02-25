@@ -129,9 +129,11 @@ def bulk_update_tareas(req: BulkUpdateRequest, db: Session = Depends(get_db)):
 
     db.commit()
 
-    # Sync fecha_siguiente_accion for all affected tareas
-    for tarea_id in req.tarea_ids:
-        _sync_fecha_siguiente_accion(db, tarea_id)
+    # Sync fecha_siguiente_accion for operations that modify acciones states
+    # (skip for change_date — fecha is already set directly on the tarea)
+    if req.operation != "change_date":
+        for tarea_id in req.tarea_ids:
+            _sync_fecha_siguiente_accion(db, tarea_id)
 
     LOG.info(f"Bulk {req.operation}: {updated_tareas} tareas, {updated_acciones} acciones updated, {created_acciones} acciones created")
     return BulkUpdateResponse(
