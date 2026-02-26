@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils'
 import { exportDatabase } from '@/api/admin'
 import { useShortcutContext } from '@/providers/KeyboardShortcutProvider'
 import { createLogger } from '@/lib/logger'
+import { VERSION_STRING } from '@/lib/version'
 
 const logger = createLogger('Navbar')
 
@@ -135,6 +136,9 @@ export function Navbar() {
             </div>
             <span className="hidden font-semibold sm:inline-block">
               Task Manager
+            </span>
+            <span className="hidden text-xs text-muted-foreground sm:inline-block">
+              v{VERSION_STRING}
             </span>
           </Link>
 

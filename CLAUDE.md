@@ -394,7 +394,7 @@ All `estado` dropdowns across the app must use the canonical order from `src/lib
 
 ### Post Implementation Checklist
 After implementing each feature:
-1. **Version & Changelog (MANDATORY)**: Increment `APP_VERSION.minor` in `frontend/src/lib/version.js` to the new feature number AND add a new entry at the TOP of the `CHANGELOG` array in `frontend/src/lib/changelog.js` (version, feature, title, summary). These are displayed on the landing page.
+1. **Version & Changelog (MANDATORY)**: Increment `APP_VERSION.minor` in `frontend/src/lib/version.js` to the new feature number AND add a new entry at the TOP of the `CHANGELOG` array in `frontend/src/lib/changelog.js` (version, feature, title, summary). These are displayed on the landing page and the version number is shown in the navbar (sourced from `version.js` automatically).
 2. Update `README.md`
 3. Update `specs/architecture/architecture_backend.md` and/or `specs/architecture/architecture_frontend.md`
 4. Use `/close_feature feature_NNN` to verify docs, move to implemented, and commit

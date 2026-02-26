@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.027",
+    feature: 27,
+    title: "Version en la barra de navegacion",
+    summary: "El numero de version de la aplicacion ahora se muestra en la barra de navegacion, junto al logo de Task Manager. Se actualiza automaticamente al incrementar la version en version.js."
+  },
+  {
     version: "1.026",
     feature: 26,
     title: "Búsqueda: filtros compactos y atajos de teclado",
