@@ -74,7 +74,7 @@ export function AddAccionDialog({ open, onOpenChange, tareaId, onSuccess }) {
         </DialogHeader>
         <div className="space-y-3" onKeyDown={handleKeyDown}>
           <div>
-            <label className="text-sm font-medium">Accion</label>
+            <label className="mb-1 block text-sm font-medium">Accion</label>
             <textarea
               ref={textareaRef}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
@@ -85,7 +85,7 @@ export function AddAccionDialog({ open, onOpenChange, tareaId, onSuccess }) {
             />
           </div>
           <div>
-            <label className="text-sm font-medium">Fecha</label>
+            <label className="mb-1 block text-sm font-medium">Fecha</label>
             <DateInput
               value={form.fecha_accion}
               onChange={val => setForm(f => ({ ...f, fecha_accion: val }))}
@@ -186,7 +186,7 @@ export function CompleteAndScheduleDialog({ open, onOpenChange, tareaId, onSucce
         </DialogHeader>
         <div className="space-y-4" onKeyDown={handleKeyDown}>
           <div className="space-y-2 rounded-md border p-3">
-            <label className="text-sm font-medium">Accion Completada</label>
+            <label className="mb-1 block text-sm font-medium">Accion Completada</label>
             <textarea
               ref={textareaRef}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
@@ -201,14 +201,14 @@ export function CompleteAndScheduleDialog({ open, onOpenChange, tareaId, onSucce
             <p className="text-xs text-muted-foreground">Se registrara con fecha de hoy y estado Completada</p>
           </div>
           <div>
-            <label className="text-sm font-medium">Fecha Siguiente Accion</label>
+            <label className="mb-1 block text-sm font-medium">Fecha Siguiente Accion</label>
             <DateInput
               value={form.fecha_siguiente}
               onChange={val => setForm(f => ({ ...f, fecha_siguiente: val }))}
             />
           </div>
           <div className="space-y-2 rounded-md border p-3">
-            <label className="text-sm font-medium">Siguiente Accion <span className="text-muted-foreground font-normal">(opcional)</span></label>
+            <label className="mb-1 block text-sm font-medium">Siguiente Accion <span className="text-muted-foreground font-normal">(opcional)</span></label>
             <textarea
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
               rows={2}
@@ -287,7 +287,7 @@ export function CambiarFechaDialog({ open, onOpenChange, tareaId, currentFecha, 
           <DialogTitle>Cambiar Fecha Siguiente Accion</DialogTitle>
         </DialogHeader>
         <div onKeyDown={handleKeyDown} ref={datePickerRef}>
-          <label className="text-sm font-medium">Fecha Siguiente Accion</label>
+          <label className="mb-1 block text-sm font-medium">Fecha Siguiente Accion</label>
           <DateInput
             value={fecha}
             onChange={setFecha}
