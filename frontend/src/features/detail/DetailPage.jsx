@@ -47,6 +47,7 @@ export default function DetailPage() {
   const [acciones, setAcciones] = useState([])
   const [responsables, setResponsables] = useState([])
   const [estadosTarea, setEstadosTarea] = useState([])
+  const [estadosAccion, setEstadosAccion] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -105,6 +106,9 @@ export default function DetailPage() {
     apiClient.get('/estados-tareas')
       .then(res => setEstadosTarea(res.data))
       .catch(() => setEstadosTarea([]))
+    apiClient.get('/estados-acciones')
+      .then(res => setEstadosAccion(res.data))
+      .catch(() => setEstadosAccion([]))
   }, [])
 
   // Edit tarea handlers
@@ -561,7 +565,19 @@ export default function DetailPage() {
               </div>
               <div>
                 <label className="text-sm font-medium">Estado</label>
-                <Input value={editAccionForm.estado} onChange={e => setEditAccionForm(f => ({ ...f, estado: e.target.value }))} />
+                <select
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  value={editAccionForm.estado || ''}
+                  onChange={e => setEditAccionForm(f => ({ ...f, estado: e.target.value }))}
+                >
+                  <option value="">-- Seleccionar --</option>
+                  {estadosAccion.map(e => (
+                    <option key={e.id} value={e.valor}>{e.valor}</option>
+                  ))}
+                  {editAccionForm.estado && !estadosAccion.some(e => e.valor === editAccionForm.estado) && (
+                    <option key="current" value={editAccionForm.estado}>{editAccionForm.estado}</option>
+                  )}
+                </select>
               </div>
             </div>
             <DialogFooter>
