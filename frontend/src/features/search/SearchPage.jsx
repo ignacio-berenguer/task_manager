@@ -292,39 +292,30 @@ export default function SearchPage() {
     }
   }
 
-  // Re-search when sort changes (only if we have results)
-  const sortInitialized = useRef(false)
+  // Re-search when sort changes (skip mount/StrictMode via prev-value comparison)
+  const prevSortRef = useRef({ sortField, sortDir })
   useEffect(() => {
-    if (!sortInitialized.current) {
-      sortInitialized.current = true
-      return
-    }
-    if (results && sortField) {
-      doSearch(0)
-    }
+    const prev = prevSortRef.current
+    prevSortRef.current = { sortField, sortDir }
+    if (prev.sortField === sortField && prev.sortDir === sortDir) return
+    if (results && sortField) doSearch(0)
   }, [sortField, sortDir]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Re-search when quick filter toggles (only if we have results)
-  const proximaSemanaInitialized = useRef(false)
+  // Re-search when quick filter toggles (skip mount/StrictMode via prev-value comparison)
+  const prevProximaSemanaRef = useRef(proximaSemana)
   useEffect(() => {
-    if (!proximaSemanaInitialized.current) {
-      proximaSemanaInitialized.current = true
-      return
-    }
-    if (results) {
-      doSearch(0)
-    }
+    const prev = prevProximaSemanaRef.current
+    prevProximaSemanaRef.current = proximaSemana
+    if (prev === proximaSemana) return
+    if (results) doSearch(0)
   }, [proximaSemana]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const proximosDiasInitialized = useRef(false)
+  const prevProximosDiasRef = useRef(proximosDias)
   useEffect(() => {
-    if (!proximosDiasInitialized.current) {
-      proximosDiasInitialized.current = true
-      return
-    }
-    if (results) {
-      doSearch(0)
-    }
+    const prev = prevProximosDiasRef.current
+    prevProximosDiasRef.current = proximosDias
+    if (prev === proximosDias) return
+    if (results) doSearch(0)
   }, [proximosDias]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Column persistence
