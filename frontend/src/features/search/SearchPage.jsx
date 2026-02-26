@@ -99,7 +99,6 @@ export default function SearchPage() {
 
   // Ref that always holds latest state (avoids stale closures in unmount cleanup)
   const stateRef = useRef()
-  stateRef.current = { filters, results, page, sortField, sortDir, columnFilters, proximaSemana, proximosDias }
 
   // Cached scroll position to restore after mount
   const cachedScrollTop = useRef(searchStateCache?.scrollTop || 0)
@@ -170,9 +169,12 @@ export default function SearchPage() {
   const clearSelection = () => setSelectedIds(new Set())
 
   // Keyboard row navigation
-  const [selectedRowIndex, setSelectedRowIndex] = useState(-1)
+  const [selectedRowIndex, setSelectedRowIndex] = useState(() => searchStateCache?.selectedRowIndex ?? -1)
   const tableBodyRef = useRef(null)
   const tableContainerRef = useRef(null)
+
+  // Keep stateRef in sync (must be after all cached state declarations)
+  stateRef.current = { filters, results, page, sortField, sortDir, columnFilters, proximaSemana, proximosDias, selectedRowIndex }
 
   // Bulk dialogs
   const [bulkChangeDateOpen, setBulkChangeDateOpen] = useState(false)
