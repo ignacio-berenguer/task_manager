@@ -279,7 +279,7 @@ All accion mutation endpoints automatically recalculate the parent tarea's `fech
 | `/` | Public | Landing page with hero section and changelog |
 | `/sign-in`, `/sign-up` | Public | Clerk authentication |
 | `/search` | Private | Task search with compact filters (no labels, placeholder text), lateral sidebar (xl+), column filter popovers (funnel icon), active filter tags (removable badges), quick date filters "2 dias" and "Semana" (mutually exclusive, toggle fecha_siguiente_accion date range), export to clipboard (copies visible tasks with pending actions), sortable/reorderable columns, colored estado tags (soft badge colors), sticky title bar, sticky results bar and table header (XL+, dynamic height via ResizeObserver), inline detail accordion, side drawer quick view, quick action buttons (add accion, change fecha), multi-select checkboxes with bulk operations toolbar (change date, complete & create action, export selected), keyboard shortcuts, new tarea dialog (Enter to submit), persistent state across navigation (filters, results, pagination, sort, scroll position). Mobile-optimized: icon-only buttons, responsive drawer grid, touch-friendly tap targets |
-| `/detail/:tarea_id` | Private | Task header with tarea name prominent + tarea_id muted, estado + responsable + fecha_siguiente_accion badges + cambiar fecha button, "Marcar Completado" button (marks tarea and non-completed acciones as completed with confirm dialog), compact acciones CRUD table (sorted desc, sticky headers), add accion dialog, notas accordion (collapsed), datos accordion (collapsed), edit tarea with estado dropdown (parametric), Ctrl+Shift+F shortcut, back navigation with state preservation. All date fields use DateInput with +/- day buttons and keyboard accelerators. All modals support Enter to submit. Mobile-optimized: card layout for acciones, responsive accordion padding, icon-only header buttons |
+| `/detail/:tarea_id` | Private | Task header with tarea name prominent + tarea_id muted, estado + responsable + fecha_siguiente_accion badges, header buttons (Completar, Cambiar Fecha, Editar) with Kbd hints, "Marcar Completado" button (marks tarea and non-completed acciones as completed with confirm dialog), compact acciones CRUD table (sorted desc, sticky headers), add accion dialog, "Completar y Programar" button with Kbd hint, notas accordion (collapsed), datos accordion (collapsed), edit tarea with estado dropdown (parametric), keyboard shortcuts (Backspace, e, c, a, p, f), back navigation with state preservation. All date fields use DateInput with +/- day buttons and keyboard accelerators. All modals support Enter to submit. Mobile-optimized: card layout for acciones, responsive accordion padding, icon-only header buttons |
 | `/chat` | Private | AI assistant with SSE streaming |
 
 ## Keyboard Shortcuts
@@ -298,7 +298,11 @@ Press `F1` anywhere in the app (or use the **Ayuda** menu in the navbar) to see 
 | `↑` / `↓` | Navigate result rows / acciones | Search, Detail |
 | `Enter` | Open selected result / edit acción | Search, Detail |
 | `e` | Edit task | Detail |
+| `c` | Completar tarea | Detail |
 | `a` | New acción | Detail, Search (results) |
+| `p` | Completar y programar | Detail |
+| `f` | Cambiar fecha | Detail |
+| `Backspace` | Back to Search | Detail |
 | `Ctrl+Enter` | Save dialog | All dialogs |
 | `Ctrl+Shift+B` | Execute search | Search |
 | `Ctrl+Shift+X` | Clear filters | Search |

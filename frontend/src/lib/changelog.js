@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.028",
+    feature: 28,
+    title: "Atajos de teclado en detalle de tarea",
+    summary: "Nuevos atajos en la pagina de detalle: Backspace para volver a busqueda, C para completar, P para completar y programar, F para cambiar fecha (ademas de los existentes E para editar y A para nueva accion). Boton 'Fecha' promovido a boton completo en la cabecera. Indicadores Kbd visibles en todos los botones con atajo."
+  },
+  {
     version: "1.027",
     feature: 27,
     title: "Version en la barra de navegacion",

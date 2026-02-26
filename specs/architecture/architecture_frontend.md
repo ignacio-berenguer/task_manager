@@ -213,11 +213,12 @@ frontend/
 - **Acciones Realizadas** (primary content, first section): Compact CRUD table sorted by fecha_accion descending, with sticky headers and EstadoBadge (size=sm) for estado; "Nueva Accion" button opens AddAccionDialog (creates accion with estado Pendiente and updates tarea's fecha_siguiente_accion); "Completar y Programar" button opens CompleteAndScheduleDialog (atomically completes current action and schedules next); full width on lg+ screens
 - **Notas Anteriores** (second section, accordion): Collapsible accordion (closed by default), read-only display of original notas text (shown only when non-empty)
 - **Datos de la Tarea** (third section, accordion): Collapsible accordion (collapsed by default) showing all tarea fields with formatted dates and EstadoBadge
-- **Keyboard shortcuts**: Ctrl+Shift+F navigates to Search page with focus on tarea filter input
+- **Keyboard shortcuts**: `Backspace` returns to Search (preserving filters), `e` edit tarea, `c` completar, `a` nueva acción, `p` completar y programar, `f` cambiar fecha, `Ctrl+Shift+F` focus search. All single-key shortcuts are disabled when any dialog is open or an input is focused. Kbd hint badges shown on all shortcut-enabled buttons (visible on lg+ screens).
+- **Cambiar Fecha button**: Promoted from tooltip-icon in the metadata badges to a full `<Button variant="outline">` in the header button group (between Completar and Editar), with label "Fecha" and `<Kbd>F</Kbd>` hint.
 - **"Marcar Completado" button**: Marks the tarea and all non-completed acciones as completed via `POST /api/v1/tareas/{tarea_id}/complete`, with a confirmation dialog before execution
 - **Edit tarea dialog**: Responsable uses a dropdown populated from `/api/v1/responsables`; estado uses a dropdown populated from `/api/v1/estados-tareas` (parametric table) instead of free text; Enter submits, Ctrl+Enter submits from anywhere
 - **Modal keyboard**: All modals support Enter to submit (except in textareas), +/- keys to adjust dates when DateInput is focused
-- **Back navigation**: Uses `navigate(-1)` (browser history) to preserve Search page state
+- **Back navigation**: `Backspace` navigates to `/search` (module-level cache restores filters/results/scroll position); back arrow button uses `navigate(-1)` (browser history)
 
 #### 6.4 Chat Page (`/chat`)
 
@@ -405,7 +406,7 @@ VITE_APP_NAME=Task Manager
 - **Dynamic help overlay:** `ShortcutHelpOverlay` reads from the registry, grouping shortcuts by category (Global, Búsqueda, Detalle, Chat). Triggered by `F1` key or Ayuda menu
 - **Kbd hint badges:** `<Kbd>` component shows shortcut hints next to key action buttons (visible on lg+ screens)
 - **Global shortcuts:** `F1` (help), `/` (search), `n` (new task), `Esc` (close/back), `g→s/c/h` (navigate)
-- **Page shortcuts:** Search (↑↓ row navigation, Enter to open, Space to preview drawer, `a` add acción, `c` complete & schedule, `f` change fecha, `Ctrl+Shift+B` search, `Ctrl+Shift+X` clear filters), Detail (`e` edit, `a` add acción, ↑↓ acción navigation), Chat (`/` focus)
+- **Page shortcuts:** Search (↑↓ row navigation, Enter to open, Space to preview drawer, `a` add acción, `c` complete & schedule, `f` change fecha, `Ctrl+Shift+B` search, `Ctrl+Shift+X` clear filters), Detail (`Backspace` back to search, `e` edit, `c` completar, `a` add acción, `p` completar y programar, `f` cambiar fecha, ↑↓ acción navigation), Chat (`/` focus)
 - **Display-only shortcuts:** Shortcuts with `enabled: false` are skipped by the global handler but still appear in the Help overlay (registered with a category for discoverability). Used for shortcuts handled locally by component `onKeyDown` handlers (e.g., table quick actions).
 - **Compact filter layout:** On `md`–`lg` screens the Search filter panel uses a two-row grid layout (`renderFilterPanel` with `variant='inline'`): Row 1 = 5-column grid (ID, Tarea, Responsable, Tema, Estado), Row 2 = flex row (quick date filters, spacer, Buscar, Limpiar). The `xl` sidebar uses the stacked `variant='sidebar'`.
 - **Auto-focus results:** After `doSearch` completes with results, `selectedRowIndex` is set to `0` and the table container receives DOM focus so arrow keys work immediately.

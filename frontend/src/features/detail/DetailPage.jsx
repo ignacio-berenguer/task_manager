@@ -213,12 +213,48 @@ export default function DetailPage() {
       enabled: !anyDialogOpen && !!tarea,
     },
     {
+      id: 'detail.completar',
+      keys: 'c',
+      key: 'c',
+      description: 'Completar tarea',
+      category: 'Detalle',
+      action: () => { if (!anyDialogOpen && tarea) setCompleteConfirmOpen(true) },
+      enabled: !anyDialogOpen && !!tarea && tarea.estado?.toLowerCase() !== 'completado',
+    },
+    {
       id: 'detail.addAccion',
       keys: 'a',
       key: 'a',
       description: 'Nueva acción',
       category: 'Detalle',
       action: () => { if (!anyDialogOpen) setAddAccionOpen(true) },
+      enabled: !anyDialogOpen,
+    },
+    {
+      id: 'detail.completeSchedule',
+      keys: 'p',
+      key: 'p',
+      description: 'Completar y programar',
+      category: 'Detalle',
+      action: () => { if (!anyDialogOpen) setCompleteScheduleOpen(true) },
+      enabled: !anyDialogOpen,
+    },
+    {
+      id: 'detail.cambiarFecha',
+      keys: 'f',
+      key: 'f',
+      description: 'Cambiar fecha',
+      category: 'Detalle',
+      action: () => { if (!anyDialogOpen) setCambiarFechaOpen(true) },
+      enabled: !anyDialogOpen,
+    },
+    {
+      id: 'detail.backspace',
+      keys: '⌫',
+      key: 'Backspace',
+      description: 'Volver a Búsqueda',
+      category: 'Detalle',
+      action: () => navigate('/search'),
       enabled: !anyDialogOpen,
     },
     {
@@ -296,17 +332,6 @@ export default function DetailPage() {
                     {formatDate(tarea.fecha_siguiente_accion)}
                   </Badge>
                 )}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      className="rounded p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground"
-                      onClick={() => setCambiarFechaOpen(true)}
-                    >
-                      <CalendarClock className="h-4 w-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>Cambiar Fecha Siguiente Accion</TooltipContent>
-                </Tooltip>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -316,11 +341,22 @@ export default function DetailPage() {
                     <Button variant="outline" onClick={() => setCompleteConfirmOpen(true)}>
                       <CheckCircle2 className="sm:mr-2 h-4 w-4" />
                       <span className="hidden sm:inline">Completar</span>
+                      <Kbd className="ml-2 hidden lg:inline-flex">C</Kbd>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Marcar tarea como Completado</TooltipContent>
                 </Tooltip>
               )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" onClick={() => setCambiarFechaOpen(true)}>
+                    <CalendarClock className="sm:mr-2 h-4 w-4" />
+                    <span className="hidden sm:inline">Fecha</span>
+                    <Kbd className="ml-2 hidden lg:inline-flex">F</Kbd>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Cambiar Fecha Siguiente Accion</TooltipContent>
+              </Tooltip>
               <Button variant="outline" onClick={openEdit}>
                 <Pencil className="sm:mr-2 h-4 w-4" />
                 <span className="hidden sm:inline">Editar</span>
@@ -338,6 +374,7 @@ export default function DetailPage() {
               <Button size="sm" variant="outline" onClick={() => setCompleteScheduleOpen(true)}>
                 <ListChecks className="sm:mr-2 h-4 w-4" />
                 <span className="hidden sm:inline">Completar y Programar</span>
+                <Kbd className="ml-2 hidden lg:inline-flex">P</Kbd>
               </Button>
               <Button size="sm" onClick={() => setAddAccionOpen(true)}>
                 <Plus className="sm:mr-2 h-4 w-4" />
