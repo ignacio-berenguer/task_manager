@@ -18,7 +18,7 @@ function getTodayISO() {
 
 /**
  * Dialog to add a new accion to a tarea.
- * Creates the accion with estado "PENDIENTE" and updates the tarea's fecha_siguiente_accion.
+ * Creates the accion with estado "Pendiente" and updates the tarea's fecha_siguiente_accion.
  */
 export function AddAccionDialog({ open, onOpenChange, tareaId, onSuccess }) {
   const [form, setForm] = useState({ accion: '', fecha_accion: getTodayISO() })
@@ -41,7 +41,7 @@ export function AddAccionDialog({ open, onOpenChange, tareaId, onSuccess }) {
         tarea_id: tareaId,
         accion: form.accion.trim(),
         fecha_accion: form.fecha_accion,
-        estado: 'PENDIENTE',
+        estado: 'Pendiente',
       })
       LOG.info(`Accion created for tarea ${tareaId}`)
       toast.success('Accion creada exitosamente')
