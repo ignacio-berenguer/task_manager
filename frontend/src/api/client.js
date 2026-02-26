@@ -4,14 +4,10 @@ import { createLogger } from '@/lib/logger'
 const logger = createLogger('API')
 
 /**
- * Resolve API base URL:
- * - Production (HTTPS): always use the known production API endpoint
- * - Development (HTTP/localhost): use env var or localhost fallback
+ * Resolve API base URL from VITE_API_BASE_URL env var.
+ * Falls back to localhost for local development.
  */
 function resolveBaseURL() {
-  if (window.location.protocol === 'https:') {
-    return 'https://taskapi.iridescentiris.tech/api/v1'
-  }
   return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
 }
 
