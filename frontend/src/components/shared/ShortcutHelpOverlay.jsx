@@ -2,7 +2,7 @@ import { useEffect, useRef, useMemo } from 'react'
 import { useShortcutContext } from '@/providers/KeyboardShortcutProvider'
 import { X } from 'lucide-react'
 
-const CATEGORY_ORDER = ['Global', 'Búsqueda', 'Detalle', 'Chat']
+const CATEGORY_ORDER = ['Global', 'Búsqueda', 'Búsqueda (resultados)', 'Detalle', 'Chat']
 
 export function ShortcutHelpOverlay() {
   const { isOverlayOpen, closeOverlay, getShortcuts } = useShortcutContext()
@@ -10,7 +10,7 @@ export function ShortcutHelpOverlay() {
 
   const grouped = useMemo(() => {
     if (!isOverlayOpen) return {}
-    const shortcuts = getShortcuts().filter(s => s.enabled)
+    const shortcuts = getShortcuts()
     const groups = {}
     for (const s of shortcuts) {
       const cat = s.category || 'Global'

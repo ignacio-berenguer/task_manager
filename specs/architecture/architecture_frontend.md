@@ -405,7 +405,10 @@ VITE_APP_NAME=Task Manager
 - **Dynamic help overlay:** `ShortcutHelpOverlay` reads from the registry, grouping shortcuts by category (Global, Búsqueda, Detalle, Chat). Triggered by `F1` key or Ayuda menu
 - **Kbd hint badges:** `<Kbd>` component shows shortcut hints next to key action buttons (visible on lg+ screens)
 - **Global shortcuts:** `F1` (help), `/` (search), `n` (new task), `Esc` (close/back), `g→s/c/h` (navigate)
-- **Page shortcuts:** Search (↑↓ row navigation, Enter to open), Detail (`e` edit, `a` add acción, ↑↓ acción navigation), Chat (`/` focus)
+- **Page shortcuts:** Search (↑↓ row navigation, Enter to open, Space to preview drawer, `a` add acción, `c` complete & schedule, `f` change fecha, `Ctrl+Shift+B` search, `Ctrl+Shift+X` clear filters), Detail (`e` edit, `a` add acción, ↑↓ acción navigation), Chat (`/` focus)
+- **Display-only shortcuts:** Shortcuts with `enabled: false` are skipped by the global handler but still appear in the Help overlay (registered with a category for discoverability). Used for shortcuts handled locally by component `onKeyDown` handlers (e.g., table quick actions).
+- **Compact filter layout:** On `md`–`lg` screens the Search filter panel uses a two-row grid layout (`renderFilterPanel` with `variant='inline'`): Row 1 = 5-column grid (ID, Tarea, Responsable, Tema, Estado), Row 2 = flex row (quick date filters, spacer, Buscar, Limpiar). The `xl` sidebar uses the stacked `variant='sidebar'`.
+- **Auto-focus results:** After `doSearch` completes with results, `selectedRowIndex` is set to `0` and the table container receives DOM focus so arrow keys work immediately.
 
 **Error Handling:** `ErrorBoundary` wraps each protected route for graceful error recovery with a retry button.
 

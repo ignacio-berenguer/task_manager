@@ -298,8 +298,13 @@ Press `F1` anywhere in the app (or use the **Ayuda** menu in the navbar) to see 
 | `↑` / `↓` | Navigate result rows / acciones | Search, Detail |
 | `Enter` | Open selected result / edit acción | Search, Detail |
 | `e` | Edit task | Detail |
-| `a` | New acción | Detail |
+| `a` | New acción | Detail, Search (results) |
 | `Ctrl+Enter` | Save dialog | All dialogs |
+| `Ctrl+Shift+B` | Execute search | Search |
+| `Ctrl+Shift+X` | Clear filters | Search |
+| `Space` | Preview drawer | Search (results) |
+| `c` | Complete & schedule | Search (results) |
+| `f` | Change fecha | Search (results) |
 
 ## MCP Tools
 

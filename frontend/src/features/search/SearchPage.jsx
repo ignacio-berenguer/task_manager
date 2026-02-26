@@ -172,6 +172,7 @@ export default function SearchPage() {
   // Keyboard row navigation
   const [selectedRowIndex, setSelectedRowIndex] = useState(-1)
   const tableBodyRef = useRef(null)
+  const tableContainerRef = useRef(null)
 
   // Bulk dialogs
   const [bulkChangeDateOpen, setBulkChangeDateOpen] = useState(false)
@@ -232,6 +233,13 @@ export default function SearchPage() {
       const res = await apiClient.post('/tareas/search', body)
       setResults(res.data)
       setPage(pageOverride)
+      // Auto-focus first result after search
+      if (res.data?.data?.length > 0) {
+        requestAnimationFrame(() => {
+          setSelectedRowIndex(0)
+          tableContainerRef.current?.focus()
+        })
+      }
     } catch (err) {
       LOG.error('Search error', err)
     } finally {
@@ -357,12 +365,36 @@ export default function SearchPage() {
       action: () => setNewTareaOpen(true),
       alwaysActive: true,
     },
-  ], [focusSearchInput])
+    {
+      id: 'search.ctrlShiftB',
+      keys: 'Ctrl+Shift+B',
+      key: 'B',
+      modifiers: { ctrl: true, shift: true },
+      description: 'Ejecutar búsqueda',
+      category: 'Búsqueda',
+      action: () => doSearch(0),
+      alwaysActive: true,
+    },
+    {
+      id: 'search.ctrlShiftX',
+      keys: 'Ctrl+Shift+X',
+      key: 'X',
+      modifiers: { ctrl: true, shift: true },
+      description: 'Limpiar filtros',
+      category: 'Búsqueda',
+      action: clearFilters,
+      alwaysActive: true,
+    },
+    // Display-only shortcuts for Help overlay (handled locally in handleTableKeyDown)
+    { id: 'search.space', keys: 'Space', key: ' ', description: 'Vista previa (drawer)', category: 'Búsqueda (resultados)', action: () => {}, enabled: false },
+    { id: 'search.enter', keys: 'Enter', key: 'Enter', description: 'Ir a detalle', category: 'Búsqueda (resultados)', action: () => {}, enabled: false },
+    { id: 'search.a', keys: 'A', key: 'a', description: 'Añadir acción', category: 'Búsqueda (resultados)', action: () => {}, enabled: false },
+    { id: 'search.c', keys: 'C', key: 'c', description: 'Completar y programar', category: 'Búsqueda (resultados)', action: () => {}, enabled: false },
+    { id: 'search.f', keys: 'F', key: 'f', description: 'Cambiar fecha', category: 'Búsqueda (resultados)', action: () => {}, enabled: false },
+  ], [focusSearchInput, doSearch, clearFilters])
 
-  // Reset selected row when results change
-  useEffect(() => {
-    setSelectedRowIndex(-1)
-  }, [results])
+  // Note: selectedRowIndex is managed by doSearch (auto-selects first row)
+  // and by handleTableKeyDown (arrow navigation). No reset on results change.
 
   // Handle focusTareaInput from navigation state (e.g. Ctrl+Shift+F from DetailPage)
   useEffect(() => {
@@ -414,7 +446,7 @@ export default function SearchPage() {
 
   // Open side drawer
   const openDrawer = async (e, row) => {
-    e.stopPropagation()
+    if (e) e.stopPropagation()
     setDrawerTarea(row)
     setDrawerLoading(true)
     try {
@@ -432,6 +464,12 @@ export default function SearchPage() {
       setDrawerLoading(false)
     }
   }
+
+  // Close side drawer and restore focus to table
+  const closeDrawer = useCallback(() => {
+    setDrawerTarea(null)
+    requestAnimationFrame(() => tableContainerRef.current?.focus())
+  }, [])
 
   // New tarea
   const handleNewTarea = async () => {
@@ -474,7 +512,10 @@ export default function SearchPage() {
     )
   }, [results?.data, columnFilters])
 
-  // Arrow key navigation on table (must be after filteredData)
+  // Check if any dialog is open (guards single-key shortcuts on table)
+  const anyDialogOpen = !!addAccionTarget || !!cambiarFechaTarget || !!completeScheduleTarget || !!drawerTarea || newTareaOpen || bulkChangeDateOpen || bulkCompleteCreateOpen
+
+  // Arrow key navigation + quick actions on table (must be after filteredData)
   const handleTableKeyDown = useCallback((e) => {
     if (!filteredData || filteredData.length === 0) return
 
@@ -496,10 +537,26 @@ export default function SearchPage() {
       e.preventDefault()
       const row = filteredData[selectedRowIndex]
       if (row) goToDetail(row.tarea_id)
-    } else if (e.key === 'Escape') {
+    } else if (e.key === 'Escape' && !anyDialogOpen) {
       setSelectedRowIndex(-1)
+    } else if (selectedRowIndex >= 0 && !anyDialogOpen) {
+      const row = filteredData[selectedRowIndex]
+      if (!row) return
+      if (e.key === ' ') {
+        e.preventDefault()
+        openDrawer(null, row)
+      } else if (e.key === 'a') {
+        e.preventDefault()
+        setAddAccionTarget({ tarea_id: row.tarea_id })
+      } else if (e.key === 'c') {
+        e.preventDefault()
+        setCompleteScheduleTarget({ tarea_id: row.tarea_id })
+      } else if (e.key === 'f') {
+        e.preventDefault()
+        setCambiarFechaTarget({ tarea_id: row.tarea_id, fecha_siguiente_accion: row.fecha_siguiente_accion })
+      }
     }
-  }, [filteredData, selectedRowIndex]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filteredData, selectedRowIndex, anyDialogOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const scrollRowIntoView = (index) => {
     requestAnimationFrame(() => {
@@ -644,87 +701,90 @@ export default function SearchPage() {
   }
 
   // Filter Panel (reused in sidebar and mobile accordion)
-  const renderFilterPanel = (tareaRef) => (
-    <div className="space-y-2" onKeyDown={handleFilterKeyDown}>
-      <div className="space-y-2">
-        <Input
-          placeholder="ID Tarea"
-          value={filters.tarea_id}
-          onChange={e => setFilters(f => ({ ...f, tarea_id: e.target.value }))}
-        />
-        <Input
-          ref={tareaRef}
-          data-search-input
-          placeholder="Tarea (/ o Ctrl+Shift+F)"
-          value={filters.tarea}
-          onChange={e => setFilters(f => ({ ...f, tarea: e.target.value }))}
-        />
-        <select
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-          value={filters.responsable}
-          onChange={e => setFilters(f => ({ ...f, responsable: e.target.value }))}
-        >
-          <option value="">Responsable: Todos</option>
-          {filterOptions?.responsables?.map(r => (
-            <option key={r} value={r}>{r}</option>
-          ))}
-        </select>
-        <select
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-          value={filters.tema}
-          onChange={e => setFilters(f => ({ ...f, tema: e.target.value }))}
-        >
-          <option value="">Tema: Todos</option>
-          {filterOptions?.temas?.map(t => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
-        <select
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-          value={filters.estado}
-          onChange={e => setFilters(f => ({ ...f, estado: e.target.value }))}
-        >
-          <option value="">Estado: Todos</option>
-          {filterOptions?.estados?.map(e => (
-            <option key={e} value={e}>{e}</option>
-          ))}
-        </select>
+  // variant: 'sidebar' = stacked (narrow sidebar), 'inline' = compact two-row grid (medium screens)
+  const renderFilterPanel = (tareaRef, variant = 'sidebar') => {
+    const isInline = variant === 'inline'
+    return (
+      <div className={isInline ? 'space-y-2' : 'space-y-2'} onKeyDown={handleFilterKeyDown}>
+        <div className={isInline ? 'grid grid-cols-1 md:grid-cols-5 gap-2' : 'space-y-2'}>
+          <Input
+            placeholder="ID Tarea"
+            value={filters.tarea_id}
+            onChange={e => setFilters(f => ({ ...f, tarea_id: e.target.value }))}
+          />
+          <Input
+            ref={tareaRef}
+            data-search-input
+            placeholder="Tarea (/ o Ctrl+Shift+F)"
+            value={filters.tarea}
+            onChange={e => setFilters(f => ({ ...f, tarea: e.target.value }))}
+          />
+          <select
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            value={filters.responsable}
+            onChange={e => setFilters(f => ({ ...f, responsable: e.target.value }))}
+          >
+            <option value="">Responsable: Todos</option>
+            {filterOptions?.responsables?.map(r => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+          <select
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            value={filters.tema}
+            onChange={e => setFilters(f => ({ ...f, tema: e.target.value }))}
+          >
+            <option value="">Tema: Todos</option>
+            {filterOptions?.temas?.map(t => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+          <select
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            value={filters.estado}
+            onChange={e => setFilters(f => ({ ...f, estado: e.target.value }))}
+          >
+            <option value="">Estado: Todos</option>
+            {filterOptions?.estados?.map(e => (
+              <option key={e} value={e}>{e}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant={proximosDias ? 'default' : 'outline'}
+            size="sm"
+            onClick={toggleProximosDias}
+          >
+            <CalendarDays className="mr-1.5 h-3.5 w-3.5" />
+            2 dias
+          </Button>
+          <Button
+            variant={proximaSemana ? 'default' : 'outline'}
+            size="sm"
+            onClick={toggleProximaSemana}
+          >
+            <CalendarDays className="mr-1.5 h-3.5 w-3.5" />
+            Semana
+          </Button>
+          {isInline && <div className="flex-1" />}
+          <Button size={isInline ? 'sm' : 'default'} className={isInline ? '' : 'flex-1'} onClick={() => doSearch(0)} disabled={loading}>
+            <Search className="mr-2 h-4 w-4" />
+            Buscar
+            <Kbd className="ml-2 hidden lg:inline-flex">Ctrl+Shift+B</Kbd>
+          </Button>
+          <Button size={isInline ? 'sm' : 'default'} variant="outline" className={isInline ? '' : 'flex-1'} onClick={clearFilters}>
+            <X className="mr-2 h-4 w-4" />
+            Limpiar
+            <Kbd className="ml-2 hidden lg:inline-flex">Ctrl+Shift+X</Kbd>
+          </Button>
+        </div>
       </div>
-      <div className="flex gap-2">
-        <Button
-          variant={proximosDias ? 'default' : 'outline'}
-          size="sm"
-          className="flex-1"
-          onClick={toggleProximosDias}
-        >
-          <CalendarDays className="mr-1.5 h-3.5 w-3.5" />
-          2 dias
-        </Button>
-        <Button
-          variant={proximaSemana ? 'default' : 'outline'}
-          size="sm"
-          className="flex-1"
-          onClick={toggleProximaSemana}
-        >
-          <CalendarDays className="mr-1.5 h-3.5 w-3.5" />
-          Semana
-        </Button>
-      </div>
-      <div className="flex gap-2">
-        <Button className="flex-1" onClick={() => doSearch(0)} disabled={loading}>
-          <Search className="mr-2 h-4 w-4" />
-          Buscar
-        </Button>
-        <Button variant="outline" onClick={clearFilters}>
-          <X className="mr-2 h-4 w-4" />
-          Limpiar
-        </Button>
-      </div>
-    </div>
-  )
+    )
+  }
 
-  const filterPanel = renderFilterPanel(sidebarTareaRef)
-  const mobileFilterPanel = renderFilterPanel(mobileTareaRef)
+  const filterPanel = renderFilterPanel(sidebarTareaRef, 'sidebar')
+  const mobileFilterPanel = renderFilterPanel(mobileTareaRef, 'inline')
 
   return (
     <Layout>
@@ -758,7 +818,7 @@ export default function SearchPage() {
           {/* Main content */}
           <div className="flex-1 min-w-0">
             {/* Mobile/tablet filters - below xl */}
-            <div className="xl:hidden mb-6 sticky top-[7.25rem] z-20 bg-background">
+            <div className="xl:hidden mb-6">
               <Accordion type="single" collapsible defaultValue="filters">
                 <AccordionItem value="filters">
                   <AccordionTrigger className="rounded-lg border bg-card px-4">
@@ -855,7 +915,7 @@ export default function SearchPage() {
                     />
                   </div>
                 </div>
-                <div className="max-xl:overflow-x-auto" tabIndex={0} onKeyDown={handleTableKeyDown} role="grid" aria-label="Resultados de búsqueda">
+                <div ref={tableContainerRef} className="max-xl:overflow-x-auto focus-visible:outline-none focus:outline-none" tabIndex={0} onKeyDown={handleTableKeyDown} role="grid" aria-label="Resultados de búsqueda" style={{ outline: 'none' }}>
                   <table className="w-full text-sm">
                     <thead className="sticky top-0 xl:top-[var(--thead-top)] z-10 bg-card">
                       <tr className="border-b bg-muted">
@@ -964,6 +1024,7 @@ export default function SearchPage() {
                           selected={selectedIds.has(row.tarea_id)}
                           onToggleSelect={() => toggleSelect(row.tarea_id)}
                           isKeyboardSelected={rowIndex === selectedRowIndex}
+                          keyboardNavActive={selectedRowIndex >= 0}
                         />
                       ))}
                     </tbody>
@@ -1001,8 +1062,8 @@ export default function SearchPage() {
       </div>
 
       {/* Side drawer */}
-      <Sheet open={!!drawerTarea} onOpenChange={() => setDrawerTarea(null)}>
-        <SheetContent onClose={() => setDrawerTarea(null)} side="right">
+      <Sheet open={!!drawerTarea} onOpenChange={closeDrawer}>
+        <SheetContent onClose={closeDrawer} side="right">
           {drawerTarea && (
             <>
               <SheetHeader>
@@ -1179,7 +1240,7 @@ export default function SearchPage() {
 }
 
 // Row component with expand/collapse
-function RowWithExpand({ row, rowIndex, columns, renderCell, expanded, onToggleExpand, accionesCache, onRowClick, onOpenDrawer, onAddAccion, onCambiarFecha, onCompleteSchedule, selected, onToggleSelect, isKeyboardSelected }) {
+function RowWithExpand({ row, rowIndex, columns, renderCell, expanded, onToggleExpand, accionesCache, onRowClick, onOpenDrawer, onAddAccion, onCambiarFecha, onCompleteSchedule, selected, onToggleSelect, isKeyboardSelected, keyboardNavActive }) {
   const cachedAcciones = accionesCache.current.get(row.tarea_id) || []
 
   return (
@@ -1187,9 +1248,10 @@ function RowWithExpand({ row, rowIndex, columns, renderCell, expanded, onToggleE
       <tr
         data-row-index={rowIndex}
         className={cn(
-          "cursor-pointer border-b hover:bg-muted/50",
+          "cursor-pointer border-b",
+          !keyboardNavActive && "hover:bg-muted/50",
           selected && "bg-primary/5",
-          isKeyboardSelected && "ring-2 ring-inset ring-primary bg-primary/5"
+          isKeyboardSelected && "bg-primary/10 ring-1 ring-inset ring-primary/30"
         )}
         onClick={onRowClick}
         aria-selected={isKeyboardSelected}

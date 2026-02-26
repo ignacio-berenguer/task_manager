@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.026",
+    feature: 26,
+    title: "Búsqueda: filtros compactos y atajos de teclado",
+    summary: "Filtros en dos líneas en pantallas medianas para reducir espacio vertical. Nuevos atajos: Ctrl+Shift+B para buscar, Ctrl+Shift+X para limpiar filtros. Tras buscar, el foco se mueve automaticamente al primer resultado. Acciones rapidas por teclado sobre el resultado seleccionado: Space para vista previa, Enter para detalle, A para añadir accion, C para completar y programar, F para cambiar fecha."
+  },
+  {
     version: "1.025",
     feature: 25,
     title: "Completar y Programar: pre-carga accion pendiente",
