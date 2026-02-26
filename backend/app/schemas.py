@@ -70,6 +70,7 @@ class CompleteAndScheduleRequest(BaseModel):
     accion_completada: str
     accion_siguiente: str | None = None
     fecha_siguiente: date
+    accion_existente_id: int | None = None
 
 
 # --- Estados (parametric) ---

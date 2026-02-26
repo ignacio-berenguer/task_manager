@@ -111,14 +111,29 @@ export function AddAccionDialog({ open, onOpenChange, tareaId, onSuccess }) {
 export function CompleteAndScheduleDialog({ open, onOpenChange, tareaId, onSuccess }) {
   const [form, setForm] = useState({ accion_completada: '', accion_siguiente: '', fecha_siguiente: getTodayISO() })
   const [saving, setSaving] = useState(false)
+  const [pendingAccion, setPendingAccion] = useState(null)
   const textareaRef = useRef(null)
 
   useEffect(() => {
     if (open) {
       setForm({ accion_completada: '', accion_siguiente: '', fecha_siguiente: getTodayISO() })
+      setPendingAccion(null)
+      if (tareaId) {
+        apiClient.get(`/acciones/tarea/${tareaId}`)
+          .then(res => {
+            const pending = res.data
+              .filter(a => a.estado && ['pendiente', 'en progreso'].includes(a.estado.toLowerCase()))
+              .sort((a, b) => (b.fecha_accion || '').localeCompare(a.fecha_accion || ''))
+            if (pending.length > 0) {
+              setPendingAccion(pending[0])
+              setForm(f => ({ ...f, accion_completada: pending[0].accion || '' }))
+            }
+          })
+          .catch(() => setPendingAccion(null))
+      }
       setTimeout(() => textareaRef.current?.focus(), 50)
     }
-  }, [open])
+  }, [open, tareaId])
 
   const handleSave = useCallback(async () => {
     if (!form.accion_completada.trim() || !form.fecha_siguiente || saving) return
@@ -128,6 +143,9 @@ export function CompleteAndScheduleDialog({ open, onOpenChange, tareaId, onSucce
         tarea_id: tareaId,
         accion_completada: form.accion_completada.trim(),
         fecha_siguiente: form.fecha_siguiente,
+      }
+      if (pendingAccion) {
+        payload.accion_existente_id = pendingAccion.id
       }
       if (form.accion_siguiente.trim()) {
         payload.accion_siguiente = form.accion_siguiente.trim()
@@ -177,6 +195,9 @@ export function CompleteAndScheduleDialog({ open, onOpenChange, tareaId, onSucce
               onChange={e => setForm(f => ({ ...f, accion_completada: e.target.value }))}
               placeholder="Descripcion de la accion realizada..."
             />
+            {pendingAccion && (
+              <p className="text-xs text-muted-foreground italic">Accion pendiente actual — edita si es necesario</p>
+            )}
             <p className="text-xs text-muted-foreground">Se registrara con fecha de hoy y estado Completada</p>
           </div>
           <div>

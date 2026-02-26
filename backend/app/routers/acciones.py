@@ -52,13 +52,22 @@ def complete_and_schedule(req: CompleteAndScheduleRequest, db: Session = Depends
     if not tarea:
         raise HTTPException(status_code=404, detail=f"Tarea {req.tarea_id} no encontrada")
 
-    accion1 = AccionRealizada(
-        tarea_id=req.tarea_id,
-        accion=req.accion_completada,
-        fecha_accion=date.today(),
-        estado="Completada",
-    )
-    db.add(accion1)
+    if req.accion_existente_id:
+        accion1 = db.query(AccionRealizada).filter(AccionRealizada.id == req.accion_existente_id).first()
+        if not accion1 or accion1.tarea_id != req.tarea_id:
+            raise HTTPException(status_code=400, detail="Accion no encontrada o no pertenece a la tarea")
+        accion1.accion = req.accion_completada
+        accion1.fecha_accion = date.today()
+        accion1.estado = "Completada"
+        accion1.fecha_actualizacion = datetime.now()
+    else:
+        accion1 = AccionRealizada(
+            tarea_id=req.tarea_id,
+            accion=req.accion_completada,
+            fecha_accion=date.today(),
+            estado="Completada",
+        )
+        db.add(accion1)
 
     accion2 = None
     if req.accion_siguiente:

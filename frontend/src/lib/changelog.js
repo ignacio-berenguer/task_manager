@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.025",
+    feature: 25,
+    title: "Completar y Programar: pre-carga accion pendiente",
+    summary: "Al abrir 'Completar y Programar', si la tarea tiene una accion pendiente, el dialogo pre-carga su texto en el campo 'Accion Completada' (editable). Al guardar, la accion existente se actualiza a Completada en lugar de crear un duplicado. Si se indica una 'Siguiente Accion', se crea como nueva accion pendiente. Funciona tanto desde la pagina de busqueda como desde el detalle de la tarea."
+  },
+  {
     version: "1.024",
     feature: 24,
     title: "Mejoras en creacion y edicion de tareas",
