@@ -127,14 +127,23 @@ export default function SearchPage() {
     return () => observer.disconnect()
   }, [results])
 
-  // Restore scroll position after results are rendered
+  // Restore scroll position and table focus after results are rendered from cache
+  const cachedSelectedRow = useRef(searchStateCache?.selectedRowIndex ?? -1)
   useEffect(() => {
     if (cachedScrollTop.current && results) {
       const scrollTop = cachedScrollTop.current
+      const rowIdx = cachedSelectedRow.current
       cachedScrollTop.current = 0
+      cachedSelectedRow.current = -1
       requestAnimationFrame(() => {
         window.scrollTo(0, scrollTop)
         LOG.debug('Restored scroll position:', scrollTop)
+        // Restore table focus and ensure selected row is visible
+        if (rowIdx >= 0) {
+          tableContainerRef.current?.focus()
+          const row = tableBodyRef.current?.querySelectorAll('tr[data-row-index]')?.[rowIdx]
+          if (row) row.scrollIntoView({ block: 'nearest' })
+        }
       })
     }
   }, [results])
