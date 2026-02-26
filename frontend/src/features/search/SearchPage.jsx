@@ -130,21 +130,21 @@ export default function SearchPage() {
   // Restore scroll position and table focus after results are rendered from cache
   const cachedSelectedRow = useRef(searchStateCache?.selectedRowIndex ?? -1)
   useEffect(() => {
-    if (cachedScrollTop.current && results) {
+    if (results) {
       const scrollTop = cachedScrollTop.current
       const rowIdx = cachedSelectedRow.current
       cachedScrollTop.current = 0
       cachedSelectedRow.current = -1
-      requestAnimationFrame(() => {
-        window.scrollTo(0, scrollTop)
-        LOG.debug('Restored scroll position:', scrollTop)
-        // Restore table focus and ensure selected row is visible
-        if (rowIdx >= 0) {
-          tableContainerRef.current?.focus()
-          const row = tableBodyRef.current?.querySelectorAll('tr[data-row-index]')?.[rowIdx]
-          if (row) row.scrollIntoView({ block: 'nearest' })
-        }
-      })
+      if (scrollTop || rowIdx >= 0) {
+        requestAnimationFrame(() => {
+          if (scrollTop) window.scrollTo(0, scrollTop)
+          if (rowIdx >= 0) {
+            tableContainerRef.current?.focus()
+            const row = tableBodyRef.current?.querySelectorAll('tr[data-row-index]')?.[rowIdx]
+            if (row) row.scrollIntoView({ block: 'nearest' })
+          }
+        })
+      }
     }
   }, [results])
 
@@ -293,7 +293,12 @@ export default function SearchPage() {
   }
 
   // Re-search when sort changes (only if we have results)
+  const sortInitialized = useRef(false)
   useEffect(() => {
+    if (!sortInitialized.current) {
+      sortInitialized.current = true
+      return
+    }
     if (results && sortField) {
       doSearch(0)
     }
