@@ -110,7 +110,9 @@ Key behaviors:
 
 **Bulk update endpoint:** Accepts a `BulkUpdateRequest` with a list of `tarea_id`s and an operation type (`change_date` or `complete_and_create`). Returns a `BulkUpdateResponse` with per-task success/failure results. The `change_date` operation updates `fecha_siguiente_accion` for all specified tareas. The `complete_and_create` operation marks each tarea as completed and creates a new accion.
 
-**Complete endpoint:** Marks the specified tarea's estado as "Completada" and sets all non-completed acciones to "Completada" in a single transaction.
+**Complete endpoint:** Marks the specified tarea's estado as "Completado" and sets all non-completed acciones to "Completada" in a single transaction.
+
+**Default estado:** When creating a new tarea without specifying estado, it defaults to "En curso". When updating a tarea, estado cannot be set to null.
 
 ### 6.2 Acciones
 
@@ -128,7 +130,7 @@ Key behaviors:
 
 **Important:** The `POST /complete-and-schedule` and `GET /tarea/{tarea_id}` routes are defined before `GET /{id}` to avoid FastAPI route conflicts.
 
-**Auto-sync `fecha_siguiente_accion`:** All accion mutation endpoints (POST, PUT, DELETE, complete-and-schedule) automatically recalculate the parent tarea's `fecha_siguiente_accion` as the MAX `fecha_accion` among pending acciones (case-insensitive estado match). If no pending acciones exist, the field is set to NULL. This is handled by the `_sync_fecha_siguiente_accion(db, tarea_id)` helper function in the router module.
+**Auto-sync `fecha_siguiente_accion`:** All accion mutation endpoints (POST, PUT, DELETE, complete-and-schedule) automatically recalculate the parent tarea's `fecha_siguiente_accion` as the MIN `fecha_accion` among pending acciones (case-insensitive estado match). If no pending acciones exist, the field is set to NULL. This is handled by the `_sync_fecha_siguiente_accion(db, tarea_id)` helper function in the router module.
 
 **Complete & Schedule endpoint:** Creates two acciones in a single transaction — one with estado "Completada" (fecha_accion = today, server-side) and one with estado "Pendiente" (fecha_accion = user-specified future date) — and uses the auto-sync helper to update the parent tarea's `fecha_siguiente_accion`.
 

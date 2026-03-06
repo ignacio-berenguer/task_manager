@@ -2,7 +2,7 @@
 
 from datetime import date
 from typing import Any, Literal
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 
 # --- Search ---
@@ -36,7 +36,7 @@ class TareaCreate(BaseModel):
     descripcion: str | None = None
     fecha_siguiente_accion: date | None = None
     tema: str | None = None
-    estado: str | None = None
+    estado: str = "En curso"
     notas_anteriores: str | None = None
 
 
@@ -48,6 +48,12 @@ class TareaUpdate(BaseModel):
     tema: str | None = None
     estado: str | None = None
     notas_anteriores: str | None = None
+
+    @model_validator(mode="after")
+    def estado_not_null_if_set(self):
+        if "estado" in self.model_fields_set and self.estado is None:
+            raise ValueError("estado cannot be null")
+        return self
 
 
 # --- Acciones ---

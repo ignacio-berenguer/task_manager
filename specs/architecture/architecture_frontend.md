@@ -126,6 +126,8 @@ frontend/
 │   │   │   └── DetailPage.jsx     # Task info card + acciones CRUD table
 │   │   ├── shared/
 │   │   │   └── ActionDialogs.jsx  # Reusable AddAccionDialog + CambiarFechaDialog + CompleteAndScheduleDialog
+│   │   ├── admin/
+│   │   │   └── AdminPage.jsx     # Parametric table management (estados, responsables)
 │   │   └── chat/
 │   │       ├── ChatPage.jsx       # AI assistant chat page
 │   │       └── ChatContext.jsx    # Chat state provider (conversation persistence)
@@ -165,9 +167,10 @@ frontend/
 | `/search` | Private | `SearchPage` | Task search with filters and data grid |
 | `/detail/:tarea_id` | Private | `DetailPage` | Task detail with acciones CRUD |
 | `/chat` | Private | `ChatPage` | AI assistant chat |
+| `/admin` | Private | `AdminPage` | Parametric table management (estados, responsables) |
 | `*` | Public | `NotFoundPage` | 404 catch-all |
 
-**Route-Based Code Splitting:** `SearchPage`, `DetailPage`, and `ChatPage` are loaded with `React.lazy()` + `Suspense` with page-specific loading skeletons.
+**Route-Based Code Splitting:** `SearchPage`, `DetailPage`, `ChatPage`, and `AdminPage` are loaded with `React.lazy()` + `Suspense` with page-specific loading skeletons.
 
 ---
 
@@ -305,7 +308,7 @@ ClerkProvider
 | `ProtectedRoute.jsx` | Auth guard, redirects unauthenticated users |
 | `ColumnConfigurator.jsx` | Column visibility + drag-and-drop reordering dialog |
 | `SortableColumnItem.jsx` | Draggable column item for ColumnConfigurator |
-| `EstadoBadge.jsx` | Colored estado badge: maps tarea estados (En Curso→red, Completado→green, Cancelado→gray) and accion estados (Pendiente→red, En Progreso→amber, Completada→green) to Badge variants |
+| `EstadoBadge.jsx` | Colored estado badge: maps tarea estados (En curso→default/blue, Completado→success/green, Cancelado→secondary/gray) and accion estados (Pendiente→warning/amber, Completada→success/green) to Badge variants |
 | `EmptyState.jsx` | Styled empty state with icon and message |
 | `ErrorBoundary.jsx` | Error boundary with retry button |
 | `NotFoundPage.jsx` | 404 page |

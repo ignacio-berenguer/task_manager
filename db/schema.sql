@@ -72,19 +72,26 @@ CREATE INDEX IF NOT EXISTS idx_acciones_fecha_accion ON acciones_realizadas(fech
 -- ============================================================================
 
 -- Default estados for tareas
-INSERT INTO estados_tareas (valor, orden) VALUES
-    ('Pendiente', 1),
-    ('En curso', 2),
-    ('En Progreso', 3),
-    ('Completada', 4),
-    ('Cancelada', 5)
+INSERT INTO estados_tareas (valor, orden, color) VALUES
+    ('En curso', 1, 'blue'),
+    ('Completado', 2, 'green'),
+    ('Cancelado', 3, 'gray')
 ON CONFLICT DO NOTHING;
 
 -- Default estados for acciones
-INSERT INTO estados_acciones (valor, orden) VALUES
-    ('Pendiente', 1),
-    ('En Progreso', 2),
-    ('Completada', 3)
+INSERT INTO estados_acciones (valor, orden, color) VALUES
+    ('Pendiente', 1, 'amber'),
+    ('Completada', 2, 'green')
+ON CONFLICT DO NOTHING;
+
+-- Default responsables
+INSERT INTO responsables (valor, orden) VALUES
+    ('Ignacio', 1),
+    ('Mario', 2),
+    ('MJ', 3),
+    ('Elena', 4),
+    ('Carla', 5),
+    ('Álvaro', 6)
 ON CONFLICT DO NOTHING;
 
 -- ============================================================================

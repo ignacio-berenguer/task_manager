@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.029",
+    feature: 29,
+    title: "Tablas parametricas y pagina de administracion",
+    summary: "Los valores de estado (tareas y acciones) y responsables ahora se gestionan desde tablas parametricas con una nueva pagina de administracion accesible desde el menu Administrador. Todos los dropdowns de la aplicacion obtienen sus opciones de estas tablas. La fecha siguiente accion se calcula automaticamente como la fecha minima de las acciones pendientes. Estados de tareas: En curso, Completado, Cancelado. Estados de acciones: Pendiente, Completada."
+  },
+  {
     version: "1.028",
     feature: 28,
     title: "Atajos de teclado en detalle de tarea",

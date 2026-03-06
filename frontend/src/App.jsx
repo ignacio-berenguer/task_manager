@@ -15,6 +15,7 @@ import { DetailSkeleton } from '@/components/shared/skeletons/DetailSkeleton'
 const SearchPage = lazy(() => import('@/features/search/SearchPage'))
 const DetailPage = lazy(() => import('@/features/detail/DetailPage'))
 const ChatPage = lazy(() => import('@/features/chat/ChatPage').then(m => ({ default: m.ChatPage })))
+const AdminPage = lazy(() => import('@/features/admin/AdminPage'))
 
 const logger = createLogger('App')
 
@@ -56,6 +57,7 @@ function App() {
             <Route path="/search" element={<ErrorBoundary><Suspense fallback={<SearchSkeleton />}><SearchPage /></Suspense></ErrorBoundary>} />
             <Route path="/detail/:tarea_id" element={<ErrorBoundary><Suspense fallback={<DetailSkeleton />}><DetailPage /></Suspense></ErrorBoundary>} />
             <Route path="/chat" element={<ErrorBoundary><Suspense fallback={<div className="flex min-h-screen items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}><ChatPage /></Suspense></ErrorBoundary>} />
+            <Route path="/admin" element={<ErrorBoundary><Suspense fallback={<div className="flex min-h-screen items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}><AdminPage /></Suspense></ErrorBoundary>} />
           </Route>
 
           {/* 404 catch-all */}

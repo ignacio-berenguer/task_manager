@@ -7,7 +7,7 @@ import {
   SignedOut,
   UserButton,
 } from '@clerk/clerk-react'
-import { Menu, X, Search, MessageSquare, Settings, Download, ChevronDown, Loader2, HelpCircle, Keyboard } from 'lucide-react'
+import { Menu, X, Search, MessageSquare, Settings, Download, ChevronDown, Loader2, HelpCircle, Keyboard, TableProperties } from 'lucide-react'
 import { ModeToggle } from '@/components/theme/ModeToggle'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -175,6 +175,15 @@ export function Navbar() {
 
                 {isAdminOpen && (
                   <div className="absolute right-0 mt-1 w-56 rounded-md border border-border bg-popover p-1 shadow-md" role="menu">
+                    <Link
+                      to="/admin"
+                      role="menuitem"
+                      className="flex w-full items-center space-x-2 rounded-sm px-2 py-2 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground"
+                      onClick={() => setIsAdminOpen(false)}
+                    >
+                      <TableProperties className="h-4 w-4" />
+                      <span>Tablas parametricas</span>
+                    </Link>
                     <button
                       onClick={handleExport}
                       disabled={isExporting}
@@ -301,18 +310,28 @@ export function Navbar() {
                 </button>
 
                 {isAdminMobileOpen && (
-                  <button
-                    onClick={handleExport}
-                    disabled={isExporting}
-                    className="flex w-full items-center space-x-2 rounded-md px-3 py-2 pl-10 text-base font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
-                  >
-                    {isExporting ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <Download className="h-5 w-5" />
-                    )}
-                    <span>{isExporting ? 'Exportando...' : 'Exportar base de datos'}</span>
-                  </button>
+                  <>
+                    <Link
+                      to="/admin"
+                      className="flex w-full items-center space-x-2 rounded-md px-3 py-2 pl-10 text-base font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <TableProperties className="h-5 w-5" />
+                      <span>Tablas parametricas</span>
+                    </Link>
+                    <button
+                      onClick={handleExport}
+                      disabled={isExporting}
+                      className="flex w-full items-center space-x-2 rounded-md px-3 py-2 pl-10 text-base font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+                    >
+                      {isExporting ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Download className="h-5 w-5" />
+                      )}
+                      <span>{isExporting ? 'Exportando...' : 'Exportar base de datos'}</span>
+                    </button>
+                  </>
                 )}
 
                 {/* Help accordion */}

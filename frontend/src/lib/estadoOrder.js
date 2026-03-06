@@ -1,9 +1,9 @@
 export const ESTADO_ORDER = [
-  'Pendiente',
   'En curso',
-  'En Progreso',
+  'Completado',
+  'Cancelado',
+  'Pendiente',
   'Completada',
-  'Cancelada'
 ]
 
 export function getEstadoIndex(name) {

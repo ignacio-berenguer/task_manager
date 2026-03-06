@@ -53,20 +53,19 @@ Acciones realizadas sobre cada tarea.
 - **estado**: Estado de la accion
 
 ### Tablas parametricas
-- **estados_tareas**: Valores validos de estado para tareas (Pendiente, En Progreso, Completada, Cancelada)
-- **estados_acciones**: Valores validos de estado para acciones (Pendiente, En Progreso, Completada)
+- **estados_tareas**: Valores validos de estado para tareas (En curso, Completado, Cancelado)
+- **estados_acciones**: Valores validos de estado para acciones (Pendiente, Completada)
+- **responsables**: Valores validos de responsable (Ignacio, Mario, MJ, Elena, Carla, Alvaro)
 
 ## Semantica de estados
 
 ### Estados de tareas
 - **En curso**: La tarea esta activa y pendiente de resolucion. El responsable tiene trabajo por hacer.
-- **Completada**: La tarea esta terminada. No requiere mas acciones.
-- **Pendiente**: La tarea esta registrada pero aun no se ha comenzado a trabajar en ella.
-- **Cancelada**: La tarea fue cancelada y no se completara.
+- **Completado**: La tarea esta terminada. No requiere mas acciones.
+- **Cancelado**: La tarea fue cancelada y no se completara.
 
 ### Estados de acciones
 - **Pendiente**: La accion aun no se ha realizado.
-- **En Progreso**: La accion esta en curso.
 - **Completada**: La accion se completo.
 
 ### IMPORTANTE sobre lenguaje del usuario

@@ -5,14 +5,12 @@ function getEstadoVariant(estado) {
   const normalized = estado.toLowerCase()
   switch (normalized) {
     case 'en curso':
+      return 'default'
     case 'pendiente':
-      return 'destructive'
+      return 'warning'
     case 'completado':
     case 'completada':
-    case 'continuar en otra tarea':
       return 'success'
-    case 'en progreso':
-      return 'warning'
     case 'cancelado':
     case 'cancelada':
       return 'secondary'

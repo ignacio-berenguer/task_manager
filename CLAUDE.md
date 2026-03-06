@@ -186,8 +186,9 @@ task_manager/
 
 - **tareas**: `tarea_id` (SERIAL PK), `tarea`, `responsable`, `descripcion`, `fecha_siguiente_accion` (DATE), `tema`, `estado`, `notas_anteriores`, `fecha_creacion` (TIMESTAMP), `fecha_actualizacion` (TIMESTAMP)
 - **acciones_realizadas**: `id` (SERIAL PK), `tarea_id` (INTEGER FK to tareas.tarea_id, ON DELETE CASCADE), `accion`, `fecha_accion` (DATE), `estado`, `fecha_creacion` (TIMESTAMP), `fecha_actualizacion` (TIMESTAMP)
-- **estados_tareas**: `id`, `valor` (UNIQUE), `orden`, `color` — seeded with: Pendiente, En curso, En Progreso, Completada, Cancelada
-- **estados_acciones**: `id`, `valor` (UNIQUE), `orden`, `color` — seeded with: Pendiente, En Progreso, Completada
+- **estados_tareas**: `id`, `valor` (UNIQUE), `orden`, `color` — seeded with: En curso, Completado, Cancelado
+- **estados_acciones**: `id`, `valor` (UNIQUE), `orden`, `color` — seeded with: Pendiente, Completada
+- **responsables**: `id`, `valor` (UNIQUE), `orden` — seeded with: Ignacio, Mario, MJ, Elena, Carla, Álvaro
 - **responsables**: `id`, `valor` (UNIQUE), `orden` — seeded during migration from unique Excel responsable values
 
 ## Backend API
@@ -262,6 +263,7 @@ POST /api/v1/tareas/search
 | `/search` | Private | SearchPage | Task search with filters |
 | `/detail/:tarea_id` | Private | DetailPage | Tarea info + acciones CRUD |
 | `/chat` | Private | ChatPage | AI assistant |
+| `/admin` | Private | AdminPage | Parametric table management |
 
 ### Key Frontend Patterns
 

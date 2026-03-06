@@ -189,6 +189,9 @@ export default function SearchPage() {
   const [bulkChangeDateOpen, setBulkChangeDateOpen] = useState(false)
   const [bulkCompleteCreateOpen, setBulkCompleteCreateOpen] = useState(false)
 
+  // Parametric data for dropdowns
+  const [responsablesList, setResponsablesList] = useState([])
+
   // Fetch filter options on first load
   useEffect(() => {
     apiClient.get('/tareas/filter-options').then(res => {
@@ -197,6 +200,9 @@ export default function SearchPage() {
     apiClient.get('/estados-tareas').then(res => {
       setEstadosTareaList(res.data)
     }).catch(() => setEstadosTareaList([]))
+    apiClient.get('/responsables').then(res => {
+      setResponsablesList(res.data)
+    }).catch(() => setResponsablesList([]))
   }, [])
 
   const doSearch = useCallback(async (pageOverride = 0) => {
@@ -732,8 +738,8 @@ export default function SearchPage() {
             onChange={e => setFilters(f => ({ ...f, responsable: e.target.value }))}
           >
             <option value="">Responsable: Todos</option>
-            {filterOptions?.responsables?.map(r => (
-              <option key={r} value={r}>{r}</option>
+            {responsablesList.map(r => (
+              <option key={r.id} value={r.valor}>{r.valor}</option>
             ))}
           </select>
           <select
@@ -752,8 +758,8 @@ export default function SearchPage() {
             onChange={e => setFilters(f => ({ ...f, estado: e.target.value }))}
           >
             <option value="">Estado: Todos</option>
-            {filterOptions?.estados?.map(e => (
-              <option key={e} value={e}>{e}</option>
+            {estadosTareaList.map(e => (
+              <option key={e.id} value={e.valor}>{e.valor}</option>
             ))}
           </select>
         </div>
@@ -973,8 +979,8 @@ export default function SearchPage() {
                                           onClick={e => e.stopPropagation()}
                                         >
                                           <option value="">Todos</option>
-                                          {filterOptions?.estados?.map(e => (
-                                            <option key={e} value={e}>{e}</option>
+                                          {estadosTareaList.map(e => (
+                                            <option key={e.id} value={e.valor}>{e.valor}</option>
                                           ))}
                                         </select>
                                       ) : (
@@ -1152,8 +1158,8 @@ export default function SearchPage() {
                 onChange={e => setNewTareaForm(f => ({ ...f, responsable: e.target.value }))}
               >
                 <option value="">-- Seleccionar --</option>
-                {filterOptions?.responsables?.map(r => (
-                  <option key={r} value={r}>{r}</option>
+                {responsablesList.map(r => (
+                  <option key={r.id} value={r.valor}>{r.valor}</option>
                 ))}
               </select>
             </div>

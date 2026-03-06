@@ -21,9 +21,9 @@ crud_acciones = CRUDBase(AccionRealizada)
 
 def _sync_fecha_siguiente_accion(db: Session, tarea_id: int) -> Tarea | None:
     """Recalculate and update the tarea's fecha_siguiente_accion
-    based on the max fecha_accion of pending acciones (case-insensitive)."""
-    max_fecha = (
-        db.query(func.max(AccionRealizada.fecha_accion))
+    based on the min fecha_accion of pending acciones (case-insensitive)."""
+    min_fecha = (
+        db.query(func.min(AccionRealizada.fecha_accion))
         .filter(
             AccionRealizada.tarea_id == tarea_id,
             func.lower(AccionRealizada.estado) == "pendiente",
@@ -34,13 +34,13 @@ def _sync_fecha_siguiente_accion(db: Session, tarea_id: int) -> Tarea | None:
     tarea = db.query(Tarea).filter(Tarea.tarea_id == tarea_id).first()
     if tarea:
         old_fecha = tarea.fecha_siguiente_accion
-        tarea.fecha_siguiente_accion = max_fecha
+        tarea.fecha_siguiente_accion = min_fecha
         tarea.fecha_actualizacion = datetime.now()
         db.commit()
         db.refresh(tarea)
         LOG.info(
             f"Synced fecha_siguiente_accion for tarea {tarea_id}: "
-            f"{old_fecha} -> {max_fecha}"
+            f"{old_fecha} -> {min_fecha}"
         )
     return tarea
 

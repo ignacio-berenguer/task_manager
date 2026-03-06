@@ -59,8 +59,8 @@ def list_tareas(
 
 def _sync_fecha_siguiente_accion(db: Session, tarea_id: int):
     """Recalculate tarea's fecha_siguiente_accion from pending acciones."""
-    max_fecha = (
-        db.query(func.max(AccionRealizada.fecha_accion))
+    min_fecha = (
+        db.query(func.min(AccionRealizada.fecha_accion))
         .filter(
             AccionRealizada.tarea_id == tarea_id,
             func.lower(AccionRealizada.estado) == "pendiente",
@@ -69,7 +69,7 @@ def _sync_fecha_siguiente_accion(db: Session, tarea_id: int):
     )
     tarea = db.query(Tarea).filter(Tarea.tarea_id == tarea_id).first()
     if tarea:
-        tarea.fecha_siguiente_accion = max_fecha
+        tarea.fecha_siguiente_accion = min_fecha
         tarea.fecha_actualizacion = datetime.now()
         db.commit()
         db.refresh(tarea)
