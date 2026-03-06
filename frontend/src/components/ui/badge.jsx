@@ -9,6 +9,8 @@ const badgeVariants = {
     outline: 'text-foreground border border-input',
     success: 'bg-success/15 text-success dark:bg-success/25',
     warning: 'bg-warning/15 text-warning dark:bg-warning/25',
+    blue: 'bg-blue-500/15 text-blue-600 dark:bg-blue-500/25 dark:text-blue-400',
+    gray: 'bg-gray-500/15 text-gray-600 dark:bg-gray-500/25 dark:text-gray-400',
   },
   size: {
     default: 'px-2.5 py-0.5 text-xs',
