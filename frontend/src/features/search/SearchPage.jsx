@@ -1254,7 +1254,13 @@ export default function SearchPage() {
 
 // Row component with expand/collapse
 function RowWithExpand({ row, rowIndex, columns, renderCell, expanded, onToggleExpand, accionesCache, onRowClick, onOpenDrawer, onAddAccion, onCambiarFecha, onCompleteSchedule, selected, onToggleSelect, isKeyboardSelected, keyboardNavActive }) {
-  const cachedAcciones = accionesCache.current.get(row.tarea_id) || []
+  const cachedAcciones = (accionesCache.current.get(row.tarea_id) || [])
+    .slice()
+    .sort((a, b) => {
+      if (!a.fecha_accion) return 1
+      if (!b.fecha_accion) return -1
+      return b.fecha_accion.localeCompare(a.fecha_accion)
+    })
 
   return (
     <>
