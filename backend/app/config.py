@@ -1,8 +1,38 @@
 """
 Configuration management for the backend API.
 """
+import logging
 import os
+import re
+from pathlib import Path
 from pydantic_settings import BaseSettings
+
+# Project root: backend/ -> task_manager/
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+
+_cfg_logger = logging.getLogger(__name__)
+
+# Patterns that identify sensitive settings (matched against lowercase field name)
+SENSITIVE_PATTERNS = {"password", "key", "secret", "token", "jwks"}
+
+
+def get_app_version() -> str:
+    """Parse the canonical app version from frontend/src/lib/version.js.
+
+    Returns a string like '1.029' or 'unknown' if the file cannot be read.
+    """
+    version_file = PROJECT_ROOT / "frontend" / "src" / "lib" / "version.js"
+    try:
+        text = version_file.read_text(encoding="utf-8")
+        match = re.search(r"major:\s*(\d+)\s*,\s*minor:\s*(\d+)", text)
+        if match:
+            major, minor = int(match.group(1)), int(match.group(2))
+            return f"{major}.{minor:03d}"
+    except FileNotFoundError:
+        _cfg_logger.warning("Version file not found: %s", version_file)
+    except Exception as exc:
+        _cfg_logger.warning("Could not parse version file: %s", exc)
+    return "unknown"
 
 
 class Settings(BaseSettings):

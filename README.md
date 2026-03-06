@@ -101,7 +101,8 @@ task_manager/
 │   │       ├── estados.py           # Estados parametric tables
 │   │       ├── responsables.py      # Responsables parametric table
 │   │       ├── agent.py             # AI agent chat with SSE streaming
-│   │       └── admin.py             # Admin: database export
+│   │       ├── admin.py             # Admin: database export
+│   │       └── ayuda.py             # Ayuda: serves project README
 │   ├── pyproject.toml
 │   └── .env                         # Configuration (gitignored)
 │
@@ -120,6 +121,7 @@ task_manager/
 │   │   │   ├── search/              # Task search + data grid
 │   │   │   ├── detail/              # Task detail + acciones CRUD
 │   │   │   ├── shared/              # Shared dialogs (AddAccion, CambiarFecha, CompleteAndSchedule)
+│   │   │   ├── ayuda/              # Documentation page (rendered README)
 │   │   │   └── chat/                # AI assistant chat
 │   │   ├── lib/                     # changelog, estadoOrder, formatDate, logger, storage, utils, version, themes
 │   │   └── providers/               # Clerk, Query, Theme, Chat, Toaster
@@ -270,6 +272,12 @@ All accion mutation endpoints automatically recalculate the parent tarea's `fech
 |--------|----------|-------------|
 | GET | `/api/v1/admin/export` | Export all database tables as downloadable JSON |
 
+**Ayuda:**
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/ayuda/readme` | Serve project README.md as JSON |
+
 **Flexible Search Operators:** `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, `not_in`, `is_null`, `is_not_null`
 
 ## Frontend Pages
@@ -281,6 +289,7 @@ All accion mutation endpoints automatically recalculate the parent tarea's `fech
 | `/search` | Private | Task search with compact filters (no labels, placeholder text), lateral sidebar (xl+), column filter popovers (funnel icon), active filter tags (removable badges), quick date filters "2 dias" and "Semana" (mutually exclusive, toggle fecha_siguiente_accion date range), export to clipboard (copies visible tasks with pending actions), sortable/reorderable columns, colored estado tags (soft badge colors), sticky title bar, sticky results bar and table header (XL+, dynamic height via ResizeObserver), inline detail accordion, side drawer quick view, quick action buttons (add accion, change fecha), multi-select checkboxes with bulk operations toolbar (change date, complete & create action, export selected), keyboard shortcuts, new tarea dialog (Enter to submit), persistent state across navigation (filters, results, pagination, sort, scroll position). Mobile-optimized: icon-only buttons, responsive drawer grid, touch-friendly tap targets |
 | `/detail/:tarea_id` | Private | Task header with tarea name prominent + tarea_id muted, estado + responsable + fecha_siguiente_accion badges, header buttons (Completar, Cambiar Fecha, Editar) with Kbd hints, "Marcar Completado" button (marks tarea and non-completed acciones as completed with confirm dialog), compact acciones CRUD table (sorted desc, sticky headers), add accion dialog, "Completar y Programar" button with Kbd hint, notas accordion (collapsed), datos accordion (collapsed), edit tarea with estado dropdown (parametric), keyboard shortcuts (Backspace, e, c, a, p, f), back navigation with state preservation. All date fields use DateInput with +/- day buttons and keyboard accelerators. All modals support Enter to submit. Mobile-optimized: card layout for acciones, responsive accordion padding, icon-only header buttons |
 | `/chat` | Private | AI assistant with SSE streaming |
+| `/ayuda` | Private | Project documentation (rendered README.md). Accessible from Ayuda > Documentación in navbar |
 | `/admin` | Private | Parametric table management: tabbed CRUD for estados de tareas (En curso, Completado, Cancelado), estados de acciones (Pendiente, Completada), and responsables (Ignacio, Mario, MJ, Elena, Carla, Alvaro). Accessible from Administrador dropdown menu |
 
 ## Keyboard Shortcuts
@@ -402,6 +411,8 @@ Press `F1` anywhere in the app (or use the **Ayuda** menu in the navbar) to see 
 | Backend | `logs/task_manager_backend.log` | FastAPI request/operation logging |
 | MCP Server | `logs/task_manager_mcp.log` | MCP tool call logging |
 | Frontend | Browser console | Color-coded, timestamped via `createLogger()` |
+
+**Startup logging:** Both the backend and management CLI log the application version (parsed from `frontend/src/lib/version.js`) and all configuration variables on startup. Sensitive values (passwords, API keys, secrets, tokens) are masked with `***`.
 
 ## Documentation
 

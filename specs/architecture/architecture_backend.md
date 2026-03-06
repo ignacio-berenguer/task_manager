@@ -49,7 +49,8 @@ backend/
 │       ├── estados.py        # Estados parametric tables (two routers)
 │       ├── responsables.py   # Responsables parametric table CRUD
 │       ├── agent.py          # AI agent chat with SSE streaming
-│       └── admin.py          # Admin: database export
+│       ├── admin.py          # Admin: database export
+│       └── ayuda.py          # Ayuda: serves project README
 ├── .env                      # Environment variables (gitignored)
 ├── .env.example              # Template
 └── pyproject.toml            # Dependencies
@@ -174,7 +175,15 @@ Two separate routers for the two estado tables:
 
 The export endpoint queries all 5 tables in dependency order (reference tables first, then main, then dependent) and returns a JSON response with `export_metadata` (timestamp, version, table list, record counts) and `data` (all records from each table). The response includes a `Content-Disposition` header to trigger a file download.
 
-### 6.7 Utility Endpoints
+### 6.7 Ayuda
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/ayuda/readme` | Serve the project README.md as JSON `{"content": "..."}` |
+
+**Router:** `routers/ayuda.py` with prefix `/ayuda`.
+
+### 6.8 Utility Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -315,6 +324,13 @@ AGENT_USER_MAPPINGS={"ignacio.berenguer@gmail.com": "Ignacio"}  # Email-to-respo
 - **Request logging**: `RequestLoggingMiddleware` logs method/path/status/duration (skips health/docs)
 - **Noisy loggers suppressed**: httpcore, anthropic, httpx, hpack set to WARNING
 
+### Startup Logging
+
+On startup (in the `lifespan()` function), the backend logs:
+1. **Application version** parsed from `frontend/src/lib/version.js` (single source of truth)
+2. **All configuration variables** from the Settings model in aligned key=value format
+3. **Sensitive value masking**: Fields whose names contain `password`, `key`, `secret`, `token`, or `jwks` are displayed as `***`
+
 ---
 
 ## 10. Middleware
@@ -343,7 +359,7 @@ The API uses a dual authentication mechanism applied at the router level via Fas
 
 ### Protected Endpoints (auth required)
 
-All router endpoints under `/api/v1/*`: tareas, acciones, estados-tareas, estados-acciones, responsables, agent, admin.
+All router endpoints under `/api/v1/*`: tareas, acciones, estados-tareas, estados-acciones, responsables, agent, admin, ayuda.
 
 Auth is applied via `dependencies=[Depends(verify_auth)]` on each `APIRouter()`.
 

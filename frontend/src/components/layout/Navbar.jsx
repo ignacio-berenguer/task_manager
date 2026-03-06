@@ -7,7 +7,7 @@ import {
   SignedOut,
   UserButton,
 } from '@clerk/clerk-react'
-import { Menu, X, Search, MessageSquare, Settings, Download, ChevronDown, Loader2, HelpCircle, Keyboard, TableProperties } from 'lucide-react'
+import { Menu, X, Search, MessageSquare, Settings, Download, ChevronDown, Loader2, HelpCircle, Keyboard, TableProperties, FileText } from 'lucide-react'
 import { ModeToggle } from '@/components/theme/ModeToggle'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -228,6 +228,15 @@ export function Navbar() {
                       <span>Atajos de teclado</span>
                       <kbd className="ml-auto rounded border border-border bg-muted px-1 font-mono text-[10px] text-muted-foreground">F1</kbd>
                     </button>
+                    <Link
+                      to="/ayuda"
+                      role="menuitem"
+                      className="flex w-full items-center space-x-2 rounded-sm px-2 py-2 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground"
+                      onClick={() => setIsHelpOpen(false)}
+                    >
+                      <FileText className="h-4 w-4" />
+                      <span>Documentación</span>
+                    </Link>
                   </div>
                 )}
               </div>
@@ -348,13 +357,23 @@ export function Navbar() {
                 </button>
 
                 {isHelpMobileOpen && (
-                  <button
-                    onClick={handleOpenShortcuts}
-                    className="flex w-full items-center space-x-2 rounded-md px-3 py-2 pl-10 text-base font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                  >
-                    <Keyboard className="h-5 w-5" />
-                    <span>Atajos de teclado</span>
-                  </button>
+                  <>
+                    <button
+                      onClick={handleOpenShortcuts}
+                      className="flex w-full items-center space-x-2 rounded-md px-3 py-2 pl-10 text-base font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <Keyboard className="h-5 w-5" />
+                      <span>Atajos de teclado</span>
+                    </button>
+                    <Link
+                      to="/ayuda"
+                      className="flex w-full items-center space-x-2 rounded-md px-3 py-2 pl-10 text-base font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <FileText className="h-5 w-5" />
+                      <span>Documentación</span>
+                    </Link>
+                  </>
                 )}
               </div>
             </div>

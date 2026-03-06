@@ -128,6 +128,8 @@ frontend/
 │   │   │   └── ActionDialogs.jsx  # Reusable AddAccionDialog + CambiarFechaDialog + CompleteAndScheduleDialog
 │   │   ├── admin/
 │   │   │   └── AdminPage.jsx     # Parametric table management (estados, responsables)
+│   │   ├── ayuda/
+│   │   │   └── AyudaPage.jsx     # Rendered README.md documentation page
 │   │   └── chat/
 │   │       ├── ChatPage.jsx       # AI assistant chat page
 │   │       └── ChatContext.jsx    # Chat state provider (conversation persistence)
@@ -168,9 +170,10 @@ frontend/
 | `/detail/:tarea_id` | Private | `DetailPage` | Task detail with acciones CRUD |
 | `/chat` | Private | `ChatPage` | AI assistant chat |
 | `/admin` | Private | `AdminPage` | Parametric table management (estados, responsables) |
+| `/ayuda` | Private | `AyudaPage` | Project README rendered as documentation page |
 | `*` | Public | `NotFoundPage` | 404 catch-all |
 
-**Route-Based Code Splitting:** `SearchPage`, `DetailPage`, `ChatPage`, and `AdminPage` are loaded with `React.lazy()` + `Suspense` with page-specific loading skeletons.
+**Route-Based Code Splitting:** `SearchPage`, `DetailPage`, `ChatPage`, `AdminPage`, and `AyudaPage` are loaded with `React.lazy()` + `Suspense` with page-specific loading skeletons.
 
 ---
 
@@ -401,7 +404,7 @@ VITE_APP_NAME=Task Manager
 
 **Administrador Dropdown:** The Navbar includes an "Administrador" dropdown menu (desktop: click-toggle popover with click-outside/Escape dismiss; mobile: accordion in drawer). Currently contains "Exportar base de datos" which downloads the entire database as a JSON file.
 
-**Ayuda (Help) Dropdown:** The Navbar includes an "Ayuda" dropdown menu (same pattern as Administrador). Contains "Atajos de teclado" which opens the ShortcutHelpOverlay.
+**Ayuda (Help) Dropdown:** The Navbar includes an "Ayuda" dropdown menu (same pattern as Administrador). Contains "Atajos de teclado" (opens ShortcutHelpOverlay) and "Documentación" (navigates to `/ayuda` page with rendered README.md).
 
 **Keyboard Shortcut System:** A centralized `KeyboardShortcutProvider` context manages a shortcut registry. Components register shortcuts via the `useKeyboardShortcuts` hook (auto-cleanup on unmount). Features:
 - **Input guard:** Shortcuts are suppressed when an input/textarea/select is focused (unless marked `alwaysActive`)

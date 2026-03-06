@@ -14,7 +14,7 @@ warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 
 from src.core.logging_config import setup_logging, LOG_LEVEL, LOG_FILE, LOG_DATE_FORMAT
 from src.config import settings as config
-from src.config.settings import validate_config
+from src.config.settings import validate_config, get_app_version, SENSITIVE_PATTERNS
 from src.init import init_schema, recreate_tables
 from src.migrate import TareasMigrationEngine
 
@@ -57,14 +57,33 @@ Examples:
     args = parser.parse_args()
 
     # Add separator and session info to log file
+    version = get_app_version()
     logger.info("=" * 60)
     logger.info(f"NEW EXECUTION - {datetime.now().strftime(LOG_DATE_FORMAT)}")
     logger.info("=" * 60)
-    logger.info("Task Manager Migration Tool")
+    logger.info(f"Task Manager CLI v{version}")
     logger.info(f"Command: {args.command}")
-    logger.info(f"Database: {config.DB_NAME}@{config.DB_HOST}:{config.DB_PORT}")
-    logger.info(f"Log file: {LOG_FILE}")
-    logger.info(f"Log level: {logging.getLevelName(LOG_LEVEL)}")
+    logger.info("=" * 60)
+
+    # Log configuration with sensitive value masking
+    cfg_vars = {
+        "LOG_LEVEL": logging.getLevelName(LOG_LEVEL),
+        "LOG_FILE": LOG_FILE,
+        "DB_HOST": config.DB_HOST,
+        "DB_PORT": config.DB_PORT,
+        "DB_USER": config.DB_USER,
+        "DB_PASSWORD": config.DB_PASSWORD,
+        "DB_NAME": config.DB_NAME,
+        "EXCEL_SOURCE_DIR": config.EXCEL_SOURCE_DIR,
+        "EXCEL_SOURCE_FILE": config.EXCEL_SOURCE_FILE,
+        "BATCH_COMMIT_SIZE": config.BATCH_COMMIT_SIZE,
+    }
+    max_key_len = max(len(k) for k in cfg_vars)
+    logger.info("Configuration:")
+    for name, value in cfg_vars.items():
+        name_lower = name.lower()
+        display = "***" if any(p in name_lower for p in SENSITIVE_PATTERNS) else str(value)
+        logger.info(f"  {name:<{max_key_len}} = {display}")
     logger.info("=" * 60)
 
     # Validate configuration before executing any command

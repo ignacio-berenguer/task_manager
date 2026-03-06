@@ -5,12 +5,35 @@ Loads settings from .env file with sensible defaults.
 """
 import os
 import logging
+import re
 from pathlib import Path
 from dotenv import load_dotenv
 
 # Calculate paths
 _management_dir = Path(__file__).parent.parent.parent
 _project_root = _management_dir.parent
+
+# Patterns that identify sensitive settings (matched against lowercase name)
+SENSITIVE_PATTERNS = {"password", "key", "secret", "token"}
+
+
+def get_app_version() -> str:
+    """Parse the canonical app version from frontend/src/lib/version.js.
+
+    Returns a string like '1.029' or 'unknown' if the file cannot be read.
+    """
+    version_file = _project_root / "frontend" / "src" / "lib" / "version.js"
+    try:
+        text = version_file.read_text(encoding="utf-8")
+        match = re.search(r"major:\s*(\d+)\s*,\s*minor:\s*(\d+)", text)
+        if match:
+            major, minor = int(match.group(1)), int(match.group(2))
+            return f"{major}.{minor:03d}"
+    except FileNotFoundError:
+        pass
+    except Exception:
+        pass
+    return "unknown"
 
 # Load .env file from management directory
 _env_path = _management_dir / '.env'

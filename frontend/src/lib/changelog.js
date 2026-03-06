@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.030",
+    feature: 30,
+    title: "Mejoras backend: version, Ayuda y logging de configuracion",
+    summary: "La version de la aplicacion se muestra en los logs de inicio del backend y del CLI de migracion (fuente unica: version.js). Nueva pagina Ayuda (Documentacion) accesible desde el menu de navegacion que renderiza el README.md del proyecto. Al iniciar, el backend registra todas las variables de configuracion en el log, enmascarando valores sensibles (passwords, API keys) con ***."
+  },
+  {
     version: "1.029",
     feature: 29,
     title: "Tablas parametricas y pagina de administracion",

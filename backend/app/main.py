@@ -11,8 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
-from .config import settings
-from .routers import tareas, acciones, estados, responsables, agent, admin
+from .config import settings, get_app_version, SENSITIVE_PATTERNS
+from .routers import tareas, acciones, estados, responsables, agent, admin, ayuda
 
 # Setup logging
 _backend_dir = Path(__file__).parent.parent
@@ -61,10 +61,31 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         return response
 
 
+def _mask_value(field_name: str, value) -> str:
+    """Return '***' for sensitive fields, otherwise the string representation."""
+    name_lower = field_name.lower()
+    if any(p in name_lower for p in SENSITIVE_PATTERNS):
+        return "***"
+    return str(value)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan events."""
-    logger.info(f"Starting {settings.API_TITLE} v{settings.API_VERSION}")
+    version = get_app_version()
+    logger.info(f"Starting {settings.API_TITLE} v{version}")
+
+    # Log configuration
+    max_key_len = max(len(name) for name in settings.model_fields)
+    sep = "=" * 60
+    lines = [sep, "Configuration:"]
+    for name in settings.model_fields:
+        val = _mask_value(name, getattr(settings, name))
+        lines.append(f"  {name:<{max_key_len}} = {val}")
+    lines.append(sep)
+    for line in lines:
+        logger.info(line)
+
     yield
     logger.info("Shutting down API")
 
@@ -102,6 +123,7 @@ app.include_router(estados.router_acciones, prefix=settings.API_PREFIX)
 app.include_router(responsables.router, prefix=settings.API_PREFIX)
 app.include_router(agent.router, prefix=settings.API_PREFIX)
 app.include_router(admin.router, prefix=settings.API_PREFIX)
+app.include_router(ayuda.router, prefix=settings.API_PREFIX)
 
 
 @app.get("/")
