@@ -434,7 +434,7 @@ export default function DetailPage() {
                         </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-0.5">
-                        {acc.estado?.toLowerCase() !== 'completada' && (
+                        {acc.estado?.toLowerCase() === 'pendiente' && (
                           <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleCompleteAccion(acc.id)} title="Completar accion">
                             <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                           </Button>
@@ -467,8 +467,8 @@ export default function DetailPage() {
                         <td className="px-2 py-1.5 text-muted-foreground">{formatDate(acc.fecha_accion)}</td>
                         <td className="px-2 py-1.5">{acc.accion}</td>
                         <td className="px-2 py-1.5"><EstadoBadge estado={acc.estado} size="sm" /></td>
-                        <td className="px-2 py-1.5 text-right">
-                          {acc.estado?.toLowerCase() !== 'completada' && (
+                        <td className="px-2 py-1.5 text-right whitespace-nowrap">
+                          {acc.estado?.toLowerCase() === 'pendiente' && (
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleCompleteAccion(acc.id)} title="Completar accion">
                               <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                             </Button>
