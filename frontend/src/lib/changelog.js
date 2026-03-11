@@ -1,5 +1,11 @@
 export const CHANGELOG = [
   {
+    version: "1.031",
+    feature: 31,
+    title: "Mejoras UX en modales, refresco de busqueda y completar accion rapida",
+    summary: "Los modales ahora enfocan automaticamente el primer control al abrirse. En Completar y Programar, Tab desde el ultimo campo salta directamente al boton Aceptar. Al volver de Detalle a Busqueda tras modificar una tarea, los resultados se refrescan automaticamente. Nuevo boton 'Completar accion' en la lista de acciones del Detalle para marcar rapidamente una accion como Completada. Al cambiar la fecha siguiente accion de una tarea, las acciones pendientes con la fecha minima se actualizan automaticamente a la nueva fecha."
+  },
+  {
     version: "1.030",
     feature: 30,
     title: "Mejoras backend: version, Ayuda y logging de configuracion",

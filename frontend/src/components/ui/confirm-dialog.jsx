@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 
@@ -26,6 +27,14 @@ export function ConfirmDialog({
   variant = 'destructive',
   loading = false,
 }) {
+  const confirmRef = useRef(null)
+
+  useEffect(() => {
+    if (open) {
+      setTimeout(() => confirmRef.current?.focus(), 50)
+    }
+  }, [open])
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="sm" onClose={() => onOpenChange(false)}>
@@ -38,10 +47,12 @@ export function ConfirmDialog({
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={loading}
+            tabIndex={-1}
           >
             {cancelText}
           </Button>
           <Button
+            ref={confirmRef}
             variant={variant}
             onClick={onConfirm}
             disabled={loading}

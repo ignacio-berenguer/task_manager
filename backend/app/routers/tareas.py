@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.auth import verify_auth
 from app.database import get_db
 from app.models import Tarea, AccionRealizada
-from app.schemas import TareaCreate, TareaUpdate, SearchRequest, BulkUpdateRequest, BulkUpdateResponse
+from app.schemas import TareaCreate, TareaUpdate, SearchRequest, BulkUpdateRequest, BulkUpdateResponse, CambiarFechaRequest, CambiarFechaResponse
 from app.crud import CRUDBase, model_to_dict
 from app.search import search
 
@@ -167,6 +167,41 @@ def complete_tarea(tarea_id: int, db: Session = Depends(get_db)):
 
     LOG.info(f"Completed tarea {tarea_id}: {len(pending)} acciones marked as Completada")
     return {"tarea": model_to_dict(tarea), "acciones_updated": len(pending)}
+
+
+@router.put("/{tarea_id}/cambiar-fecha")
+def cambiar_fecha(tarea_id: int, req: CambiarFechaRequest, db: Session = Depends(get_db)):
+    """Change a tarea's fecha_siguiente_accion and propagate to min-fecha pending acciones."""
+    tarea = db.query(Tarea).filter(Tarea.tarea_id == tarea_id).first()
+    if not tarea:
+        raise HTTPException(status_code=404, detail=f"Tarea {tarea_id} no encontrada")
+
+    tarea.fecha_siguiente_accion = req.fecha
+    tarea.fecha_actualizacion = datetime.now()
+
+    updated_acciones = 0
+    pending = db.query(AccionRealizada).filter(
+        AccionRealizada.tarea_id == tarea_id,
+        func.lower(AccionRealizada.estado) == "pendiente",
+    ).all()
+
+    if pending:
+        min_fecha = min(
+            (acc.fecha_accion for acc in pending if acc.fecha_accion is not None),
+            default=None,
+        )
+        if min_fecha is not None:
+            for acc in pending:
+                if acc.fecha_accion == min_fecha:
+                    acc.fecha_accion = req.fecha
+                    acc.fecha_actualizacion = datetime.now()
+                    updated_acciones += 1
+
+    db.commit()
+    db.refresh(tarea)
+
+    LOG.info(f"Cambiar fecha tarea {tarea_id}: fecha={req.fecha}, {updated_acciones} acciones updated")
+    return CambiarFechaResponse(updated_tarea=True, updated_acciones=updated_acciones)
 
 
 @router.get("/{tarea_id}")

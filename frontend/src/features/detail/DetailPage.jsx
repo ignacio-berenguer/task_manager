@@ -12,12 +12,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { EstadoBadge } from '@/components/shared/EstadoBadge'
 import { AddAccionDialog, CambiarFechaDialog, CompleteAndScheduleDialog } from '@/features/shared/ActionDialogs'
+import { markSearchDirty } from '@/features/search/SearchPage'
 import { DateInput } from '@/components/ui/date-input'
 import { formatDate } from '@/lib/formatDate'
 import { cn } from '@/lib/utils'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Kbd } from '@/components/ui/kbd'
-import { ArrowLeft, Plus, Pencil, Trash2, Calendar, CalendarClock, ListChecks, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Plus, Pencil, Trash2, Calendar, CalendarClock, ListChecks, CheckCircle2, CheckCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { createLogger } from '@/lib/logger'
 import apiClient from '@/api/client'
@@ -54,6 +55,7 @@ export default function DetailPage() {
   // Edit tarea
   const [editOpen, setEditOpen] = useState(false)
   const [editForm, setEditForm] = useState({})
+  const editTareaInputRef = useRef(null)
 
   // Add accion dialog (shared component)
   const [addAccionOpen, setAddAccionOpen] = useState(false)
@@ -72,6 +74,21 @@ export default function DetailPage() {
   const [editAccionOpen, setEditAccionOpen] = useState(false)
   const [editAccionForm, setEditAccionForm] = useState({ accion: '', fecha_accion: '', estado: '' })
   const [editingAccionId, setEditingAccionId] = useState(null)
+  const editAccionTextareaRef = useRef(null)
+
+  // Auto-focus when Edit Tarea dialog opens
+  useEffect(() => {
+    if (editOpen) {
+      setTimeout(() => editTareaInputRef.current?.focus(), 50)
+    }
+  }, [editOpen])
+
+  // Auto-focus when Edit Accion dialog opens
+  useEffect(() => {
+    if (editAccionOpen) {
+      setTimeout(() => editAccionTextareaRef.current?.focus(), 50)
+    }
+  }, [editAccionOpen])
 
   const fetchData = async () => {
     setLoading(true)
@@ -128,6 +145,7 @@ export default function DetailPage() {
     try {
       await apiClient.put(`/tareas/${tarea_id}`, editForm)
       setEditOpen(false)
+      markSearchDirty()
       fetchData()
     } catch (err) {
       LOG.error('Error updating tarea', err)
@@ -147,6 +165,7 @@ export default function DetailPage() {
       if (!payload.fecha_accion) delete payload.fecha_accion
       await apiClient.put(`/acciones/${editingAccionId}`, payload)
       setEditAccionOpen(false)
+      markSearchDirty()
       fetchData()
     } catch (err) {
       LOG.error('Error saving accion', err)
@@ -157,6 +176,7 @@ export default function DetailPage() {
     if (!confirm('Eliminar esta accion?')) return
     try {
       await apiClient.delete(`/acciones/${id}`)
+      markSearchDirty()
       fetchData()
     } catch (err) {
       LOG.error('Error deleting accion', err)
@@ -170,12 +190,26 @@ export default function DetailPage() {
       const res = await apiClient.post(`/tareas/${tarea_id}/complete`)
       toast.success(`Tarea marcada como Completado (${res.data.acciones_updated} acciones actualizadas)`)
       setCompleteConfirmOpen(false)
+      markSearchDirty()
       fetchData()
     } catch (err) {
       LOG.error('Error marking tarea as complete', err)
       toast.error('Error al marcar como completado')
     } finally {
       setCompleting(false)
+    }
+  }
+
+  // Quick-complete a single accion
+  const handleCompleteAccion = async (accionId) => {
+    try {
+      await apiClient.put(`/acciones/${accionId}`, { estado: 'Completada' })
+      toast.success('Accion marcada como Completada')
+      markSearchDirty()
+      fetchData()
+    } catch (err) {
+      LOG.error('Error completing accion', err)
+      toast.error('Error al completar la accion')
     }
   }
 
@@ -400,6 +434,11 @@ export default function DetailPage() {
                         </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-0.5">
+                        {acc.estado?.toLowerCase() !== 'completada' && (
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleCompleteAccion(acc.id)} title="Completar accion">
+                            <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          </Button>
+                        )}
                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEditAccion(acc)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -419,7 +458,7 @@ export default function DetailPage() {
                       <th className="w-[100px] px-2 py-1.5 text-left font-medium">Fecha</th>
                       <th className="px-2 py-1.5 text-left font-medium">Accion</th>
                       <th className="w-[120px] px-2 py-1.5 text-left font-medium">Estado</th>
-                      <th className="w-[80px] px-2 py-1.5 text-right font-medium">Acciones</th>
+                      <th className="w-[110px] px-2 py-1.5 text-right font-medium">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -429,6 +468,11 @@ export default function DetailPage() {
                         <td className="px-2 py-1.5">{acc.accion}</td>
                         <td className="px-2 py-1.5"><EstadoBadge estado={acc.estado} size="sm" /></td>
                         <td className="px-2 py-1.5 text-right">
+                          {acc.estado?.toLowerCase() !== 'completada' && (
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleCompleteAccion(acc.id)} title="Completar accion">
+                              <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                            </Button>
+                          )}
                           <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEditAccion(acc)}>
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -497,7 +541,7 @@ export default function DetailPage() {
             }}>
               <div>
                 <label className="text-sm font-medium">Tarea</label>
-                <Input value={editForm.tarea || ''} onChange={e => setEditForm(f => ({ ...f, tarea: e.target.value }))} />
+                <Input ref={editTareaInputRef} value={editForm.tarea || ''} onChange={e => setEditForm(f => ({ ...f, tarea: e.target.value }))} />
               </div>
               <div>
                 <label className="text-sm font-medium">Responsable</label>
@@ -558,7 +602,7 @@ export default function DetailPage() {
           open={addAccionOpen}
           onOpenChange={setAddAccionOpen}
           tareaId={tarea.tarea_id}
-          onSuccess={fetchData}
+          onSuccess={() => { markSearchDirty(); fetchData() }}
         />
 
         {/* Cambiar Fecha Dialog (shared) */}
@@ -567,7 +611,7 @@ export default function DetailPage() {
           onOpenChange={setCambiarFechaOpen}
           tareaId={tarea.tarea_id}
           currentFecha={tarea.fecha_siguiente_accion}
-          onSuccess={fetchData}
+          onSuccess={() => { markSearchDirty(); fetchData() }}
         />
 
         {/* Complete & Schedule Dialog (shared) */}
@@ -575,7 +619,7 @@ export default function DetailPage() {
           open={completeScheduleOpen}
           onOpenChange={setCompleteScheduleOpen}
           tareaId={tarea.tarea_id}
-          onSuccess={fetchData}
+          onSuccess={() => { markSearchDirty(); fetchData() }}
         />
 
         {/* Edit Accion Dialog */}
@@ -590,6 +634,7 @@ export default function DetailPage() {
               <div>
                 <label className="text-sm font-medium">Accion</label>
                 <textarea
+                  ref={editAccionTextareaRef}
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                   rows={3}
                   value={editAccionForm.accion}

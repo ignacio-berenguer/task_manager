@@ -398,7 +398,7 @@ VITE_APP_NAME=Task Manager
 
 **localStorage Persistence:** Column configurations, page sizes, and theme preferences are persisted via the `createStorage()` utility.
 
-**Module-Level State Cache:** The Search page uses a module-level JavaScript variable (`searchStateCache`) to preserve state (filters, results, pagination, sort, column filters, scroll position) across in-app navigation. The variable survives component unmount/remount within the SPA but resets on full page refresh. State is saved via `useEffect` cleanup on unmount and restored via `useState` initializers on mount. A `stateRef` pattern avoids stale closures in the cleanup function.
+**Module-Level State Cache:** The Search page uses a module-level JavaScript variable (`searchStateCache`) to preserve state (filters, results, pagination, sort, column filters, scroll position) across in-app navigation. The variable survives component unmount/remount within the SPA but resets on full page refresh. State is saved via `useEffect` cleanup on unmount and restored via `useState` initializers on mount. A `stateRef` pattern avoids stale closures in the cleanup function. A companion `searchDirtyFlag` (exported via `markSearchDirty()`) is set by DetailPage on any tarea/accion mutation; on mount, SearchPage checks this flag and re-executes the search if dirty, ensuring stale cached results are refreshed after edits.
 
 **Spanish UI:** All user-facing text is in Spanish. Code identifiers use Spanish column names without accents (e.g., `descripcion`, `accion`).
 
@@ -419,7 +419,9 @@ VITE_APP_NAME=Task Manager
 
 **Error Handling:** `ErrorBoundary` wraps each protected route for graceful error recovery with a retry button.
 
-**Shared Feature Components:** Reusable dialog components in `features/shared/ActionDialogs.jsx` are used by both SearchPage and DetailPage for "Añadir Accion", "Cambiar Fecha Siguiente Accion", and "Completar y Programar Siguiente" operations. Each dialog manages its own form state, API calls, and toast notifications, and accepts an `onSuccess` callback to refresh the parent page's data. The CompleteAndScheduleDialog atomically completes an action (estado Completada, fecha today) and schedules the next one (estado Pendiente, future date), updating the tarea's fecha_siguiente_accion via a single backend endpoint.
+**Shared Feature Components:** Reusable dialog components in `features/shared/ActionDialogs.jsx` are used by both SearchPage and DetailPage for "Añadir Accion", "Cambiar Fecha Siguiente Accion", and "Completar y Programar Siguiente" operations. Each dialog manages its own form state, API calls, and toast notifications, and accepts an `onSuccess` callback to refresh the parent page's data. The CompleteAndScheduleDialog atomically completes an action (estado Completada, fecha today) and schedules the next one (estado Pendiente, future date), updating the tarea's fecha_siguiente_accion via a single backend endpoint. The CambiarFechaDialog calls `PUT /tareas/{id}/cambiar-fecha` which atomically updates the tarea's fecha and propagates the change to minimum-fecha pending acciones. All dialogs auto-focus their first control on open and set `tabIndex={-1}` on Cancel buttons so Tab from the last field goes directly to the primary action button.
+
+**Completar Accion Button:** Each accion row in the Detail page has a CheckCircle icon button (green, visible only when estado is not "Completada") that marks the accion as Completada with a single click — no confirmation dialog. Uses `PUT /acciones/{id}` with `{ estado: "Completada" }`. Triggers data refresh and marks search as dirty.
 
 **Code Splitting:** All protected routes use `React.lazy()` with `Suspense` and page-specific skeleton fallbacks for optimal loading performance.
 

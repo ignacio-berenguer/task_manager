@@ -229,6 +229,7 @@ The backend API is secured with a dual authentication mechanism:
 | POST | `/api/v1/tareas/search` | Flexible search with filters |
 | POST | `/api/v1/tareas/bulk-update` | Bulk update tareas (change_date or complete_and_create) |
 | POST | `/api/v1/tareas/{tarea_id}/complete` | Mark tarea and all non-completed acciones as completed |
+| PUT | `/api/v1/tareas/{tarea_id}/cambiar-fecha` | Change fecha and propagate to min-fecha pending acciones |
 
 **Acciones:**
 

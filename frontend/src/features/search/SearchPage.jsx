@@ -52,6 +52,10 @@ const searchStorage = createStorage('search')
 // Module-level cache: survives in-app navigation, clears on page refresh
 let searchStateCache = null
 
+// Module-level dirty flag: set by DetailPage when mutations occur
+let searchDirtyFlag = false
+export function markSearchDirty() { searchDirtyFlag = true }
+
 // Format a Date object as YYYY-MM-DD using local timezone
 const formatLocalDate = (d) =>
   d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
@@ -162,6 +166,14 @@ export default function SearchPage() {
   const [newTareaForm, setNewTareaForm] = useState({ tarea: '', responsable: '', tema: '', estado: 'En curso', proxima_accion: '', fecha_proxima_accion: '' })
   const [estadosTareaList, setEstadosTareaList] = useState([])
   const [newTareaLoading, setNewTareaLoading] = useState(false)
+  const newTareaInputRef = useRef(null)
+
+  // Auto-focus first input when Nueva Tarea dialog opens
+  useEffect(() => {
+    if (newTareaOpen) {
+      setTimeout(() => newTareaInputRef.current?.focus(), 50)
+    }
+  }, [newTareaOpen])
 
   // Action dialogs (shared components)
   const [addAccionTarget, setAddAccionTarget] = useState(null)
@@ -272,6 +284,15 @@ export default function SearchPage() {
       doSearch(0)
     }
   }, [filterOptions, doSearch])
+
+  // Re-search when returning from Detail with dirty flag
+  useEffect(() => {
+    if (searchDirtyFlag && results) {
+      searchDirtyFlag = false
+      LOG.debug('Search dirty flag detected, refreshing results')
+      doSearch(page)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const clearFilters = () => {
     setFilters({ tarea_id: '', tarea: '', responsable: '', tema: '', estado: 'En curso' })
@@ -1145,6 +1166,7 @@ export default function SearchPage() {
             <div>
               <label className="text-sm font-medium">Tarea *</label>
               <Input
+                ref={newTareaInputRef}
                 value={newTareaForm.tarea}
                 onChange={e => setNewTareaForm(f => ({ ...f, tarea: e.target.value }))}
                 placeholder="Nombre de la tarea"
@@ -1384,9 +1406,16 @@ function RowWithExpand({ row, rowIndex, columns, renderCell, expanded, onToggleE
 function BulkChangeDateDialog({ open, onOpenChange, selectedIds, onSuccess }) {
   const [fecha, setFecha] = useState('')
   const [saving, setSaving] = useState(false)
+  const datePickerRef = useRef(null)
 
   useEffect(() => {
-    if (open) setFecha('')
+    if (open) {
+      setFecha('')
+      setTimeout(() => {
+        const btn = datePickerRef.current?.querySelector('button')
+        btn?.focus()
+      }, 50)
+    }
   }, [open])
 
   const handleSave = async () => {
@@ -1418,7 +1447,7 @@ function BulkChangeDateDialog({ open, onOpenChange, selectedIds, onSuccess }) {
             e.preventDefault(); handleSave()
           }
         }}>
-          <div>
+          <div ref={datePickerRef}>
             <label className="text-sm font-medium">Nueva Fecha</label>
             <DateInput value={fecha} onChange={setFecha} />
             <p className="text-xs text-muted-foreground mt-1">Las acciones pendientes tambien se actualizaran a esta fecha.</p>

@@ -105,6 +105,17 @@ class ResponsableUpdate(BaseModel):
     orden: int | None = None
 
 
+# --- Cambiar Fecha ---
+
+class CambiarFechaRequest(BaseModel):
+    fecha: date
+
+
+class CambiarFechaResponse(BaseModel):
+    updated_tarea: bool
+    updated_acciones: int
+
+
 # --- Bulk Operations ---
 
 class BulkUpdateRequest(BaseModel):

@@ -106,6 +106,7 @@ Key behaviors:
 | POST | `/api/v1/tareas/search` | Flexible search with filters |
 | POST | `/api/v1/tareas/bulk-update` | Bulk update tareas (change_date or complete_and_create operations) |
 | POST | `/api/v1/tareas/{tarea_id}/complete` | Mark tarea and all non-completed acciones as completed |
+| PUT | `/api/v1/tareas/{tarea_id}/cambiar-fecha` | Change fecha_siguiente_accion and propagate to min-fecha pending acciones |
 
 **Router:** `routers/tareas.py` with prefix `/tareas`.
 
@@ -114,6 +115,8 @@ Key behaviors:
 **Complete endpoint:** Marks the specified tarea's estado as "Completado" and sets all non-completed acciones to "Completada" in a single transaction.
 
 **Default estado:** When creating a new tarea without specifying estado, it defaults to "En curso". When updating a tarea, estado cannot be set to null.
+
+**Cambiar fecha endpoint:** Updates tarea's `fecha_siguiente_accion` to the new date. If the tarea has pending acciones (estado = "Pendiente"), finds the minimum `fecha_accion` among them and updates all pending acciones with that minimum fecha to the new date. Returns `CambiarFechaResponse` with `updated_tarea` (bool) and `updated_acciones` (int count).
 
 ### 6.2 Acciones
 

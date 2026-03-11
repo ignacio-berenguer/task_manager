@@ -93,7 +93,7 @@ export function AddAccionDialog({ open, onOpenChange, tareaId, onSuccess }) {
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>Cancelar</Button>
+          <Button variant="outline" onClick={handleClose} tabIndex={-1}>Cancelar</Button>
           <Button onClick={handleSave} disabled={saving || !form.accion.trim() || !form.fecha_accion}>
             {saving ? 'Guardando...' : 'Guardar'}
           </Button>
@@ -220,7 +220,7 @@ export function CompleteAndScheduleDialog({ open, onOpenChange, tareaId, onSucce
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>Cancelar</Button>
+          <Button variant="outline" onClick={handleClose} tabIndex={-1}>Cancelar</Button>
           <Button onClick={handleSave} disabled={saving || !isValid}>
             {saving ? 'Guardando...' : 'Guardar'}
           </Button>
@@ -254,11 +254,12 @@ export function CambiarFechaDialog({ open, onOpenChange, tareaId, currentFecha, 
     if (!fecha || saving) return
     setSaving(true)
     try {
-      await apiClient.put(`/tareas/${tareaId}`, {
-        fecha_siguiente_accion: fecha,
-      })
-      LOG.info(`Fecha siguiente accion updated for tarea ${tareaId}`)
-      toast.success('Fecha actualizada exitosamente')
+      const res = await apiClient.put(`/tareas/${tareaId}/cambiar-fecha`, { fecha })
+      const updatedAcciones = res.data?.updated_acciones || 0
+      LOG.info(`Fecha siguiente accion updated for tarea ${tareaId}, ${updatedAcciones} acciones updated`)
+      toast.success(updatedAcciones > 0
+        ? `Fecha actualizada (${updatedAcciones} accion${updatedAcciones !== 1 ? 'es' : ''} pendiente${updatedAcciones !== 1 ? 's' : ''} actualizada${updatedAcciones !== 1 ? 's' : ''})`
+        : 'Fecha actualizada exitosamente')
       onOpenChange(false)
       onSuccess?.()
     } catch (err) {
